@@ -1,0 +1,27 @@
+FROM php:8.5-fpm-alpine
+
+RUN apk add --no-cache \
+        autoconf \
+        g++ \
+        gcc \
+        make \
+        imagemagick \
+        imagemagick-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        icu-dev \
+		mysql-client \
+    && docker-php-ext-install \
+        pdo_mysql \
+		mysqli \
+        gd \
+        intl \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
+    && apk del autoconf g++ gcc make
+	
+RUN echo "[client]" > /etc/my.cnf && \
+    echo "ssl=OFF" >> /etc/my.cnf && \
+    echo "[mysqldump]" >> /etc/my.cnf && \
+    echo "ssl=OFF" >> /etc/my.cnf && \
+    chmod 644 /etc/my.cnf

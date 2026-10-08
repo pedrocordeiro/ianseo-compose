@@ -1,0 +1,34 @@
+<?php
+$lang['API-AutoGroup']='대량 그룹 생성';
+$lang['API-ConfirmDeleteRow']='이 행을 삭제하시겠습니까?';
+$lang['API-DeviceGrouping']='장치 그룹화';
+$lang['API-EnableDeviceGrouping']='장치 그룹화 활성화';
+$lang['API-Group']='그룹';
+$lang['API-TargetGrouping']='표적 그룹화';
+$lang['API-Targets']='표적';
+$lang['AskSignature-0']='아니오';
+$lang['AskSignature-1']='선수 ID 스캔';
+$lang['AskSignature-2']='화면 서명';
+$lang['AutoImport']='자동 가져오기';
+$lang['CheckConnected']='접속상태 확인';
+$lang['CmdDelete']='제거';
+$lang['CmdImport']='가져오기';
+$lang['ConfirmGenerateZip']='세션 $a[1]에 대한 모든 $a[0]이 포함된 ZIP 파일 생성을 확인해 주세요.';
+$lang['ConnectionHttp']='HTTP';
+$lang['ConnectionSocket']='소켓';
+$lang['ConnectionType']='접속 유형';
+$lang['Controller']='컨트롤러';
+$lang['DataRefresh']='데이터 새로고침';
+$lang['Desc-Let-1']='현재 엔드 가져오기';
+$lang['Desc-Let-2']='현재 엔드에서 누락된 화살';
+$lang['DevConnected']='연결됨';
+$lang['ISK-BadCompCode']='잘못된 대회 코드';
+$lang['ISK-ForceQRCodeScanning-Help']='QR코드 스캔을 통해서만 설정을 허용합니다.<br>수동으로 과녁을 선택할 수 없습니다.<br>주로 원격 온라인 토너먼트에서 사용되며 다른 과녁에 점수입력하는 것을 방지하기 위함입니다.';
+$lang['ISK-Lite-NoCompCode']='대회 코드 누락';
+$lang['ISK-Lite-ServerUrl']='서버 URL (프로토콜 및 포트 80이 아닌 경우 포함)';
+$lang['ISK-NoCompCode']='대회 코드 누락';
+$lang['ISK-onlyAccreditated']='검증된 AD인증';
+$lang['ISK-ServerUrl']='서버 URL (프로토콜 및 포트 80이 아닌 경우 포함)';
+$lang['ISK-ServerUrlPin']='대회 보안 PIN';
+$lang['WAToolbox-NoCompCode']='대회 코드 누락';
+?>

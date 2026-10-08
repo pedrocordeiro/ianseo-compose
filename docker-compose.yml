@@ -1,0 +1,46 @@
+services:
+
+  ianseo-php-fpm:
+    build: ./php-fpm
+    container_name: ianseo-php-fpm
+    volumes:
+      - ${IANSEO_FOLDER}:/var/www
+      - ./php-fpm/ianseo.ini:/usr/local/etc/php/conf.d/ianseo.ini
+    networks:
+      - ianseo-network
+    depends_on:
+      - ianseo-database
+
+  ianseo-nginx:
+    image: nginx:alpine
+    container_name: ianseo-nginx
+    environment:
+      - APP_PORT=${APP_PORT}
+    volumes:
+      - ${IANSEO_FOLDER}:/var/www
+      - ./nginx/conf.d:/etc/nginx/templates
+    networks:
+      - ianseo-network
+    ports:
+      - "${APP_PORT}:80"
+    depends_on:
+      - ianseo-php-fpm
+
+  ianseo-database:
+    image: mysql:latest
+    container_name: ianseo-database
+    environment:
+      MYSQL_ROOT_PASSWORD: ianseo
+      MYSQL_DATABASE: ianseo
+      MYSQL_USER: ianseo
+      MYSQL_PASSWORD: ianseo
+    volumes:
+      - ${MYSQL_FOLDER}:/var/lib/mysql
+    networks:
+      - ianseo-network
+    ports:
+      - "${MYSQL_PORT}:3306"
+
+networks:
+  ianseo-network:
+    driver: bridge

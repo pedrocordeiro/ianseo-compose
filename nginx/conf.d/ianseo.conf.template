@@ -1,0 +1,23 @@
+server {
+    listen      80;
+    server_name localhost;
+    root        /var/www;
+    index       index.php index.html index.htm;
+
+    absolute_redirect off;
+    port_in_redirect on;
+
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_pass ianseo-php-fpm:9000;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SERVER_PORT ${APP_PORT};
+        fastcgi_param HTTP_HOST $host:${APP_PORT};
+        fastcgi_read_timeout 1860;
+    }
+}
