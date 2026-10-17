@@ -4,8 +4,8 @@ services:
     build: ./php-fpm
     container_name: ianseo-php-fpm
     volumes:
-      - ${IANSEO_FOLDER}:/var/www
-      - ./php-fpm/ianseo.ini:/usr/local/etc/php/conf.d/ianseo.ini
+      - ${IANSEO_FOLDER}:/var/www:z
+      - ./php-fpm/ianseo.ini:/usr/local/etc/php/conf.d/ianseo.ini:z
     networks:
       - ianseo-network
     depends_on:
@@ -17,8 +17,8 @@ services:
     environment:
       - APP_PORT=${APP_PORT}
     volumes:
-      - ${IANSEO_FOLDER}:/var/www
-      - ./nginx/conf.d:/etc/nginx/templates
+      - ${IANSEO_FOLDER}:/var/www:z
+      - ./nginx/conf.d:/etc/nginx/templates:z
     networks:
       - ianseo-network
     ports:
@@ -35,7 +35,7 @@ services:
       MYSQL_USER: ianseo
       MYSQL_PASSWORD: ianseo
     volumes:
-      - ${MYSQL_FOLDER}:/var/lib/mysql
+      - ${MYSQL_FOLDER}:/var/lib/mysql:z
     networks:
       - ianseo-network
     ports:
