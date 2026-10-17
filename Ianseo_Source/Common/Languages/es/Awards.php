@@ -1,0 +1,33 @@
+<?php
+$lang['Aw-Anthem']='Línea del himno';
+$lang['Aw-Anthem-TPE']='Línea del himno TPE';
+$lang['Aw-Applause']='Línea de aplausos';
+$lang['Aw-Intro']='Línea de la introducción';
+$lang['Aw-Med1']='Nombre del premiado con 1er puesto';
+$lang['Aw-Med2']='Nombre del premiado con el 2º puesto';
+$lang['Aw-Med3']='Nombre del premiado con el 3er puesto';
+$lang['Aw-Med4']='Nombre del premiado con el 4º puesto';
+$lang['Aw-representing']='Línea de representación';
+$lang['Aw-representingTeam']='Línea de presentación para equipos';
+$lang['CM0']='Compuesto Masculino';
+$lang['CM1']='Equipo Compuesto Masculino';
+$lang['CustomAward']='Trofeo personalizado';
+$lang['CustomEvent']='Nombre del Trofeo';
+$lang['CustomNation']='Paises de los premiados';
+$lang['CustomPrize']='Presentación de los Trofeos';
+$lang['CustomWinner']='Persona(s) premiada(s)';
+$lang['CW0']='Compuesto Feminino';
+$lang['CW1']='Equipo Compuesto Feminino';
+$lang['CX']='Equipo Mixto Compuesto';
+$lang['CX1']='Equipo Mixto Compuesto';
+$lang['EvNameTranslated']='Evento traducido';
+$lang['PrecisionPrizeEvent']='Trofeo a la Precisión';
+$lang['PrecPrizePresentation']='El ganador del Trofeo a la Precisión en Hombres Compuesto en Evento XXX';
+$lang['RM0']='Recurvo Masculino';
+$lang['RM1']='Equipo Recurvo Masculino';
+$lang['RW0']='Recurvo Feminino';
+$lang['RW1']='Equipo Recurvo Feminino';
+$lang['RX']='Equipo Mixto Recurvo';
+$lang['RX1']='Equipo Mixto Recurvo';
+$lang['WaitAthletes']='Esperar a los atletas';
+?>

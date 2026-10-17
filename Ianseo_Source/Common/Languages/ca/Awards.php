@@ -1,0 +1,32 @@
+<?php
+$lang['Aw-Anthem']='Línia himne';
+$lang['Aw-Anthem-TPE']='TPE línia himne';
+$lang['Aw-Applause']='Línia aplaudiments';
+$lang['Aw-Intro']='Línia introducció';
+$lang['Aw-Med1']='Nom guardó 1r lloc';
+$lang['Aw-Med2']='Nom guardó 2n lloc';
+$lang['Aw-Med3']='Nom guardó 3r lloc';
+$lang['Aw-Med4']='Nom guardó 4t lloc';
+$lang['Aw-representing']='Línia representant/defensant';
+$lang['CM0']='Compost Home';
+$lang['CM1']='Equip Compost Home';
+$lang['CustomAward']='Premi personalitzat';
+$lang['CustomEvent']='Nom Premi';
+$lang['CustomNation']='Nació dels guardonats';
+$lang['CustomPrize']='Lliurament de premi';
+$lang['CustomWinner']='Persona(s) premiada(s)';
+$lang['CW0']='Compost Dona';
+$lang['CW1']='Equip Compost Dona';
+$lang['CX']='Equip Compost Mixt';
+$lang['CX1']='Equip Compost Mixt';
+$lang['EvNameTranslated']='Traducció esdeveniment';
+$lang['PrecisionPrizeEvent']='Premi de Precisió';
+$lang['PrecPrizePresentation']='El guanyador del Premi de Precisió Compost Homes per a l\'Etapa XXX';
+$lang['RM0']='Recobat Home';
+$lang['RM1']='Equip Recorbat Home';
+$lang['RW0']='Recorbat Dona';
+$lang['RW1']='Equip Recorbat Dona';
+$lang['RX']='Equip Recorbat Mixt';
+$lang['RX1']='Equip Recorbat Mixt';
+$lang['WaitAthletes']='Espera atletes';
+?>

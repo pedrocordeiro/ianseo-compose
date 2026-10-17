@@ -1,0 +1,32 @@
+<?php
+$lang['Aw-Anthem']='Zeile bzgl. Hymne';
+$lang['Aw-Anthem-TPE']='Zeile bzgl. TPE Hymne';
+$lang['Aw-Applause']='Zeile bzgl. Applaus';
+$lang['Aw-Intro']='Zeile bzgl. Intro';
+$lang['Aw-Med1']='Auszeichnung für den 1. Platz';
+$lang['Aw-Med2']='Auszeichnung für den 2. Platz';
+$lang['Aw-Med3']='Auszeichnung für den 3. Platz';
+$lang['Aw-Med4']='Auszeichnung für den 4. Platz';
+$lang['Aw-representing']='Zeile bzgl. Vertreten für';
+$lang['CM0']='Compound Herren';
+$lang['CM1']='Compound Herren Team';
+$lang['CustomAward']='Individuelle Auszeichnung';
+$lang['CustomEvent']='Name des Preises';
+$lang['CustomNation']='Land des Preisträgers';
+$lang['CustomPrize']='Preisverleihung';
+$lang['CustomWinner']='Prämierte Person(en)';
+$lang['CW0']='Compound Damen';
+$lang['CW1']='Compound Damen Team';
+$lang['CX']='Compound Mixed Team';
+$lang['CX1']='Compound Mixed Team';
+$lang['EvNameTranslated']='Übersetztes Ereignis';
+$lang['PrecisionPrizeEvent']='Präzisionspreis';
+$lang['PrecPrizePresentation']='Der Gewinner des Men\'s Compound Präzisionspreis für die XXX Etappe';
+$lang['RM0']='Recurve Schützenklasse Herren';
+$lang['RM1']='Recurve Schützenklasse Herren Mannschaft';
+$lang['RW0']='Recurve Schützenklasse Damen';
+$lang['RW1']='Recurve Schützenklasse Damen Mannschaft';
+$lang['RX']='Recurve Mix Team';
+$lang['RX1']='Recurve Mix Team';
+$lang['WaitAthletes']='Warten auf die Schützen';
+?>
