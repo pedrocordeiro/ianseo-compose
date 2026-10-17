@@ -97,7 +97,6 @@ if(isset($_REQUEST['Action']) && preg_match("/^(tSendMessage|tPersonal|tSendQrSe
 
 			$QrCode['device']=$_REQUEST['deviceId'];
 	        $Json['json'][]=$QrCode;
-            $Json['json'][]=array('action'=>'info', 'device'=>$_REQUEST['deviceId'], 'sender'=>'');
 	        $Json['error'] = false;
 	        JsonOut($Json);
 			break;
@@ -130,13 +129,12 @@ if(isset($_REQUEST['Action']) && preg_match("/^(tSendMessage|tPersonal|tSendQrSe
                 JsonOut($Json);
             }
 	        $Json['assigned']=$_REQUEST["sequenceId"];
-	        $IskSeq = array('IskKey'=>'', "type"=>'', "subtype"=>'', "session"=>'', "distance"=>[], "sendTeamComponents"=>0, "maxdist"=>'');
+	        $IskSeq = array('IskKey'=>'', "type"=>'', "subtype"=>'', "session"=>'', "distance"=>[], "maxdist"=>'');
             if(array_key_exists($tmpSeq[0], getApiScheduledSessions())) {
                 $type = substr($tmpSeq[0],0,1);
 	            $SEQTYPE = $type;
                 $subtype='';
                 $maxDist = '';
-                $sendTeamComponents = 0;
 				switch($type) {
 					case 'Q':
 						$maxDist = substr($tmpSeq[0],1,1);
@@ -149,9 +147,6 @@ if(isset($_REQUEST['Action']) && preg_match("/^(tSendMessage|tPersonal|tSendQrSe
 						break;
 					default:
 						$subtype=$type;
-                        if($type=='T' AND intval($_REQUEST['sendTeamComponents'])!=0) {
-                            $sendTeamComponents = 1;
-                        }
 						$ses = substr($tmpSeq[0],1);
 						if($ses[0]=='R') {
 							$subtype='R';
@@ -167,7 +162,7 @@ if(isset($_REQUEST['Action']) && preg_match("/^(tSendMessage|tPersonal|tSendQrSe
 					}
 					$Dists[]=intval($d);
 				}
-                $IskSeq = array('IskKey'=>$tmpSeq[0], "type"=>$type, "subtype"=>$subtype, "session"=>$ses, "distance"=>$Dists, "sendTeamComponents"=>$sendTeamComponents, "maxdist"=>$maxDist);
+                $IskSeq = array('IskKey'=>$tmpSeq[0], "type"=>$type, "subtype"=>$subtype, "session"=>$ses, "distance"=>$Dists, "maxdist"=>$maxDist);
             }
             if(count($storeSeq)==0) {
                 $storeSeq = array($GROUPID => $IskSeq);
@@ -219,7 +214,7 @@ if(isset($_REQUEST['Action']) && preg_match("/^(tSendMessage|tPersonal|tSendQrSe
             }
             break;
         case 'tGroupTarget':
-            if(preg_match("/^[0-9]+$/",$_REQUEST["newGrp"],$tmpGrp) AND $tmpGrp[0]<=26 AND preg_match("/^[0-9]+$/",$_REQUEST["newTgt"],$tmpTgt) AND $tmpTgt[0]<=9999) {
+            if(preg_match("/^[0-9]+$/",$_REQUEST["newGrp"],$tmpGrp) AND $tmpGrp[0]<=26 AND preg_match("/^[0-9]+$/",$_REQUEST["newTgt"],$tmpTgt) AND $tmpTgt[0]<=999) {
 				$SQL[] = "IskDvGroup={$tmpGrp[0]}, IskDvTarget={$tmpTgt[0]}, IskDvSetup=''";
             }
             break;
@@ -232,7 +227,7 @@ if(isset($_REQUEST['Action']) && preg_match("/^(tSendMessage|tPersonal|tSendQrSe
             $SQL[] = "IskDvTournament=IF(IskDvTournament=".$_SESSION["TourId"].", 0, ".$_SESSION["TourId"].") ";
             break;
         case 'tTargetFrom':
-            if(preg_match("/^[0-9]+$/",$_REQUEST["newTgt"],$tmpTgt) AND $tmpTgt[0]<=9999) {
+            if(preg_match("/^[0-9]+$/",$_REQUEST["newTgt"],$tmpTgt) AND $tmpTgt[0]<=999) {
                 foreach ($tmpDevices as $tmpDev) {
                     safe_w_SQL("UPDATE IskDevices SET IskDvTarget='".($tmpTgt[0]++) ."' WHERE IskDvDevice = '{$tmpDev}'");
                 }
@@ -312,7 +307,6 @@ if (safe_num_rows($q)>0) {
 			'tPersonal' => $usePersonalDevices ? intval($r->IskDvPersonal) : -1,
 
             'tAppVersion' => $r->IskDvVersion,
-            'tAppScoring' => ($r->IskDvAppVersion>=ISK_NG_LITE_CODE),
             'tApp' => AppNames[$r->IskDvAppVersion],
             'tBattery' => intval($r->IskDvBattery),
             'tAuthReq' => intval($r->IskDvAuthRequest),

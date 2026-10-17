@@ -11,8 +11,11 @@ if(file_exists($CFG->DOCUMENT_PATH.'Api/ISK-NG/config_defines.php')) {
     include_once($CFG->DOCUMENT_PATH.'Api/ISK-NG/config_defines.php');
 }
 
-if(!isset($_REQUEST['New']) and CheckTourSession(true)) {
-    checkFullACL(AclCompetition, 'cData', AclReadWrite);
+checkFullACL(AclCompetition, 'cData', AclReadWrite);
+
+if (!isset($_REQUEST['New']) && !CheckTourSession(true)) {
+    print get_text('CrackError');
+    exit;
 }
 
 $SetTypes=GetExistingTournamentTypes();
@@ -31,10 +34,6 @@ if (isset($_REQUEST['Command'])) {
     if ($_REQUEST['Command']=='SAVE') { // /*and (!isset($_REQUEST['New']) or !empty($_REQUEST['d_Rule']))*/)
         if (!IsBlocked(BIT_BLOCK_TOURDATA)) {
             $ToCode=preg_replace('/[^0-9a-z._-]+/sim', '_', $_REQUEST['d_ToCode']);
-            if(isset($_REQUEST['New']) and $_SESSION['TourId']==-1 and $CFG->USERAUTH AND !empty($_SESSION['AUTH_ENABLE']) AND empty($_SESSION['AUTH_ROOT']) and !possibleFeature(AclRoot, AclReadWrite,$ToCode)) {
-                CD_redirect($CFG->ROOT_DIR);
-                exit;
-            }
             $TheString=preg_replace('/ +/', '', $_REQUEST['d_ToTimeZone']);
             $sign=($TheString[0]=='-' ? '-' : '+');
             $tmp=explode(':', $TheString);
@@ -64,11 +63,7 @@ if (isset($_REQUEST['Command'])) {
                 } else {
                     $RowId=0;
                     if(empty($_REQUEST['d_ToIocCode'])) $_REQUEST['d_ToIocCode']='';
-                    if(empty($_REQUEST['d_SubRule']) OR is_numeric($_REQUEST['d_SubRule'])) {
-                        $ToTypeSubRule = (empty($_REQUEST['d_SubRule']) || empty($SetTypes[$_REQUEST['d_Rule']]['rules'][$_REQUEST['d_ToType']][$_REQUEST['d_SubRule'] - 1]) ? '' : $SetTypes[$_REQUEST['d_Rule']]['rules'][$_REQUEST['d_ToType']][$_REQUEST['d_SubRule'] - 1]);
-                    } else {
-                        $ToTypeSubRule = $_REQUEST['d_SubRule'];
-                    }
+                    $ToTypeSubRule = (empty($_REQUEST['d_SubRule']) || empty($SetTypes[$_REQUEST['d_Rule']]['rules'][$_REQUEST['d_ToType']][$_REQUEST['d_SubRule']-1]) ? '' : $SetTypes[$_REQUEST['d_Rule']]['rules'][$_REQUEST['d_ToType']][$_REQUEST['d_SubRule']-1]);
                     $DoChanges=isset($_REQUEST['TourReset']);
 
                     // check rules of the tournament
@@ -266,7 +261,7 @@ if (isset($_REQUEST['Command'])) {
                             // there has been a change in API, so we reset spurious settings
                             switch($UseAPI) {
                                 case 11:
-                                    resetModuleParameters('ISK-NG', ['Mode','ServerUrl', 'ServerUrlPin',  'Grouping', 'ForceQRCodeScanning']);
+                                    resetModuleParameters('ISK-NG', ['Mode','ServerUrl', 'ServerUrlPin', 'Grouping']);
                                     break;
                                 case 12:
                                     resetModuleParameters('ISK-NG', ['Mode','ServerUrl', 'ServerUrlPin', 'LicenseNumber', 'Grouping', 'UsePersonalDevices']);
@@ -415,7 +410,7 @@ if (!isset($_REQUEST['New'])) {
 				if(count($SetTypes)>1)
 					echo '<option value="">--> '.get_text('Setup-Select','Install').' <--</option>';
 				foreach($SetTypes as $key => $val) {
-                    echo '<option value="' . $key . '"' . (((!is_null($MyRow) and $key == str_replace('FITA','default',$MyRow->ToLocRule)) or (is_null($MyRow) and !empty($_REQUEST['d_Rule']) and $key == $_REQUEST['d_Rule'])) ? ' selected' : '') . '>' . $val['descr'] . '</option>';
+                    echo '<option value="' . $key . '"' . (((!is_null($MyRow) and $key == $MyRow->ToLocRule) or (is_null($MyRow) and !empty($_REQUEST['d_Rule']) and $key == $_REQUEST['d_Rule'])) ? ' selected' : '') . '>' . $val['descr'] . '</option>';
                 }
 			?>
 		</select>
@@ -436,7 +431,7 @@ if(isset($_REQUEST['New'])) {
         }
     }
 } else {
-	foreach($SetTypes[str_replace('FITA','default',$MyRow->ToLocRule)]['types'] as $k=>$v) {
+	foreach($SetTypes[$MyRow->ToLocRule]['types'] as $k=>$v) {
 		echo '<option value="'.$k.'"'.($k==$MyRow->ToType?' selected':'').'>'.$v.'</option>';
 	}
 }
@@ -446,7 +441,7 @@ if(isset($_REQUEST['New'])) {
 </td>
 </tr>
 
-<tr id="rowSubRule"<?php echo (isset($_REQUEST['New']) || !empty($SetTypes[str_replace('FITA','default',$MyRow->ToLocRule)]['rules'][$MyRow->ToType]) ? '' : ' style="display:none"'); ?>>
+<tr id="rowSubRule"<?php echo (isset($_REQUEST['New']) || !empty($SetTypes[$MyRow->ToLocRule]['rules'][$MyRow->ToType]) ? '' : ' style="display:none"'); ?>>
 	<th class="TitleLeft w-15"><?php echo get_text('LocalSubRule','Tournament'); ?></th>
 	<td><select name="d_SubRule" id="d_SubRule">
 <?php
@@ -457,16 +452,11 @@ if(isset($_REQUEST['New']) and !empty($_REQUEST['d_Rule']) and !empty($_REQUEST[
         echo '<option value="'.($k+1).'"'.(($k+1)==$_REQUEST['d_SubRule'] ? ' selected' : '').'>'.get_text($v,'Install').'</option>';
     }
 
-} else if(!isset($_REQUEST['New']) and !empty($SetTypes[str_replace('FITA','default',$MyRow->ToLocRule)]['rules'][$MyRow->ToType])) {
+} else if(!isset($_REQUEST['New']) and !empty($SetTypes[$MyRow->ToLocRule]['rules'][$MyRow->ToType])) {
 	echo '<option value="">--</option>';
-    $tmpFound=false;
-	foreach($SetTypes[str_replace('FITA','default',$MyRow->ToLocRule)]['rules'][$MyRow->ToType] as $k => $v) {
+	foreach($SetTypes[$MyRow->ToLocRule]['rules'][$MyRow->ToType] as $k => $v) {
 		echo '<option value="'.($k+1).'"'.($v==$MyRow->ToTypeSubRule?' selected':'').'>'.get_text($v,'Install').'</option>';
-        $tmpFound = ($tmpFound or ($v==$MyRow->ToTypeSubRule));
 	}
-    if(!$tmpFound and !empty($MyRow->ToTypeSubRule)) {
-        echo '<option value="'.($MyRow->ToTypeSubRule).'" selected>'.($MyRow->ToTypeSubRule).'</option>';
-    }
 }
 
 ?>
@@ -543,9 +533,17 @@ if (!$MyRow) {
 
 <tr>
 <th class="TitleLeft w-15"><?php print get_text('TourTimeZone','Tournament');?></th>
-    <td><?php
-        echo '<input type="text"'.($Arr_Values2Check_Index['d_ToTimeZone']['Error'] ? ' class="error"' : '').' name="d_ToTimeZone" id="ToTimeZone" rows="2" cols="40" value="'.($MyRow->ToTimeZone??'').'"> (±hh:mm)';
-        ?></td>
+<td>
+<input type="text" <?php print ($Arr_Values2Check_Index['d_ToTimeZone']['Error'] ? ' class="error"' : '');?> name="d_ToTimeZone" rows="2" cols="40" value="
+<?php
+	if ($Arr_Values2Check_Index['d_ToTimeZone']['Error'] or !$MyRow) {
+		$Offset=(empty($_COOKIE['offset']) ? '0' : $_COOKIE['offset']);
+		print (array_key_exists('d_ToTimeZone',$_REQUEST) ? $_REQUEST['d_ToTimeZone'] : ($Offset[0]=='-' ? '-' : '+').date('H:i', abs($Offset*60)));
+	} else {
+		print $MyRow->ToTimeZone;
+	}
+?>"> (±hh:mm)
+</td>
 </tr>
 
 <tr>

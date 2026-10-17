@@ -60,7 +60,7 @@ function getAccrQuery($Id=0) {
 		}
 	}
 	return "Select EnId,EnTournament,EnDivision,EnClass,EnCountry,CoCode,CoName,EnCode,EnName,EnFirstName,EnStatus,
-			EnIndClEvent,EnTeamClEvent,EnIndFEvent,EnTeamFEvent,EnTeamMixEvent,EnPays,QuSession,CONCAT(QuTarget, QuLetter) As TargetNo,
+			EnIndClEvent,EnTeamClEvent,EnIndFEvent,EnTeamFEvent,EnTeamMixEvent,EnPays,QuSession,SUBSTRING(QuTargetNo,2) As TargetNo,
 			m.AEOperation, PhEnId
 			, ".($_SESSION['chk_Photo'] ? 'PhEnId is not null and PhPhoto!=""' : '1')." as HasPhoto
 			, ".($_SESSION['chk_Paid']==1 ? 'p.AEId is not null' : '1')." as HasPaid
@@ -116,35 +116,11 @@ function CheckAccreditationCode($EnCode, $Options=array(), $OnlyTour=false) {
             }
 
 			$iceContent=getIceRegExpMatches($r->IceContent);
-			//$RegExp=str_replace(array('\\{ENCODE\\}', '\\{COUNTRY\\}','\\{DIVISION\\}','\\{CLASS\\}', '\\{TOURNAMENT\\}'), '(.+?)', $RegExp);
-            if(preg_match('#(?<!/)/$#', $RegExp)) {
-                preg_replace('#(?<!/)/$#', '(?:\/)?', $RegExp);
-            } else {
-                $RegExp .= '(?:\/)?';
-            }
-            $RegExp=str_replace(array('\\{ENCODE\\}', '\\{COUNTRY\\}'), '(.+?)', $RegExp);
-            if(strpos($RegExp,'{TOURNAMENT\\}')) {
-                $RegExp=str_replace(array('\\{TOURNAMENT\\}'), '('.getCodeFromId($TourId).')', $RegExp);
-            }
-            if(strpos($RegExp,'{DIVISION\\}')) {
-                $tmpRegExp = array();
-                $qRegExp = safe_r_SQL("select DivId from Divisions where DivTournament=$TourId");
-                while ($rRegExp = safe_fetch($qRegExp)) {
-                    $tmpRegExp[] = $rRegExp->DivId;
-                }
-                $RegExp=str_replace(array('\\{DIVISION\\}'), '('.implode('|', $tmpRegExp).')', $RegExp);
-            }
-            if(strpos($RegExp,'{CLASS\\}')) {
-                $tmpRegExp = array();
-                $qRegExp = safe_r_SQL("select ClId from Classes where ClTournament=$TourId");
-                while ($rRegExp = safe_fetch($qRegExp)) {
-                    $tmpRegExp[] = $rRegExp->ClId;
-                }
-                $RegExp = str_replace(array('\\{CLASS\\}'), '(' . implode('|', $tmpRegExp) . ')', $RegExp);
-            }
+
+			$RegExp=str_replace(array('\\{ENCODE\\}', '\\{COUNTRY\\}','\\{DIVISION\\}','\\{CLASS\\}', '\\{TOURNAMENT\\}'), '(.+?)', $RegExp);
 			unset($Matches);
 
-			preg_match('/^'.$RegExp.'$/i', $bib, $Matches);
+			preg_match('/^'.$RegExp.'$/', $bib, $Matches);
 			$BibCode=($iceContent['encode']!=-1 && isset($Matches[$iceContent['encode']]) ? $Matches[$iceContent['encode']] : 0);
 			$Division='';
 			$Class='';
@@ -185,10 +161,10 @@ function CheckAccreditationCode($EnCode, $Options=array(), $OnlyTour=false) {
 
 					// check the cardtype matches the requested bib
 				if($Continue) {
-					$sql="select * from Entries LEFT JOIN ExtraData zextra ON EnId=zextra.EdId and zextra.EdType='Z' and zextra.EdExtra!='' where (EnCode = ".StrSafe_DB($BibCode)." or zextra.EdExtra = ".StrSafe_DB($BibCode).") and EnTournament=$TourId ".($CardsMatched ? "and concat(EnDivision,EnClass) in ('".str_replace(",", "','", $CardsMatched)."')" : "");
+					$sql="select * from Entries where EnCode='$BibCode' and EnTournament=$TourId ".($CardsMatched ? "and concat(EnDivision,EnClass) in ('".str_replace(",", "','", $CardsMatched)."')" : "");
 					$d=safe_r_SQL($sql);
 
-					if(safe_num_rows($d) and preg_match('/^'.$RegExp.'$/i', $CheckCode) and $ID=CheckBibIsOk($BibCode, $Where, $WAbib, $Country, $Division)) {
+					if(safe_num_rows($d) and $CheckCode==$EnCode and $ID=CheckBibIsOk($BibCode, $Where, $WAbib, $Country, $Division)) {
 						if(!in_array($ID, $ret)) $ret[array_search($TourId, array_keys($Options))]= $ID;
 					}
 				}
@@ -241,12 +217,7 @@ function getIceRegExpMatches($IceContent) {
 }
 
 function CheckBibIsOk($Bib, $Where, $WAbib = null, $Country=null, $Division=null, $Class=null) {
-	$Select = "SELECT EnId 
-        FROM Entries 
-        INNER JOIN Qualifications ON EnId=QuId 
-        inner join Countries on CoId=EnCountry
-        LEFT JOIN ExtraData zextra ON EnId=zextra.EdId and zextra.EdType='Z' and zextra.EdExtra!=''
-        WHERE (EnCode = ".StrSafe_DB($Bib)." or zextra.EdExtra = ".StrSafe_DB($Bib).") AND $Where";
+	$Select = "SELECT EnId FROM Entries INNER JOIN Qualifications ON EnId=QuId inner join Countries on CoId=EnCountry WHERE EnCode=" . StrSafe_DB($Bib) . " AND $Where";
 	if($Country) {
 		$Select.=' and CoCode='. StrSafe_DB($Country);
 	}

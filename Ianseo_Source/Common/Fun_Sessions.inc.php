@@ -83,6 +83,7 @@ function GetSessions($type=null,$extend=false,$ids=null,$tour=null) {
 function GetNumQualSessions() {
     $q="SELECT ToNumSession FROM Tournament WHERE ToId={$_SESSION['TourId']}";
     $r=safe_r_sql($q);
+
     return safe_fetch($r)->ToNumSession;
 }
 
@@ -93,35 +94,55 @@ function GetNumQualSessions() {
  * @param int $elim: 1 o 2 e indica il girone
  * @return bool: true se ok false altrimenti
  */
-function CreateElimRows($event,$elim, $ignore=false, $TourId=0) {
-    if(!$TourId) {
-        $TourId=$_SESSION['TourId'];
-    }
+	function CreateElimRows($event,$elim, $ignore=false, $TourId=0)
+	{
+		$max=0;
+		$ret=true;
 
-    // numero di righe da creare
-    $q="SELECT EvElim{$elim} AS `q`
-        FROM Events
-        WHERE EvCode='{$event}' AND EvTournament={$TourId} AND EvTeamEvent=0";
-    $r=safe_r_sql($q);
-    if (safe_num_rows($r)==1 and $max=safe_fetch($r) and $max->q > 0) {
-        $tuple=array();
-        $e=$elim-1;
+		if(!$TourId) $TourId=$_SESSION['TourId'];
 
-        foreach(range(1, $max->q) as $i) {
-            // id,girone,evento,torneo,rank di qualifica,score,hits,gold,x,rank,timestamp
-            $tuple[]="(0,{$e},'{$event}',{$TourId},{$i},0,0,0,0,0,'0000-00-00 00:00:00')";
-        }
+	// numero di righe da creare
+		$q="
+			SELECT EvElim{$elim} AS `q`
+			FROM
+				Events
+			WHERE
+				EvCode='{$event}' AND EvTournament={$TourId} AND EvTeamEvent=0
+		";
+		$r=safe_r_sql($q);
+	//print $q.'<br><br>';exit;
+		if ($r && safe_num_rows($r)==1)
+		{
+			$max=safe_fetch($r)->q;
+			if ($max>0)
+			{
+				$tuple=array();
+				$e=$elim-1;
 
-        $q="INSERT ".($ignore ? 'ignore' : '')." INTO Eliminations
-            (ElId,ElElimPhase,ElEventCode,ElTournament,ElQualRank,ElScore,ElHits,ElGold,ElXnine,ElRank,ElDateTime) VALUES
-            " . implode(',',$tuple);
-        safe_w_sql($q);
+				for ($i=1;$i<=$max;++$i)
+				{
+				// id,girone,evento,torneo,rank di qualifica,score,hits,gold,x,rank,timestamp
+					$tuple[]="(0,{$e},'{$event}',{$TourId},{$i},0,0,0,0,0,'0000-00-00 00:00:00')";
+				}
 
-        return true;
-    }
+				$q="
+					INSERT ".($ignore ? 'ignore' : '')." INTO Eliminations
+					(ElId,ElElimPhase,ElEventCode,ElTournament,ElQualRank,ElScore,ElHits,ElGold,ElXnine,ElRank,ElDateTime) VALUES
+				" . implode(',',$tuple) . " ";
+				$r=safe_w_sql($q);
+				//print $q.'<br>';
+				$ret=($r!==false);
+			}
 
-    return false;
-}
+			//print '<br>'.$q;
+		}
+		else
+		{
+			$ret=false;
+		}
+
+		return $ret;
+	}
 
 /**
  * DeleteElimRows()
@@ -234,37 +255,4 @@ function getArrowEnds($Session=1, $Dist=0, $TourId=0) {
     }
 
 	return $ret;
-}
-
-function orderSesLocations($SesLocations) {
-    usort($SesLocations, function($a,$b) {
-        if($a['order']>$b['order']) {
-            return 1;
-        }
-        if($a['order']<$b['order']) {
-            return -1;
-        }
-        if($a['location']>$b['location']) {
-            return 1;
-        }
-        if($a['location']<$b['location']) {
-            return -1;
-        }
-        return 0;
-    });
-    return array_values($SesLocations);
-}
-
-function getSesLocations() {
-    $SesLocations=[];
-    foreach(getModuleParameter('SesLocations', 'PrintOrder', []) as $k=>$v) {
-        $SesLocations[$k]=['location'=>$k,'order'=>$v];
-    }
-    $q=safe_r_SQL("select distinct `SesLocation` from `Session` where SesLocation!='' and SesTournament={$_SESSION['TourId']} order by `SesLocation`");
-    while($r=safe_fetch($q)) {
-        if(empty($SesLocations[$r->SesLocation])) {
-            $SesLocations[$r->SesLocation]=['location'=>$r->SesLocation,'order'=>0];
-        }
-    }
-    return $SesLocations;
 }

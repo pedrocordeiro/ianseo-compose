@@ -44,6 +44,10 @@ foreach ($Arr_Templates as $Value)
     }
 }
 
+/*print '<pre>';
+print_r($Arr_Files2Send);
+print '</pre>';exit;*/
+
 $StrCurlError = '';
 $PostResult = '';
 
@@ -116,6 +120,9 @@ if (count($Arr_Files2Send)>0)
             {
                 $StrCurlError .= curl_error($ch);
             }
+
+            // chiudo la sessione CURL
+            curl_close($ch);
         }
     }
 }

@@ -50,7 +50,6 @@ $JS_SCRIPT=array(
 		'strSetupCopyWarning' => get_text('SetupCopyWarning', 'RoundRobin'),
 		'cmdConfirm' => get_text('Confirm', 'Tournament'),
 		'cmdCancel' => get_text('CmdCancel'),
-		'ChangesLost' => get_text('ChangesLost', 'Errors'),
 	)),
 	'<script type="text/javascript" src="./Common.js"></script>',
 	'<script type="text/javascript" src="./Setup.js"></script>',
@@ -74,15 +73,13 @@ echo '<tr>';
 echo '<th class="Title" colspan="2">';
 echo $Teams;
 echo '<select id="EvCode" onchange="getEventDetail()">'.$Events.'</select>';
-echo '<div id="EvLevel" style="display: inline;font:9pt Arial,Verdana,Sans"></div>';
+echo '<select id="EvLevel" onchange="getEventDetail()"></select>';
 echo '<select id="EvCopyFrom" onchange="copyFromEvent(this)"></select>';
 echo '</th>';
 echo '</tr>';
 
 echo '<tr><th>'.get_text('QualifiedArchers', 'RoundRobin').'</th><TD id="QualifiedArchers"></TD></tr>';
 echo '<tr><th>'.get_text('Rounds', 'RoundRobin').'</th><TD id="RoundsPerGroup"></TD></tr>';
-echo '<tr><th>'.get_text('MatchesPerPerson', 'RoundRobin').'</th><TD id="MatchesPerPerson"></TD></tr>';
-echo '<tr><th>'.get_text('MatchesPerRound', 'RoundRobin').'</th><TD id="MatchesPerRound"></TD></tr>';
 echo '<tbody id="LevDetails"></tbody>';
 
 echo '</table>';

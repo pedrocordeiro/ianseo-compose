@@ -8,7 +8,7 @@ if(isset($NewIanseo) and isset($NewIanseo->UUID)) {
     DelParameter('UUID');
 }
 
-$newversion='2026-08-05 17:30:00';
+$newversion='2025-02-24 14:17:01';
 
 // Check if the DB is up to date
 if(in_array($CFG->DOCUMENT_PATH . 'Common'.DIRECTORY_SEPARATOR.'config.inc.php', get_included_files())) {

@@ -1,7 +1,7 @@
 <?php
 $version='2020-03-27 13:33:00';
 
-$AllowedTypes=array(1,2,3,5,6,7,8,9,10,12,37,40,11,13);
+$AllowedTypes=array(1,2,3,6,7,8,37,40);
 
 $SetType['UK']['descr']=get_text('Setup-UK', 'Install');
 $SetType['UK']['noc'] = 'GBR';
@@ -12,12 +12,13 @@ foreach($AllowedTypes as $val) {
     $SetType['UK']['types']["$val"]=$TourTypes[$val];
 }
 
-foreach(array(1,2,3,5,6,7,8,37) as $val) {
-    if($_SESSION)
-        $SetType['UK']['rules']["$val"] =
-            (ProgramRelease === 'TESTING')
-                ? array('SetUkNationals', 'SetUkJunNationals','SetUK_Metric')
-                : array('SetUK_Metric');
+foreach(array(1,2,3,6,7,8,37) as $val) {
+    $SetType['UK']['rules']["$val"] = array(
+        'SetUkNationals',
+        'SetUkJunNationals',
+        'SetUK_Metric',
+
+    );
 }
 	foreach(array(40) as $val) {
         $SetType['UK']['rules']["$val"]=array(
@@ -36,21 +37,7 @@ foreach(array(1,2,3,5,6,7,8,37) as $val) {
             'SetUK_BR2',
             'SetUK_STFD',
             'SetUK_PMTH',
-            'SetUK_LNER',
+
         );
 }
-foreach(array(9,10,12) as $val) {
-    $SetType['UK']['rules']["$val"] = array(
-        'SetUK_Field',
-
-    );
-    }
-
-// 3D (both types)
-foreach(array(11, 13) as $val) {
-    $SetType['UK']['rules']["$val"]=array(
-        'SetAllClass',
-    );
-}
-
 

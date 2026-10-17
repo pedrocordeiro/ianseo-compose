@@ -19,10 +19,9 @@ function CreateStandardDivisions($TourId, $Type='FITA', $SubRule) {
         'L'=>'Langbogen',
         'T'=>'Traditional',
         'B'=>'Blankbogen',
-        'W0'=>'W0',
         'W1'=>'W1',
-        'PR'=>'Para Recurve',
-        'PC'=>'Para Compound',
+        'RO'=>'Recurve Open',
+        'CO'=>'Compound Open',
         'C'=>'Compound',
         'R'=>'Recurve'
     );
@@ -31,7 +30,7 @@ function CreateStandardDivisions($TourId, $Type='FITA', $SubRule) {
         $optionDivs = array('R' => 'Recurve', 'C' => 'Compound', 'B' => 'Blankbogen', 'L' => 'Langbogen', 'T' => 'Traditional');
     }
     foreach ($optionDivs as $k => $v){
-		CreateDivision($TourId, $i++, $k, $v, 1, ($k=='W1' ? 'W1' : substr($k,0,1)), ($k=='W1' ? 'W1' : substr($k,0,1)),($k=='W0' or $k=='W1' or $k=='PR' or $k=='PC'));
+		CreateDivision($TourId, $i++, $k, $v, 1, ($k=='W1' ? 'W1' : substr($k,0,1)), ($k=='W1' ? 'W1' : substr($k,0,1)),($k=='W1' or $k=='RO' or $k=='CO'));
 	}
 }
 
@@ -52,15 +51,12 @@ function CreateStandardClasses($TourId, $SubRule, $Type='FITA') {
             CreateClass($TourId, 9, 18, 20, 1, 'U21W', 'U21W,W', 'U21 weiblich');
             CreateClass($TourId, 10, 18, 20, 0, 'U21M', 'U21M,M', 'U21 männlich');
 
-            CreateClass($TourId, 11, 50, 64, 1, '50W', '50W,W', '50+ weiblich');
-            CreateClass($TourId, 12, 50, 64, 0, '50M', '50M,M', '50+ männlich');
-            CreateClass($TourId, 13, 60, 99, 1, '60W', '60W,W', '60+ weiblich');
-            CreateClass($TourId, 14, 60, 99, 0, '60M', '60M,M', '60+ männlich');
-            CreateClass($TourId, 15, 65, 99, 1, '65W', '65W,50W,W', '65+ weiblich');
-            CreateClass($TourId, 16, 65, 99, 0, '65M', '65M,50M,M', '65+ männlich');
+            CreateClass($TourId, 11, 60, 99, 1, '60W', '60W,W', '60+ weiblich');
+            CreateClass($TourId, 12, 60, 99, 0, '60M', '60M,M', '60+ männlich');
+            CreateClass($TourId, 13, 60, 99, -1, '60', '60', '60+');
 
-            CreateClass($TourId, 17, 21, 49, 1, 'W', 'W', 'Damen');
-            CreateClass($TourId, 18, 21, 49, 0, 'M', 'M', 'Herren');
+            CreateClass($TourId, 14, 21, 59, 1, 'W', 'W', 'Damen');
+            CreateClass($TourId, 15, 21, 59, 0, 'M', 'M', 'Herren');
 
             break;
 		case '2':
@@ -121,22 +117,22 @@ function CreateStandardEvents($TourId, $SubRule, $Outdoor=true, $allowBB=true) {
 
 function InsertStandardEvents($TourId, $SubRule, $Outdoor=true) {
     foreach (array('R'=>'R_','C'=>'C_','B'=>'B_','L'=>'L_','T'=>'T_') as $kDiv=>$vDiv) {
-        $clsTmpArr = array('W','U21W','U18W','50W','60W','65W');
+        $clsTmpArr = array('W','U21W','U18W','60W');
         if($kDiv == 'R' AND $Outdoor) {
             $clsTmpArr = array('W','U21W');
         } else if($kDiv == 'T') {
-            $clsTmpArr = array('W','U21W','50W','60W','65W');
+            $clsTmpArr = array('W','U21W','60W');
         }
         foreach($clsTmpArr as $kClass=>$vClass) {
             InsertClassEvent($TourId, 0, 1, str_replace('_','W',$vDiv), $kDiv,  $vClass);
             InsertClassEvent($TourId, 1, 3, str_replace('_','W',$vDiv),  $kDiv,  $vClass);
             InsertClassEvent($TourId, 1, 1, str_replace('_','X',$vDiv),  $kDiv,  $vClass);
         }
-        $clsTmpArr = array('M','U21M','U18M','50M','60M','65M');
+        $clsTmpArr = array('M','U21M','U18M','60','60M');
         if($kDiv == 'R' AND $Outdoor) {
             $clsTmpArr = array('M','U21M');
         } else if($kDiv == 'T') {
-            $clsTmpArr = array('M','U21M','50M','60M','65M');
+            $clsTmpArr = array('M','U21M','60','60M');
         }
         foreach($clsTmpArr as $kClass=>$vClass) {
             InsertClassEvent($TourId, 0, 1, str_replace('_','M',$vDiv), $kDiv,  $vClass);

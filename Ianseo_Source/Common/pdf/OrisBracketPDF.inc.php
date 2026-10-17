@@ -2,7 +2,8 @@
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 require_once("Common/pdf/OrisPDF.inc.php");
 
-class OrisBracketPDF extends OrisPDF {
+class OrisBracketPDF extends OrisPDF
+{
 	var $CellHSp = 0;
 	var $CellVSp = 0;
 	var $TeamMatchNoPosition = array(0,0,0,0);
@@ -12,7 +13,8 @@ class OrisBracketPDF extends OrisPDF {
 	var $OrisPages='AB';
 
 	//Constructor
-	function __construct($DocNumber, $DocTitle, $Headers='') {
+	function __construct($DocNumber, $DocTitle, $Headers='')
+	{
 		//$this->__construct('P','mm','A4');
 		parent::__construct($DocNumber, $DocTitle, $Headers);
 		$this->SetAutoPageBreak(false);
@@ -86,11 +88,12 @@ class OrisBracketPDF extends OrisPDF {
 			$this->Line($this->getX(),$this->getY(),$this->getX(),$this->getY()+2*$this->CellVSp);
 			if($item->ScheduledDate != '' && $item->ScheduledTime != '') {
 				//debug_svela($item);
+				$ShowSchedule= ($item->FinTie==0 && $item->OppTie==0 && $item->Score=='' && $item->OppScore==0 && $item->FinRank==0 && $item->OppFinRank==0);
 				$this->SetFont('','',6);
 				$this->SetXY(OrisPDF::leftMargin+$this->DataSize[0]+$this->DataSize[1]+$this->DataSize[2]+$this->DataSize[3]+$this->DataSize[4],$this->getY()+0.4*$this->CellVSp);
-				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledDate), 0, 0, 'R', 0);
+				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($ShowSchedule ? $item->ScheduledDate : ''), 0, 0, 'R', 0);
 				$this->SetXY(OrisPDF::leftMargin+$this->DataSize[0]+$this->DataSize[1]+$this->DataSize[2]+$this->DataSize[3]+$this->DataSize[4],$this->getY()+0.6*$this->CellVSp);
-				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledTime), 0, 0, 'R', 0);
+				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($ShowSchedule ? $item->ScheduledTime : ''), 0, 0, 'R', 0);
 			}
 		}
 
@@ -141,15 +144,16 @@ class OrisBracketPDF extends OrisPDF {
 
 
 		$this->Line(83+$PhaseCounter*$this->CellHSp,$this->lastY,83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY);
-		if($item->FinMatchNo % 2 == 0) {
+		if($item->FinMatchNo % 2 == 0)
+		{
 			$this->Line(83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY,83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY+($PhaseCounter==1 ? 3: ($PhaseCounter==2 ? 6: ($PhaseCounter==3 ? 12: 24))) * $this->CellVSp);
 			if($item->ScheduledDate != '' && $item->ScheduledTime != '') {
 				$ShowSchedule= ($item->FinTie==0 && $item->OppTie==0 && empty($item->Score) && empty($item->OppScore));
 				$this->SetFont('','',6);
 				$this->SetXY(83+$PhaseCounter*$this->CellHSp,$this->getY()+($PhaseCounter==1 ? 3: ($PhaseCounter==2 ? 6: ($PhaseCounter==3 ? 12: 24))) * $this->CellVSp/2 - 0.6 * $this->CellVSp);
-				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledDate), 0, 0, 'R', 0);
+				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($ShowSchedule ? $item->ScheduledDate : ''), 0, 0, 'R', 0);
 				$this->SetXY(83+$PhaseCounter*$this->CellHSp,$this->getY()+0.6*$this->CellVSp);
-				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledTime), 0, 0, 'R', 0);
+				$this->Cell($this->CellHSp,0.6*$this->CellVSp, ($ShowSchedule ? $item->ScheduledTime : ''), 0, 0, 'R', 0);
 			}
 		}
 
@@ -157,31 +161,30 @@ class OrisBracketPDF extends OrisPDF {
 	}
 
 	function PrintFinalists() {
-        if(count($this->Finalists)==0 OR !isset($this->Finalists[1]) OR !isset($this->Finalists[2])) {
+		if(count($this->Finalists)==0) {
 			return;
 		}
-		$this->SetXY(125, 170);
+		$this->SetXY(110, 170);
 		$this->SetFont('','b');
 		$this->Cell(0,0, $this->FinalRank);
 		$this->SetFont('','');
-		$this->Rect(124,169,$this->getPageWidth()-134, min(8, $this->MaxFinalists)*4 + 6);
+		$this->Rect(109,169,$this->getPageWidth()-119, min(8, $this->MaxFinalists)*4 + 6);
 		$Striked=false;
 		for($n=1;$n<=min(8,$this->MaxFinalists);$n++) {
 			if(isset($this->Finalists[$n])) {
 				$Striked=true;
+
 				foreach($this->Finalists[$n] as $Fin) {
-					$this->SetxY(125, 170+$n*4);
+					$this->SetxY(110, 170+$n*4);
 					$this->Cell(10,4, $Fin->ShowRank ? $Fin->FinRank : $Fin->IrmText, '','','R');
-					$this->Cell(55,4, $Fin->FirstName.' '.$Fin->Name);
+					$this->Cell(45,4, $Fin->FirstName.' '.$Fin->Name);
 					$this->Cell(10,4, $Fin->Country);
-	/*				if($n>4) {
-						$this->Cell(10,4, $Fin->AvgMatch ? number_format($Fin->AvgMatch,3,$this->NumberDecimalSeparator) : $Fin->Score, '','','R');
-                        if($Fin->AvgMatch AND $Fin->AvgTie!=0) {
-                            $this->Cell(8,4, number_format($Fin->AvgTie,3,$this->NumberDecimalSeparator));
-                        } else  if(!$Fin->AvgMatch and $Fin->ScoreMatch and $Fin->ScoreMatch!=$Fin->Score) {
-							$this->Cell(8,4, '('.$Fin->ScoreMatch.')');
+					if($n>4) {
+						$this->Cell(8,4, $Fin->Score, '','','R');
+						if($Fin->ScoreMatch and $Fin->ScoreMatch!=$Fin->Score) {
+							$this->Cell(10,4, '('.$Fin->ScoreMatch.')');
 						}
-					}*/
+					}
 					$n++;
 				}
 				$n--;
@@ -194,7 +197,7 @@ class OrisBracketPDF extends OrisPDF {
 	}
 
 	function PrintFinalistsTeam($Top) {
-		if(count($this->Finalists)==0 OR !isset($this->Finalists[1]) OR !isset($this->Finalists[2])) {
+		if(count($this->Finalists)==0) {
 			return;
 		}
 		if($Top) {
@@ -214,8 +217,8 @@ class OrisBracketPDF extends OrisPDF {
 		$W=$this->getPageWidth()-$StartX-$this->getSideMargin();
 		$W1=$W*0.10;
 		$W2=$W*0.16;
-		$W4=$W*0.16*0;
-		$W5=$W*0.15*0;
+		$W4=$W*0.11;
+		$W5=$W*0.20;
 		$W3=$W-$W1-$W2-$W4-$W5;
 		$this->SetXY($StartX, $StartY);
 		$this->SetFont('','b');
@@ -232,14 +235,14 @@ class OrisBracketPDF extends OrisPDF {
 					$this->Cell($W1,4, $Fin->ShowRank ? $Fin->FinRank : $Fin->IrmText, '','','R');
 					$this->Cell($W2,4, $Fin->Country);
 					$this->Cell($W3,4, $Fin->Team);
-/*					if($n>4) {
-                        $this->Cell($W4,4, $Fin->AvgMatch ? number_format($Fin->AvgMatch,3,$this->NumberDecimalSeparator) : $Fin->Score, '','','R');
-                        if($Fin->AvgMatch AND $Fin->AvgTie!=0) {
-                            $this->Cell($W5,4, number_format($Fin->AvgTie,3,$this->NumberDecimalSeparator));
-                        } else  if(!$Fin->AvgMatch and $Fin->ScoreMatch and $Fin->ScoreMatch!=$Fin->Score) {
-                            $this->Cell($W5,4, '('.$Fin->ScoreMatch.')');
-                        }
-					}*/
+					if($n>4) {
+						if($Fin->ScoreMatch and $Fin->ScoreMatch!=$Fin->Score) {
+							$this->Cell($W4,4, $Fin->Score, '','','R');
+							$this->Cell($W5,4, '('.$Fin->ScoreMatch.')');
+						} else {
+							$this->Cell($W4+$W5,4, $Fin->Score, '','','R');
+						}
+					}
 					$n++;
 				}
 				$n--;
@@ -251,16 +254,16 @@ class OrisBracketPDF extends OrisPDF {
 		}
 	}
 
-	function PrintMedals($PhaseCounter, $GoldName, $SilverName, $BronzeName) {
+	function PrintMedals($PhaseCounter, $GoldFirstName, $GoldName, $GoldCountry, $SilverFirstName, $SilverName, $SilverCountry, $BronzeFirstName, $BronzeName, $BronzeCountry)
+	{
 		$this->SetLineWidth(0.1);
 		$this->SetXY(95+$PhaseCounter*$this->CellHSp,$this->lastY);
 		$this->SetFont('','B');
 		$this->Cell($this->CellHSp-5,$this->CellVSp,"GOLD",0,1,'L');
 		$this->SetXY(83+$PhaseCounter*$this->CellHSp,$this->GetY());
 		$this->SetFont('','');
-		if(is_string($GoldName)) {
-            $this->Cell($this->CellHSp, $this->CellVSp, $GoldName, 0, 0, 'L');
-        }
+		if(!is_null($GoldFirstName) && strlen($GoldFirstName)>0)
+			$this->Cell($this->CellHSp,$this->CellVSp,$GoldFirstName . ' ' . $this->FirstLetters($GoldName). " (" . $GoldCountry . ")" ,0,0,'L');
 		$this->Line(83+$PhaseCounter*$this->CellHSp,$this->lastY+2*$this->CellVSp,83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY+2*$this->CellVSp);
 
 		$this->lastY += ($PhaseCounter==2 ? 3: 6) * $this->CellVSp;
@@ -269,10 +272,9 @@ class OrisBracketPDF extends OrisPDF {
 		$this->Cell($this->CellHSp-5,$this->CellVSp,"SILVER",0,1,'L');
 		$this->SetXY(83+$PhaseCounter*$this->CellHSp,$this->GetY());
 		$this->SetFont('','');
-		if(is_string($SilverName)) {
-            $this->Cell($this->CellHSp, $this->CellVSp, $SilverName, 0, 0, 'L');
-        }
-        $this->Line(83+$PhaseCounter*$this->CellHSp,$this->lastY+2*$this->CellVSp,83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY+2*$this->CellVSp);
+		if(!is_null($SilverFirstName) && strlen($SilverFirstName)>0)
+			$this->Cell($this->CellHSp,$this->CellVSp,$SilverFirstName . ' ' . $this->FirstLetters($SilverName). " (" . $SilverCountry . ")" ,0,0,'L');
+		$this->Line(83+$PhaseCounter*$this->CellHSp,$this->lastY+2*$this->CellVSp,83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY+2*$this->CellVSp);
 
 		$this->lastY += ($PhaseCounter==2 ? 3: 6) * $this->CellVSp;
 		$this->SetXY(95+$PhaseCounter*$this->CellHSp,$this->lastY);
@@ -280,10 +282,10 @@ class OrisBracketPDF extends OrisPDF {
 		$this->Cell($this->CellHSp-5,$this->CellVSp,"BRONZE",0,1,'L');
 		$this->SetXY(83+$PhaseCounter*$this->CellHSp,$this->GetY());
 		$this->SetFont('','');
-		if(is_string($BronzeName)) {
-            $this->Cell($this->CellHSp,$this->CellVSp, $BronzeName ,0,0,'L');
-        }
+		if(!is_null($BronzeFirstName) && strlen($BronzeFirstName)>0)
+			$this->Cell($this->CellHSp,$this->CellVSp,$BronzeFirstName . ' ' . $this->FirstLetters($BronzeName). " (" . $BronzeCountry . ")" ,0,0,'L');
 		$this->Line(83+$PhaseCounter*$this->CellHSp,$this->lastY+2*$this->CellVSp,83+$PhaseCounter*$this->CellHSp+$this->CellHSp,$this->lastY+2*$this->CellVSp);
+
 	}
 
 	function FirstColumnTeam($item) {
@@ -363,9 +365,9 @@ class OrisBracketPDF extends OrisPDF {
 			if($item->ScheduledDate != '' && $item->ScheduledTime != '') {
 				$this->SetFont('','',6);
 				$this->SetXY(OrisPDF::leftMargin+$this->DataSize[0]+$this->DataSize[1]+$this->DataSize[2]+$this->DataSize[3]+$this->DataSize[4],$this->lastY+((3+2*count($item->Componenti))*$this->CellVSp)/2-$this->CellVSp);
-				$this->Cell($this->CellHSp,$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledDate), 0, 0, 'R', 0);
+				$this->Cell($this->CellHSp,$this->CellVSp, (($item->TfTie==0 AND $item->OppTie==0 AND $item->Score=='' AND $item->OppScore==0) ? $item->ScheduledDate : ''), 0, 0, 'R', 0);
 				$this->SetXY(OrisPDF::leftMargin+$this->DataSize[0]+$this->DataSize[1]+$this->DataSize[2]+$this->DataSize[3]+$this->DataSize[4],$this->lastY+((3+2*count($item->Componenti))*$this->CellVSp)/2);
-				$this->Cell($this->CellHSp,$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledTime), 0, 0, 'R', 0);
+				$this->Cell($this->CellHSp,$this->CellVSp, (($item->TfTie==0 AND $item->OppTie==0 AND $item->Score=='' AND $item->OppScore=='0') ? $item->ScheduledTime : ''), 0, 0, 'R', 0);
 				$this->SetFont('','','8');
 			}
 		}
@@ -438,9 +440,9 @@ class OrisBracketPDF extends OrisPDF {
 				if($item->ScheduledDate != '' && $item->ScheduledTime != '') {
 					$this->SetFont('','',6);
 					$this->SetXY($StartX,$this->lastY+($StartY * $this->CellVSp)/2-$this->CellVSp);
-					$this->Cell($this->CellHSp,$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledDate), 0, 0, 'R', 0);
+					$this->Cell($this->CellHSp,$this->CellVSp, (($item->TfTie==0 && $item->OppTie==0 && $item->Score=='' && $item->OppScore==0) ? $item->ScheduledDate : ''), 0, 0, 'R', 0);
 					$this->SetXY($StartX,$this->lastY+($StartY * $this->CellVSp)/2);
-					$this->Cell($this->CellHSp,$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledTime), 0, 0, 'R', 0);
+					$this->Cell($this->CellHSp,$this->CellVSp, (($item->TfTie==0 && $item->OppTie==0 && $item->Score=='' && $item->OppScore==0) ? $item->ScheduledTime : ''), 0, 0, 'R', 0);
 					$this->SetFont('','',8);
 				}
 			} else {
@@ -448,9 +450,9 @@ class OrisBracketPDF extends OrisPDF {
 				if($item->ScheduledDate != '' && $item->ScheduledTime != '') {
 					$this->SetFont('','',6);
 					$this->SetXY($StartX,$this->lastY+(($PhaseCounter==3 ? 4.5 : (3.5+$NumComponenti)) *$this->CellVSp)/2-$this->CellVSp);
-					$this->Cell($this->CellHSp,$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledDate), 0, 0, 'R', 0);
+					$this->Cell($this->CellHSp,$this->CellVSp, (($item->TfTie==0 && $item->OppTie==0 && $item->Score=='' && $item->OppScore==0) ? $item->ScheduledDate : ''), 0, 0, 'R', 0);
 					$this->SetXY($StartX,$this->lastY+(($PhaseCounter==3 ? 4.5 : (3.5+$NumComponenti)) *$this->CellVSp)/2);
-					$this->Cell($this->CellHSp,$this->CellVSp, ($item->hideSchedule ? '' : $item->ScheduledTime), 0, 0, 'R', 0);
+					$this->Cell($this->CellHSp,$this->CellVSp, (($item->TfTie==0 && $item->OppTie==0 && $item->Score=='' && $item->OppScore==0) ? $item->ScheduledTime : ''), 0, 0, 'R', 0);
 					$this->SetFont('','',8);
 				}
 			}

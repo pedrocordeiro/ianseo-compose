@@ -35,7 +35,7 @@ if (empty($_SESSION['TourId']) && (is_null($schedule) || is_null($team))) {
 checkFullACL(AclSpeaker, '', AclReadOnly, false);
 
 $otherWhere= "
-	AND fs1.FSTeamEvent=" . intval($team) . "
+	AND fs1.FSTeamEvent=" . StrSafe_DB($team) . "
 	AND (CONCAT(fs1.FSScheduledDate,' ',fs1.FSScheduledTime)=" . StrSafe_DB($schedule) . " OR CONCAT(fs2.FSScheduledDate,' ',fs2.FSScheduledTime)=" . StrSafe_DB($schedule) . ")
 ";
 
@@ -62,7 +62,7 @@ if ($team==0) {
 			AND UNIX_TIMESTAMP(TfDateTime)>" . StrSafe_DB($serverDate) . " ";
 }
 
-$orderBy=" CAST(fs1.FSTarget as SIGNED) ASC, CAST(fs2.FSTarget AS SIGNED) ASC";
+$orderBy=" concat(fs1.FSTarget,fs2.FSTarget) ASC ";
 
 
 $rs=safe_r_sql($countSql);
@@ -198,8 +198,8 @@ if (safe_num_rows($rs)>0) {
 					'ev'	=> $myRow->event,
 					'ph'	=> get_text(namePhase($myRow->firstPhase,$myRow->phase). '_Phase'),
 					'evn'	=> $myRow->eventName,
-					't'	    => intval($target),
-                    't2'	=> intval($target2),
+					't'	    => $target,
+                    't2'	=> $target2,
 					'n1'	=> $myRow->name1 . ' (#' . $myRow->rank1 . ')',
 					'cn1'	=> $myRow->countryName1,
 					'ar1'	=> strlen(str_replace(' ','',$myRow->arrowString1)),

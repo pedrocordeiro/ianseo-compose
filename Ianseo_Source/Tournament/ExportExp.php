@@ -119,6 +119,10 @@
 	}
 
 // ora genero le stringhe dei pdf e accodo a $Tour
+//	print '<pre>';
+//	print_r($pdfFiles);
+//	print '</pre>';
+//	exit;
 	if (count($pdfFiles)>0)
 	{
 	/*
@@ -139,6 +143,10 @@
 		}
 		unset($__ExportPDF);
 	}
+//	print '<pre>';
+//	print_r(array_keys($Tour));
+//	print '</pre>';exit;
+	//print 'qui';exit;
 
 	header('Content-type: application/octet-stream');
 	header("Content-Disposition: attachment; filename=\"" . $ToCode . '.exp' . "\"");

@@ -557,24 +557,22 @@ function selectArrow(obj, noselect) {
     $('[id^="SvgEndR_SO_"]').hide();
     var so=$(obj).closest('tr').attr('so')=='1';
     var end=$(obj).closest('tr').attr('end');
-    var lSx=($('#swapOpponents').is(':checked')?'R':'L');
-    var lDx=($('#swapOpponents').is(':checked')?'L':'R');
     if($(obj).closest('td.Opponents').attr('id')=='ScorecardL') {
         $('#Target').toggleClass('TargetL', true);
         if(so) {
-            $('#SvgEnd'+lSx+'_SO_'+end).show();
+            $('#SvgEndL_SO_'+end).show();
         } else {
-            $('#SvgEnd'+lSx+'_'+end).show();
+            $('#SvgEndL_'+end).show();
         }
     } else {
         $('#Target').toggleClass('TargetR', true);
         if(so) {
-            $('#SvgEnd'+lDx+'_SO_'+end).show();
+            $('#SvgEndR_SO_'+end).show();
         } else {
-            $('#SvgEnd'+lDx+'_'+end).show();
+            $('#SvgEndR_'+end).show();
         }
     }
-    if(obj.value && obj.value!='' && document.getElementById('svgLastArrow')) {
+    if(obj.value!='' && document.getElementById('svgLastArrow')) {
     	let sighter=document.getElementById('svgLastArrow').getBBox();
     	let arrow=document.getElementById('Svg'+obj.id).getBBox();
 

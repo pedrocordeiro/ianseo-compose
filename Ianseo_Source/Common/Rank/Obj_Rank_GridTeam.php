@@ -35,8 +35,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 	 */
 		var $EnIdFound=array();
 		var $TeamFound='';
-        var $scheduledMatchesList=array();
-        var $scheduledMatchesStatus=array();
 
 		protected function safeFilter() {
 			$ret=array();
@@ -144,7 +142,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				. " EvShootOff,"
 				. " EvCodeParent,"
 				. " EvMixedTeam,"
-				. " EvElimType,"
 				. " GrPhase Phase,"
 				. " @BitPhase:=if(GrPhase=0, 1, pow(2, ceil(log2(GrPhase))+1)),"
 				. " @BitPhase & EvMatchArrowsNo!=0 as FinElimChooser,"
@@ -165,7 +162,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				. " i1.IrmType IrmText,"
 				. " i1.IrmShowRank ShowRank,"
 				. " TeScore QualScore, "
-				. " TeHits QualHits, "
 				. " TeNotes QualNotes, "
 				. " TfWinLose Winner, "
 				. " TfDateTime LastUpdated, "
@@ -183,19 +179,9 @@ require_once('Common/Lib/Fun_PrintOuts.php');
                 . " TfTbDecoded TieDecoded,"
 				. " TfStatus Status, "
 				. " TfRecordBitmap  as RecBitLevel, EvIsPara, "
-                . " coalesce (FinOdfStartlist,'0') as OdfStartList,
-                        coalesce(FinOdfGettingReady,'0') as OdfGettingReady,
-                        coalesce(FinOdfLive,'0') as OdfLive,
-                        coalesce(FinOdfUnconfirmed,'0') as OdfUnconfirmed,
-                        coalesce(FinOdfUnofficial,'0') as OdfUnofficial,
-                        coalesce(FinOdfOfficial,'0') as OdfOfficial,
-                        coalesce(FinOdfArrows,'') as OdfArrows,
-                        coalesce(FinOdfTiming,'') as OdfTiming, "
 				. " TfConfirmed Confirmed, "
 				. " TfSetPoints SetPoints, "
 				. " TfSetPointsByEnd SetPointsByEnd, "
-				. " TfAverageMatch AverageMatch, "
-				. " TfAverageTie AverageTie, "
                 . " fs1.FsLJudge as jLine, fs1.FsTJudge as jTarget, "
 				. " TfArrowstring Arrowstring, TfLive LiveFlag,"
 				. " if(@BitPhase & EvMatchMultipleMatches!=0 or @BitPhase & EvFinalAthTarget!=0, fs1.FsLetter, fs1.FsTarget) as Target,"
@@ -217,7 +203,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				. " LEFT JOIN Countries ON TfTeam=CoId AND TfTournament=CoTournament and CoTournament=$this->tournament "
 				. " LEFT JOIN FinSchedule fs1 ON TfEvent=fs1.FSEvent AND fs1.FSMatchNo=TfMatchNo AND TfTournament=fs1.FSTournament AND fs1.FSTeamEvent='1' and fs1.FSTournament=$this->tournament "
 				. " LEFT JOIN FinSchedule fs2 ON TfEvent=fs2.FSEvent AND fs2.FSMatchNo=case TfMatchNo when 0 then 4 when 1 then 6 when 2 then 4 when 3 then 6 else TfMatchNo*2 end AND TfTournament=fs2.FSTournament AND fs2.FSTeamEvent='1' and fs2.FSTournament=$this->tournament "
-                . " LEFT JOIN FinOdfTiming ON FinOdfEvent=TfEvent AND FinOdfMatchno=TfMatchNo AND FinOdfTournament=TfTournament AND FinOdfTeamEvent='1' "
 				. " WHERE TfMatchNo%2=0 AND TfTournament = " . $this->tournament . " " . $filter
 				. ") f1 inner join ("
 				. "select"
@@ -242,7 +227,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				. " i1.IrmType OppIrmText,"
 				. " i1.IrmShowRank OppShowRank,"
 				. " TeScore OppQualScore, "
-				. " TeHits OppQualHits, "
 				. " TeNotes OppQualNotes, "
 				. " TfWinLose OppWinner, "
 				. " TfDateTime OppLastUpdated, "
@@ -261,18 +245,8 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				. " TfStatus OppStatus, "
 				. " TfConfirmed OppConfirmed, "
 				. " TfRecordBitmap  as OppRecBitLevel, "
-                . " coalesce (FinOdfStartlist,'0') as OppOdfStartList,
-                        coalesce(FinOdfGettingReady,'0') as OppOdfGettingReady,
-                        coalesce(FinOdfLive,'0') as OppOdfLive,
-                        coalesce(FinOdfUnconfirmed,'0') as OppOdfUnconfirmed,
-                        coalesce(FinOdfUnofficial,'0') as OppOdfUnofficial,
-                        coalesce(FinOdfOfficial,'0') as OppOdfOfficial,
-                        coalesce(FinOdfArrows,'') as OppOdfArrows,
-                        coalesce(FinOdfTiming,'') as OppOdfTiming, "
 				. " TfSetPoints OppSetPoints, "
 				. " TfSetPointsByEnd OppSetPointsByEnd, "
-				. " TfAverageMatch OppAverageMatch, "
-				. " TfAverageTie OppAverageTie, "
 				. " TfArrowstring OppArrowstring, "
 				. " @BitPhase:=if(GrPhase=0, 1, pow(2, ceil(log2(GrPhase))+1)),"
 				. " if(@BitPhase & EvMatchMultipleMatches!=0 or @BitPhase & EvFinalAthTarget!=0, fs1.FsLetter, fs1.FsTarget) as OppTarget, "
@@ -288,7 +262,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				. " LEFT JOIN Countries ON TfTeam=CoId AND TfTournament=CoTournament and CoTournament=$this->tournament "
 				. " LEFT JOIN FinSchedule fs1 ON fs1.FSEvent=TfEvent AND fs1.FSMatchNo=TfMatchNo AND fs1.FSTournament=TfTournament AND fs1.FSTeamEvent='1' and fs1.FSTournament=$this->tournament "
 				. " LEFT JOIN FinSchedule fs2 ON fs2.FSEvent=TfEvent AND fs2.FSMatchNo=case TfMatchNo when 0 then 4 when 1 then 6 when 2 then 4 when 3 then 6 else TfMatchNo*2 end AND fs2.FSTournament=TfTournament AND fs2.FSTeamEvent='1' and fs2.FSTournament=$this->tournament "
-                . " LEFT JOIN FinOdfTiming ON FinOdfEvent=TfEvent AND FinOdfMatchno=TfMatchNo AND FinOdfTournament=TfTournament AND FinOdfTeamEvent='1' "
 				. " WHERE TfMatchNo%2=1 AND TfTournament = " . $this->tournament . " " . $filter
 				. ") f2 on Tournament=OppTournament and Event=OppEvent and MatchNo=OppMatchNo-1
 				LEFT JOIN DocumentVersions DV1 on Tournament=DV1.DvTournament AND DV1.DvFile = 'B-TEAM' and DV1.DvEvent=''
@@ -312,13 +285,13 @@ require_once('Common/Lib/Fun_PrintOuts.php');
                     select EnId as Coach1Id, ifnull(EdExtra,EnCode) Coach1Code, CoCode as Coach1Country, if(EnSex=0, 'M', 'F') as Coach1Gender, EnFirstName as Coach1FamName, EnName as Coach1GivName, concat(ucase(EnFirstName), ' ', EnName) as Coach1
                     from Entries 
                     inner join Countries on CoId=EnCountry and CoTournament=EnTournament
-                    LEFT JOIN ExtraData ON EdId=EnId AND EdType='Z' and EdExtra!='' 
+                    LEFT JOIN ExtraData ON EdId=EnId AND EdType='Z' 
                     where EnTournament={$this->tournament}) Coach1 on Coach1Id=CoachId
                 LEFT JOIN (
                     select EnId as Coach2Id, ifnull(EdExtra,EnCode) Coach2Code, CoCode as Coach2Country, if(EnSex=0, 'M', 'F') as Coach2Gender, EnFirstName as Coach2FamName, EnName as Coach2GivName, concat(ucase(EnFirstName), ' ', EnName) as Coach2
                     from Entries 
                     inner join Countries on CoId=EnCountry and CoTournament=EnTournament
-                    LEFT JOIN ExtraData ON EdId=EnId AND EdType='Z' and EdExtra!='' 
+                    LEFT JOIN ExtraData ON EdId=EnId AND EdType='Z' 
                     where EnTournament={$this->tournament}) Coach2 on Coach2Id=OppCoachId
 				$ExtraFilter
                 ORDER BY ".($OrderByTarget ? 'Target, ' : '')."EvProgr ASC, event, Phase DESC, MatchNo ASC ";
@@ -339,7 +312,7 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 				INNER JOIN Entries ON TfcId=EnId AND TfcTournament=EnTournament
 				INNER JOIN Countries ON CoId=EnCountry AND CoTournament=EnTournament
 				INNER JOIN Teams ON TfcCoId=TeCoId AND TfcSubTeam=TeSubTeam AND TfcEvent=TeEvent AND TfcTournament=TeTournament AND TeFinEvent=1
-				left join ExtraData on EdId=EnId and EdType='Z' and EdExtra!=''
+				left join ExtraData on EdId=EnId and EdType='Z'
 				WHERE TfcTournament = " . $this->tournament
 				. " " . (empty($this->opts['events']) ? '' : CleanEvents($this->opts['events'], 'TfcEvent'))
 				. " ORDER BY EvProgr, TfcEvent, TfcCoId, TfcSubTeam, EnSex desc, EnFirstName, TfcOrder ";
@@ -538,8 +511,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'scheduledDate' => $myRow->ScheduledDate,
 					'scheduledTime' => $myRow->ScheduledTime,
 					'scheduledKey' => $myRow->ScheduledKey,
-                    'hideSchedule' => false,
-//
 					'lastUpdated' => $myRow->LastUpdated,
 					'matchNo' => $myRow->MatchNo,
 					'isValidMatch'=> ($myRow->GridPosition + $myRow->OppGridPosition),
@@ -547,12 +518,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'odfMatchName' => $myRow->OdfMatchName ? $myRow->OdfMatchName : '',
                     'odfUnitcode' => $myRow->OdfUnitCode ? $myRow->EvOdfCode.$myRow->OdfUnitCode : '',
 					'odfPath' => $myRow->OdfPreviousMatch && intval($myRow->OdfPreviousMatch)==0 ? $myRow->OdfPreviousMatch : get_text(($myRow->MatchNo==2 or $myRow->MatchNo==3) ? 'LoserMatchName' : 'WinnerMatchName', 'ODF', $myRow->OdfPreviousMatch ? $myRow->OdfPreviousMatch : $myRow->PreviousMatchTime),
-                    'odfStartList' => $myRow->OdfStartList[0]!='0'  ? $myRow->OdfStartList : ($myRow->OppOdfStartList[0]!='0'  ? $myRow->OppOdfStartList : ''),
-                    'odfGettingReady' => $myRow->OdfGettingReady[0]!='0'  ? $myRow->OdfGettingReady : ($myRow->OppOdfGettingReady[0]!='0'  ? $myRow->OppOdfGettingReady : ''),
-                    'odfLive' => $myRow->OdfLive[0]!='0'  ? $myRow->OdfLive : ($myRow->OppOdfLive[0]!='0'  ? $myRow->OppOdfLive : ''),
-                    'odfOdfUnconfirmed' => $myRow->OdfUnconfirmed[0]!='0'  ? $myRow->OdfUnconfirmed : ($myRow->OppOdfUnconfirmed[0]!='0'  ? $myRow->OppOdfUnconfirmed : ''),
-                    'odfOdfUnofficial' => $myRow->OdfUnofficial[0]!='0'  ? $myRow->OdfUnofficial : ($myRow->OppOdfUnofficial[0]!='0'  ? $myRow->OppOdfUnofficial : ''),
-                    'odfOdfOfficial' => $myRow->OdfOfficial[0]!='0'  ? $myRow->OdfOfficial : ($myRow->OppOdfOfficial[0]!='0'  ? $myRow->OppOdfOfficial : ''),
 					'target' => ltrim($myRow->Target ?? '','0'),
 					'coach' => $myRow->Coach,
 					'coachGivName' => $myRow->CoachGivName,
@@ -568,7 +533,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'memberAssoc' => $myRow->MaCode,
 					'qualRank' => $myRow->ShowRankQual ? $myRow->QualRank : $myRow->IrmTextQual,
 					'qualScore'=> $myRow->QualScore,
-					'qualHits'=> $myRow->QualHits,
 					'qualNotes'=> $myRow->QualNotes,
 					'finRank' => $myRow->FinRank,
 					'showRank' => $myRow->ShowRankFin,
@@ -582,9 +546,7 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'setScore'=> $myRow->SetScore,
 				 	'setPoints'=> $myRow->SetPoints,
 				 	'setPointsByEnd'=> $myRow->SetPointsByEnd,
-                    'avgMatch'=> $myRow->AverageMatch,
-                    'avgTie'=> $myRow->AverageTie,
-                    'notes'=> $myRow->Notes,
+				 	'notes'=> $myRow->Notes,
 				 	'arrowstring'=> $myRow->Arrowstring,
 					'tie'=> $myRow->Tie,
 				 	'tiebreak'=> trim($myRow->TieBreak),
@@ -596,12 +558,10 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'scoreConfirmed'=>$myRow->Confirmed,
 					'shootFirst'=>$myRow->ShootFirst,
 					'record' => $this->ManageBitRecord($myRow->RecBitLevel, $myRow->CaCode, $myRow->MaCode, $myRow->EvIsPara),
-				 	'position'=> ($myRow->QualRank and in_array($myRow->EvElimType, [0,3,4])) ? $myRow->QualRank : (useGrPostion2($myRow->EvFinalFirstPhase, $myRow->Phase) ? ($myRow->Position2 ? $myRow->Position2:'') : $myRow->Position),
+				 	'position'=> $myRow->QualRank ? $myRow->QualRank : (useGrPostion2($myRow->EvFinalFirstPhase, $myRow->Phase) ? ($myRow->Position2 ? $myRow->Position2:'') : $myRow->Position),
                     'saved'=> ($myRow->Position>0 and $myRow->Position<=SavedInPhase($myRow->EvFinalFirstPhase)),
 				 	'teamId'=> $myRow->Team,
 				 	'subTeam'=> $myRow->SubTeam,
-                    'odfArrows' => $myRow->OdfArrows ? json_decode($myRow->OdfArrows, true) : [],
-                    'odfTiming' => $myRow->OdfTiming ? json_decode($myRow->OdfTiming, true) : [],
 //
 					'oppLastUpdated' => $myRow->OppLastUpdated,
 					'oppMatchNo' => $myRow->OppMatchNo,
@@ -623,7 +583,6 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'oppMemberAssoc' => $myRow->OppMaCode,
 					'oppQualRank' => $myRow->OppShowRankQual ? $myRow->OppQualRank : $myRow->OppIrmTextQual,
 					'oppQualScore'=> $myRow->OppQualScore,
-					'oppQualHits'=> $myRow->OppQualHits,
 					'oppQualNotes'=> $myRow->OppQualNotes,
 					'oppFinRank' => $myRow->OppFinRank,
 					'oppShowRank' => $myRow->OppShowRankFin,
@@ -637,9 +596,7 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'oppSetScore'=> $myRow->OppSetScore,
 				 	'oppSetPoints'=> $myRow->OppSetPoints,
 				 	'oppSetPointsByEnd'=> $myRow->OppSetPointsByEnd,
-                    'oppAvgMatch'=> $myRow->OppAverageMatch,
-                    'oppAvgTie'=> $myRow->OppAverageTie,
-                    'oppNotes'=> $myRow->OppNotes,
+				 	'oppNotes'=> $myRow->OppNotes,
 				 	'oppArrowstring'=> $myRow->OppArrowstring,
 					'oppTie'=> $myRow->OppTie,
 				 	'oppTiebreak'=> trim($myRow->OppTieBreak),
@@ -651,13 +608,10 @@ require_once('Common/Lib/Fun_PrintOuts.php');
 					'oppScoreConfirmed'=>$myRow->OppConfirmed,
 					'oppShootFirst'=>$myRow->OppShootFirst,
 					'oppRecord' => $this->ManageBitRecord($myRow->OppRecBitLevel, $myRow->OppCaCode, $myRow->OppMaCode, $myRow->EvIsPara),
-				 	'oppPosition'=> ($myRow->OppQualRank and in_array($myRow->EvElimType, [0,3,4])) ? $myRow->OppQualRank : (useGrPostion2($myRow->EvFinalFirstPhase, $myRow->Phase) ? ($myRow->OppPosition2 ? $myRow->OppPosition2:'') : $myRow->OppPosition),
+				 	'oppPosition'=> $myRow->OppQualRank ? $myRow->OppQualRank : (useGrPostion2($myRow->EvFinalFirstPhase, $myRow->Phase) ? ($myRow->OppPosition2 ? $myRow->OppPosition2:'') : $myRow->OppPosition),
                     'oppSaved'=> ($myRow->OppPosition>0 and $myRow->OppPosition<=SavedInPhase($myRow->EvFinalFirstPhase)),
                     'oppTeamId'=> $myRow->OppTeam,
-                    'oppTeamId'=> $myRow->OppTeam,
 				 	'oppSubTeam'=> $myRow->OppSubTeam,
-                    'oppOdfArrows' => $myRow->OppOdfArrows ? json_decode($myRow->OppOdfArrows, true) : [],
-                    'oppOdfTiming' => $myRow->OppOdfTiming ? json_decode($myRow->OppOdfTiming, true) : [],
 					);
 
                 if(!empty($this->opts['extended'])) {
@@ -670,27 +624,7 @@ require_once('Common/Lib/Fun_PrintOuts.php');
                 }
 
                 $this->data['sections'][$myRow->Event]['phases'][$myRow->Phase]['items'][] = $item;
-                if(!array_key_exists($item["scheduledKey"], $this->scheduledMatchesList)) {
-                    $this->scheduledMatchesList[$item["scheduledKey"]] = array();
-                    $this->scheduledMatchesStatus[$item["scheduledKey"]] = array();
-                    $this->scheduledMatchesStatus[$item["scheduledKey"]][$myRow->Event] = false;
-                } elseif(!array_key_exists($myRow->Event, $this->scheduledMatchesStatus[$item["scheduledKey"]])) {
-                    $this->scheduledMatchesStatus[$item["scheduledKey"]][$myRow->Event] = false;
-                }
-                $this->scheduledMatchesList[$item["scheduledKey"]][] = array($myRow->Event, $myRow->Phase, array_key_last($this->data['sections'][$myRow->Event]['phases'][$myRow->Phase]['items']));
-                $this->scheduledMatchesStatus[$item["scheduledKey"]][$myRow->Event] |= !(empty($item["score"]) AND empty($item["setScore"]) AND empty($item["irm"]) AND empty($item["oppScore"]) AND empty($item["oppSetScore"] AND empty($item["oppIrm"])));
 			}
-            foreach ($this->scheduledMatchesStatus as $key => $value) {
-                foreach ($value as $kEvent=>$vEvent) {
-                    if ($vEvent) {
-                        foreach ($this->scheduledMatchesList[$key] as $keyArray) {
-                            if ($keyArray[0] == $kEvent) {
-                                $this->data['sections'][$keyArray[0]]['phases'][$keyArray[1]]['items'][$keyArray[2]]['hideSchedule'] = true;
-                            }
-                        }
-                    }
-                }
-            }
 		}
 
 		function getData() {

@@ -15,9 +15,9 @@
 global $CFG;
 
 define ("ProgramName","Ianseo");	// Nome del programma
-define ("ProgramVersion","2026-03-01"); // "By failing to prepare, you are preparing to fail. (Benjamin Franklin)"
+define ("ProgramVersion","2025-02-10"); // "The greatest enemy of knowledge is not ignorance, it is the illusion of knowledge. (Stephen Hawking)"
 
-define ("TargetNoPadding",4);		// Padding del targetno
+define ("TargetNoPadding",3);		// Padding del targetno
 
 define ("TieBreakArrows_Ind",3);	// Numero di frecce per il tiebreak dell'olympic round IND
 define ("TieBreakArrowsSet_Ind",1);	// Numero di frecce per il tiebreak dell'olympic round IND a SET
@@ -67,6 +67,13 @@ Inserimento nuove funzioni di Chris per la gestione degli errori di DB
 Definizione delle variabili e delle costanti utilizzate
 
 ******************************/
+$safe_SQL=array(
+	'w_connect'=>0,
+	'r_connect'=>0,
+	'w_querries'=>array(),
+	'r_querries'=>array(),
+	);
+
 $WRIT_CON='';
 $READ_CON='';
 $GLOBALS['tempo']=getmicrotime();
@@ -372,7 +379,7 @@ function CheckTourSession($PrintCrack=false, $popup=false)
 		isset($_SESSION['TourWhenTo']) && $_SESSION['TourWhenTo']!='0000-00-00')
 		{
 
-		if(!defined("TargetNoPadding")) define ("TargetNoPadding",4);
+		if(!defined("TargetNoPadding")) define ("TargetNoPadding",3);
 
 		return true;
 	}
@@ -402,22 +409,23 @@ function OutputError($errore) {
 	- InfoTournament()
 	Ritorna le info del torneo attivo prelevandole dalla sessione
 */
-function InfoTournament(){
+function InfoTournament()
+{
 	global $CFG, $INFO, $listACL;
 // E' selezionato un torneo
 	print '<table class="Tabella">';
-	print '<tr style="height:35px">';
+	print '<tr style="height:34px">';
 	print '<td>';
 	if (CheckTourSession()) {
-		print get_text('SelTour') . ': ' . $_SESSION['TourName'] .
-            ' (' . $_SESSION['TourWhere'] . ' ' . get_text('From','Tournament') . ' ' . $_SESSION['TourWhenFrom'] . ' ' . get_text('To','Tournament') . ' ' . $_SESSION['TourWhenTo'] . ') - ' .
-            $_SESSION['TourCode'] . (empty($GLOBALS['ERROR_REPORT']) ? '' : ' - Id: '. $_SESSION['TourId']);
-	} else {
+		print get_text('SelTour') . ': ' . $_SESSION['TourName'] . ' (' . $_SESSION['TourWhere'] . ' ' . get_text('From','Tournament') . ' ' . $_SESSION['TourWhenFrom'] . ' ' . get_text('To','Tournament') . ' ' . $_SESSION['TourWhenTo'] . ') - ' . $_SESSION['TourCode'] ;
+	}
+	else	// Non � selezionato nessun torneo
+	{
 		print get_text('NoTour','Tournament');
 	}
 	print '</td>';
 	if($file=CheckHelp()) {
-		print '<td class="Center w-5">';
+		print '<td width="5%" class="Center">';
 		print '<a href="javascript:OpenPopup(\''.$CFG->ROOT_DIR.'Help.php?help='.$file.'\',\'Esegui\',800,500);">';
 		print '<img onMouseOver="resizeImg(this, 150, \''.$CFG->ROOT_DIR.'Common/Images/help-30.png\')" onMouseOut="resizeImg(this)" border="0" src="'.$CFG->ROOT_DIR.'Common/Images/help.png" alt="Help" title="Help">';
 		print '</a>';
@@ -481,7 +489,7 @@ function CreateTourSession($TourId) {
         }
 
 		$MyRow=safe_fetch($Rs);
-        $dateTimeZone = new DateTimeZone($MyRow->ToTimeZone?:'UTC');
+        $dateTimeZone = new DateTimeZone($MyRow->ToTimeZone);
         $dateTimeZone->getOffset(new DateTime("now", new DateTimeZone('UTC')));
 
 		$_SESSION['TourId']=$MyRow->ToId;
@@ -753,13 +761,15 @@ function getCodeFromId($id) {
  *
  * @return int: tipo del torneo se esiste; 0 altrimenti
  */
-function getTournamentType($TourId='') {
+function getTournamentType($TourId='')
+{
 	$ret=0;
 
 	$query
 		= "SELECT ToType FROM Tournament WHERE ToId=" . StrSafe_DB($TourId?$TourId:$_SESSION['TourId']) . " ";
 	$rs=safe_r_sql($query);
-	if (safe_num_rows($rs)==1) {
+	if (safe_num_rows($rs)==1)
+	{
 		$row=safe_fetch($rs);
 		$ret=$row->ToType;
 	}
@@ -772,8 +782,18 @@ function getTournamentType($TourId='') {
  * @param int $Id: id del torneo
  * @return int
  */
-	function GetCategory($Id) {
+	function GetCategory($Id)
+	{
 		global $CFG;
+		/*$Query
+			= "SELECT TtCategory "
+			. "FROM "
+				. "Tournament*Type "
+				. "INNER JOIN "
+					. "Tournament "
+				. "ON TtId=ToType "
+			. "WHERE "
+				. "ToId=" . StrSafe_DB($Id) . " ";*/
 		$Query
 			= "SELECT ToCategory AS TtCategory "
 			. "FROM "
@@ -783,7 +803,8 @@ function getTournamentType($TourId='') {
 		$Rs=safe_r_sql($Query);
 		$Cat=-1;
 
-		if ($Rs && safe_num_rows($Rs)==1) {
+		if ($Rs && safe_num_rows($Rs)==1)
+		{
 			$Row=safe_fetch($Rs);
 			$Cat=$Row->TtCategory;
 		}
@@ -1094,11 +1115,6 @@ function checkCompetitionAnomalies() {
             'Msg'=>get_text('EventIncompleteSetting', 'Errors', get_text('TeamFinEvent', 'Tournament')),
             'Lnk'=>$CFG->ROOT_DIR.'Final/Team/ListEvents.php',
         ],
-        'Q'=>[
-            'Cats'=>[],
-            'Msg'=>get_text('EndsArrowsMisMatch', 'Errors', get_text('Q-Session', 'Tournament')),
-            'Lnk'=>$CFG->ROOT_DIR.'Tournament/ManSessions_kiss.php',
-        ],
         'I'=>[
             'Cats'=>[],
             'Msg'=>get_text('EndsArrowsMisMatch', 'Errors', get_text('IndFinEvent', 'Tournament')),
@@ -1150,7 +1166,7 @@ function checkCompetitionAnomalies() {
               inner join Tournament on ToId=DivTournament
               where DivTournament={$_SESSION['TourId']} and DivAthlete=1) as AllCats
         left join TournamentDistances on TdTournament={$_SESSION['TourId']} and TdType=ToType and Category like TdClasses
-        group by Category, DivViewOrder, ClViewOrder
+        group by Category
         having Distances!=1 or NoDistances=1
         order by DivViewOrder, ClViewOrder");
     while($r=safe_fetch($q)) {
@@ -1183,24 +1199,14 @@ function checkCompetitionAnomalies() {
         $Ret[$r->TeamEvent]['Cats'][]='<a href="'.$CFG->ROOT_DIR.'Final/Individual/SetEventRules.php?EvCode='.$r->EvCode.'">'.$r->EvCode.'</a>';
     }
 
-    // check events End/Arrows anomalies in Qualification
-    $q=safe_r_sql("SELECT `DiSession`, `DiDistance` 
-        FROM `DistanceInformation` 
-        WHERE `DiTournament` = {$_SESSION['TourId']} and (DiEnds=0 or DiArrows=0)
-        order by DiSession, DiDistance");
-    while($r=safe_fetch($q)) {
-        $Ret['Q']['Cats'][]=get_text('PopupStatusSession', 'Api',$r->DiSession) . ': ' . get_text('DistanceNum', 'Api',$r->DiDistance);
-    }
-
-    // check events End/Arrows anomalies, but not in Run Archery
-    if($_SESSION['TourType']!=48) {
-        $q=safe_r_sql("select EvCode, if(EvTeamEvent=1,'T','I') as TeamEvent
+    // check events End/Arrows anomalies
+    $q=safe_r_sql("select EvCode, if(EvTeamEvent=1,'T','I') as TeamEvent
         from Events
         where EvTournament={$_SESSION['TourId']} and (EvElimEnds=0 or EvFinEnds=0 or EvElimArrows=0 or EvFinArrows=0) and EvFinalFirstPhase!=0
         order by EvTeamEvent,EvProgr");
-        while($r=safe_fetch($q)) {
-            $Ret[$r->TeamEvent]['Cats'][]=$r->EvCode;
-        }
+
+    while($r=safe_fetch($q)) {
+        $Ret[$r->TeamEvent]['Cats'][]=$r->EvCode;
     }
 
     $RetResult=[];
@@ -1303,36 +1309,4 @@ function UpdateToInnoDb($Apply=true) {
     }
 
     return false;
-}
-
-function createAvailableTargetSQL($Session=0, $TourId=0) {
-    if(!$TourId) {
-        $TourId=$_SESSION['TourId'];
-    }
-    /*
-SELECT A.Session as AtSession,  A.Target AS AtTarget, B.Letter as AtLetter
-FROM
-    (SELECT 1 as Session, 1 as Target UNION ALL SELECT 1,2) AS A
-CROSS JOIN
-	(SELECT 'A' as Letter UNION ALL SELECT 'B') AS B
-ORDER BY AtSession, AtTarget, AtLetter;
-     */
-    $aSub = array();
-    $bSub = array();
-    $Sql = "SELECT `SesOrder`, `SesTar4Session`, `SesAth4Target`, `SesFirstTarget` 
-        FROM `Session` 
-        WHERE `SesTournament`=$TourId AND `SesType`='Q'" . ($Session ? " AND `SesOrder`=$Session" : "");
-    $q=safe_r_SQL($Sql);
-    while($r=safe_fetch($q)) {
-        foreach (range($r->SesFirstTarget, $r->SesFirstTarget+$r->SesTar4Session-1) as $i) {
-            $tmp = "SELECT $r->SesOrder as `Session`, $i as `Target`,";
-            foreach (range("A", chr(64+$r->SesAth4Target)) as $i) {
-                $aSub[] = $tmp . " '$i' as `Letter`";
-            }
-        }
-    }
-    return  "SELECT `A`.`Session` as `FullTgtSession`,  `A`.`Target` AS `FullTgtTarget`, `A`.`Letter` as `FullTgtLetter` 
-        FROM  (".implode(' UNION ALL ', $aSub).') AS `A` 
-        ORDER BY `FullTgtSession`, `FullTgtTarget`, `FullTgtLetter`';
-
 }

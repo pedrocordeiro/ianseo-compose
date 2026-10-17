@@ -2,8 +2,6 @@
 $lang['AllFieldsMandatory']='Semua ruangan perlu diisi';
 $lang['AllMailsRedirect']='Semua mesej akan dihantar ke';
 $lang['Anomalies']='Anomali';
-$lang['BarCodeSession']='Ada kesalahan di dalam tetapan: cuba tetapan sesi!';
-$lang['BarCodeSettings']='Ada kesalahan di dalam tetapan';
 $lang['ClassFromToError']='Dari dan Ke mesti berupa nilai berangka';
 $lang['ClubNotFound']='Kod Kelab tidak ditemui dalam kelab sedia ada. Sila kemas kini pangkalan data dahulu!';
 $lang['DecodeError']='Nyahkod Ralat';
@@ -61,7 +59,6 @@ $lang['NoMailRecipients']='Email ini tidka ditujukan kepada sesiapa! Sila semak 
 $lang['NoPrivilege']='Keistimewaan Tidak mencukupi: anda tidak dibenarkan beroperasi di halaman ini!';
 $lang['NoSameOrders']='Nilai Susunan baharu tidak boleh diduakan.';
 $lang['NoSmtpServerSet']='Sila tetapkan pelayan SMTP sebelum menghantar e-mel!';
-$lang['ServiceNotAvailable']='Servis Tidak Tersedia';
 $lang['SpecialFilterDiscrepancy']='Penapis khas telah ditetapkan tetapi tidak aktif!';
 $lang['TargetNumberMismatch']='Nombor Sasaran hanya boleh berbentuk [NomborTarget][HurufTarget], seperti pada 129C';
 $lang['TargetRangeMismatch']='Julat Sasaran mestilah 2 angka sasaran (tanpa huruf) dipisahkan dengan tanda hubung (tanda tolak), yang pertama lebih rendah daripada yang kedua, seperti pada 23-44';

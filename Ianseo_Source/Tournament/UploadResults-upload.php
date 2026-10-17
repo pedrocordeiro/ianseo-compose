@@ -243,7 +243,7 @@ if(empty($_REQUEST['btnDelOnline'])) {
     if(!empty($_REQUEST['RobinInd'])) {
         $RET->IR=new StdClass();
         foreach($_REQUEST['RobinInd'] as $Event) {
-            $RET->IR->{$Event}=getRobin(['team'=>substr($Event,1,1), 'events'=>[substr($Event,2)]],$ORIS,1,1);
+            $RET->IR->{$Event}=getRobin(['team'=>substr($Event,1,1), 'events'=>[substr($Event,2)]],$ORIS);
         }
     }
 
@@ -251,7 +251,7 @@ if(empty($_REQUEST['btnDelOnline'])) {
     if(!empty($_REQUEST['RobinTeam'])) {
         $RET->IR=new StdClass();
         foreach($_REQUEST['RobinTeam'] as $Event) {
-            $RET->IR->{$Event}=getRobin(['team'=>substr($Event,1,1), 'events'=>[substr($Event,2)], 'includeTeamRank' => ($_SESSION['TourLocSubRule']=='SetFRD12023' or $_SESSION['TourLocSubRule']=='SetFRD12026')],$ORIS,1,1);
+            $RET->IR->{$Event}=getRobin(['team'=>substr($Event,1,1), 'events'=>[substr($Event,2)], 'includeTeamRank' => $_SESSION['TourLocSubRule']=='SetFRD12023'],$ORIS);
         }
     }
 
@@ -264,11 +264,9 @@ if(empty($_REQUEST['btnDelOnline'])) {
     // Brackets, Individual
     if(!empty($_REQUEST['BracketsInd'])) {
         $RET->IB=new StdClass();
-        $RET->IBScorecard=new StdClass();
         foreach($_REQUEST['BracketsInd'] as $Event) {
             $EventCode = getChildrenEvents(substr($Event,2));
             $RET->IB->{$Event}=getBracketsIndividual($EventCode, $ORIS, true, true, true, $ShowRecords);
-            $RET->IBScorecard->{$Event}=getBracketsIndividual($EventCode, $ORIS, true, true, true, $ShowRecords, null, false, false);
         }
     }
 

@@ -6,9 +6,6 @@ var ClickMovesPosition=false;
 
 $(document).ready(function() {
     getMatchesData();
-    if(PreParams.keypad=='1') {
-        toggleKeypress();
-    }
 });
 
 function getMatchesData() {
@@ -23,15 +20,6 @@ function getMatchesData() {
 function updateComboEvents() {
     $('#Spotting').hide();
     var spType = $('#spotType').val();
-    if((spType=='Ind' && PreParams.Team=='1') || (spType=='Team' && PreParams.Team=='0')) {
-        PreParams.Team=(spType=='Ind'?0:1);
-        PreParams.d_Event='';
-        PreParams.d_Match=-1;
-        PreParams.d_Phase=null;
-        PreEvent='';
-        PreMatchno=-1;
-        PrePhase=-1;
-    }
     $('#spotCode').empty();
     $('#spotCode').append('<option value="">---</option>');
     $('#spotPhase').empty();
@@ -45,9 +33,9 @@ function updateComboEvents() {
         updateComboPhases();
     }
 
-	if (window.history.pushState) {
-		var newurl = '?'+$.param(PreParams);
-		window.history.pushState(null,'',newurl);
+	if (history.pushState) {
+		var newurl = window.location.origin + window.location.pathname + '?Team='+(spType=='Team' ? 1 : 0);
+		window.history.pushState({path:newurl},'',newurl);
 	}
 }
 
@@ -55,7 +43,6 @@ function updateComboPhases() {
     $('#Spotting').hide();
     var spType = $('#spotType').val();
     var spEvent = $('#spotCode').val();
-    PreParams.d_Event=spEvent;
     $('#spotPhase').empty();
     $('#spotPhase').append('<option value="">---</option>');
     $('#spotMatch').empty();
@@ -68,24 +55,13 @@ function updateComboPhases() {
             updateComboMatches();
         }
     }
-    if (window.history.pushState) {
-        var newurl = '?'+$.param(PreParams);
-        window.history.pushState(null,'',newurl);
-    }
 }
-function updateHistory() {
-    PreParams.d_Match=$('#spotMatch').val();
-    if (window.history.pushState) {
-        var newurl = '?'+$.param(PreParams);
-        window.history.pushState(null,'',newurl);
-    }
-}
+
 function updateComboMatches(selectedMatch) {
     $('#Spotting').hide();
     var spType = ($('#spotType').val()=='Team' ? '1' : '0');
     var spEvent = $('#spotCode').val();
     var spPhase = $('#spotPhase').val();
-    PreParams.d_Phase=spPhase;
     $('#spotMatch').empty();
     $.getJSON(WebDir+'Final/Spotting-MatchesList.php?CompCode='+CompCode+'&Type='+spType+'&Event='+spEvent+'&Phase='+spPhase, function (data) {
         if(data.data.length!=1) {
@@ -112,15 +88,10 @@ function updateComboMatches(selectedMatch) {
             buildScorecard();
         }
     });
-    if (window.history.pushState) {
-        var newurl = '?'+$.param(PreParams);
-        window.history.pushState(null,'',newurl);
-    }
 }
 
 function toggleTarget() {
     $('#Target').toggleClass('Hidden', $('#spotTarget:checked').length==0);
-    $('#ClickMovesNextDiv').toggleClass('d-none', !$('#spotTarget:checked').length);
     buildScorecard();
 }
 
@@ -515,7 +486,7 @@ function selectArrow(obj, noselect) {
             $('#SvgEndR_'+end).show();
         }
     }
-    if(obj.value && obj.value!='' && document.getElementById('svgLastArrow')) {
+    if(obj.value!='' && document.getElementById('svgLastArrow')) {
     	let sighter=document.getElementById('svgLastArrow').getBBox();
     	let arrow=document.getElementById('Svg'+obj.id).getBBox();
 
@@ -637,7 +608,7 @@ function addPoint (id) {
     }
 }
 
-function moveToNextPhase(obj = null, verbose=true) {
+function moveToNextPhase(obj) {
     var spType = ($('#spotType').val()=='Team' ? '1' : '0');
     var spEvent = $('#spotCode').val();
     var spMatch = $('#spotMatch').val();
@@ -645,9 +616,7 @@ function moveToNextPhase(obj = null, verbose=true) {
     $.getJSON(WebDir + 'Final/Spotting-nextPhase.php?event='+spEvent+'&team='+spType+'&matchno='+spMatch+(obj ? '&pool='+obj : ''), function(data) {
         if(data.error==0) {
             updateComboMatches(spMatch);
-            if(verbose) {
-                alert(data.msg);
-            }
+            alert(data.msg);
         } else {
             alert(data.msg);
         }
@@ -709,13 +678,7 @@ function toggleKeypressNew() {
 
 function toggleKeypress() {
 	keyPressedActive=!keyPressedActive;
-    PreParams.keypad = keyPressedActive?1:0;
-    if (window.history.pushState) {
-        var newurl = '?'+$.param(PreParams);
-        window.history.pushState(null,'',newurl);
-    }
-
-    $('#ActivateKeys')[0].checked=keyPressedActive;
+	$('#ActivateKeys')[0].checked=keyPressedActive;
     if(keyPressedActive)
         $('#keypadLegenda').show();
     else {
@@ -736,189 +699,211 @@ function toggleKeypress() {
 		$('#Spotting input[type="text"]').prop('readonly', true);
 
 		// creates the definitions
-        var combo={
-            is_solitary: true,
-            // prevent_default: true,
-            // prevent_repeat: true,
-        }
 
-        var allCombos=[];
+		KeyListener.simple_combo("right", function() {
+			gotoNext();
+		});
 
-        // all the keys producing a go next
-        var keys=['right', 'backspace', 'num_divide', 'tab',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {gotoNext();},
-                is_solitary: true,
-            });
+		KeyListener.simple_combo("backspace", function() {
+			gotoNext();
+		});
+
+		KeyListener.simple_combo("num_divide", function() {
+			gotoNext();
+		});
+
+		KeyListener.simple_combo("tab", function() {
+			gotoNext();
+		});
+
+		KeyListener.simple_combo("shift tab", function() {
+			gotoPrevious();
+		});
+
+		KeyListener.simple_combo("left", function() {
+			gotoPrevious();
+		});
+
+		KeyListener.simple_combo(".", function() {
+			setValue('');
+		});
+
+		KeyListener.simple_combo("delete", function() {
+			setValue('');
+		});
+
+		KeyListener.simple_combo("esc", function() {
+			setValue('');
+		});
+
+		KeyListener.simple_combo("num_decimal", function() {
+			setValue('');
+		});
+
+		KeyListener.simple_combo("num_multiply", function() {
+			toggleStar();
+		});
+
+		KeyListener.simple_combo("*", function(e) {
+			toggleStar();
+		});
+
+		KeyListener.simple_combo("shift d", function(e) {
+			toggleStar();
+		});
+
+        KeyListener.simple_combo("d", function(e) {
+            toggleStar();
         });
 
-        // all the keys producing a go previous
-        keys=['shift tab', 'left',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {gotoPrevious();},
-                is_solitary: true,
-            });
+		KeyListener.simple_combo("num_0", function() {
+			setValue('M');
+		});
+
+		KeyListener.simple_combo("m", function() {
+			setValue('M');
+		});
+
+		KeyListener.simple_combo("shift m", function() {
+			setValue('M');
+		});
+
+		KeyListener.simple_combo("num_1", function() {
+			setValue('1');
+		});
+
+		KeyListener.simple_combo("1", function() {
+			setValue('1');
+		});
+
+		KeyListener.simple_combo("num_2", function() {
+			setValue('2');
+		});
+
+		KeyListener.simple_combo("2", function() {
+			setValue('2');
+		});
+
+		KeyListener.simple_combo("num_3", function() {
+			setValue('3');
+		});
+
+		KeyListener.simple_combo("3", function() {
+			setValue('3');
+		});
+
+		KeyListener.simple_combo("num_4", function() {
+			setValue('4');
+		});
+
+		KeyListener.simple_combo("4", function() {
+			setValue('4');
+		});
+
+		KeyListener.simple_combo("num_5", function() {
+			setValue('5');
+		});
+
+		KeyListener.simple_combo("5", function() {
+			setValue('5');
+		});
+
+		KeyListener.simple_combo("num_6", function() {
+			setValue('6');
+		});
+
+		KeyListener.simple_combo("6", function() {
+			setValue('6');
+		});
+
+		KeyListener.simple_combo("num_7", function() {
+			setValue('7');
+		});
+
+		KeyListener.simple_combo("7", function() {
+			setValue('7');
+		});
+
+		KeyListener.simple_combo("num_8", function() {
+			setValue('8');
+		});
+
+		KeyListener.simple_combo("8", function() {
+			setValue('8');
+		});
+
+		KeyListener.simple_combo("num_9", function() {
+			setValue('9');
+		});
+
+		KeyListener.simple_combo("9", function() {
+			setValue('9');
+		});
+
+		KeyListener.simple_combo("num_subtract", function() {
+			setValue('10');
+		});
+
+		KeyListener.simple_combo("shift t", function() {
+			setValue('10');
+		});
+
+        KeyListener.simple_combo("t", function() {
+            setValue('10');
         });
 
-        // going up 1 end
-        allCombos.push({
-            keys:'up',
-            on_keydown: function() {
-                var curArrow=$('.ActiveArrow input').attr('id');
-                var t=curArrow.split(/\]\[/);
-                if(parseInt(t[2])>0) {
-                   t[2]--;
-                    curArrow=t.join('][');
-                    var newCell=$('#'+curArrow.replaceAll('[','\\[').replaceAll(']','\\]'));
-                    newCell.focus();
-                    if(newCell.length==1) {
-                        selectArrow(newCell[0], true);
-                    }
-                }
-            },
-            is_solitary: true,
+		KeyListener.simple_combo("shift e", function() {
+			setValue('11');
+		});
+
+        KeyListener.simple_combo("e", function() {
+            setValue('11');
         });
 
-        // going down 1 end
-        allCombos.push({
-            keys:'down',
-            on_keydown: function() {
-                var curArrow=$('.ActiveArrow input').attr('id');
-                var t=curArrow.split(/\]\[/);
-                t[2]++;
-                curArrow=t.join('][');
-                var newCell=$('#'+curArrow.replaceAll('[','\\[').replaceAll(']','\\]'));
-                if(newCell.length>0) {
-                    newCell.focus();
-                    selectArrow(newCell[0], true);
-                }
-            },
-            is_solitary: true,
+		KeyListener.simple_combo("shift f", function() {
+			setValue('12');
+		});
+
+        KeyListener.simple_combo("f", function() {
+            setValue('12');
         });
 
-        // all the keys toggling a star
-        var keys=['num_multiply', '*', 'shift d', 'd',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {toggleStar();},
-                is_solitary: true,
-            });
+		KeyListener.simple_combo("num_add", function() {
+			setValue('X');
+		});
+
+        KeyListener.simple_combo("x", function() {
+            setValue('X');
         });
 
-        // all the keys deleting the value
-        var keys=['.', 'delete', 'esc', 'num_decimal',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {setValue('');},
-                is_solitary: true,
-            });
-        });
+		KeyListener.simple_combo("shift x", function() {
+			setValue('X');
+		});
 
-        // A to Set/Reset Alternate Shooting
-        var keys=['A', 'a',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {$('#MatchAlternate').click();},
-                is_solitary: true,
-            });
-        });
+		KeyListener.simple_combo("shift q", function() {
+			// confirm left end
+			var obj=$('[ref="ConfirmL"]');
+			if(obj.length && !obj.prop('disabled')) {
+				ConfirmEnd(obj[0]);
+			}
+		});
 
-        // V to set/Unset Live
-        var keys=['V', 'v',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {setLive();},
-                is_solitary: true,
-            });
-        });
+		KeyListener.simple_combo("shift e", function() {
+			// confirm left end
+			var obj=$('[ref="ConfirmR"]');
+			if(obj.length && !obj.prop('disabled')) {
+				ConfirmEnd(obj[0]);
+			}
+		});
 
-        // P to move to next phase
-        var keys=['P', 'p',];
-        $.each(keys, function() {
-            allCombos.push({
-                keys:this.toString(),
-                on_keydown: function() {
-                    if(!$('#moveWinner').is(':disabled')) {
-                        moveToNextPhase(null, false);
-                    }
-                },
-                is_solitary: true,
-            });
-        });
+		KeyListener.simple_combo("shift w", function() {
+			// confirm left end
+			var obj=$('#confirmMatch');
+			if(obj.length && !obj.prop('disabled')) {
+				confirmMatch(obj[0]);
+			}
+		});
 
-
-        // all the keys inserting values
-        var keys={
-            'M': ['0', 'num_0', 'm', 'shift m'],
-            '1':['1', 'num_1'],
-            '2':['2', 'num_2'],
-            '3':['3', 'num_3'],
-            '4':['4', 'num_4'],
-            '5':['5', 'num_5'],
-            '6':['6', 'num_6'],
-            '7':['7', 'num_7'],
-            '8':['8', 'num_8'],
-            '9':['9', 'num_9'],
-            '10':['t', 'shift t', 'num_subtract'],
-            '11':['y', 'shift y'],
-            '12':['u', 'shift u'],
-            'X':['x', 'shift x', 'num_add'],
-        }
-        $.each(keys, function(idx, items) {
-            $.each(items, function() {
-                allCombos.push({
-                    keys:this.toString(),
-                    on_keydown: function() {setValue(idx);},
-                    is_solitary: true,
-                });
-            });
-        });
-
-        allCombos.push({
-            keys:"shift q",
-            is_solitary: true,
-            on_keydown:function() {
-                // confirm left end
-                var obj = $('[ref="ConfirmL"]');
-                if (obj.length && !obj.prop('disabled')) {
-                    ConfirmEnd(obj[0]);
-                }
-            }
-        });
-
-        allCombos.push({
-            keys:"shift e",
-            is_solitary: true,
-            on_keydown:function() {
-                // confirm right end
-                var obj = $('[ref="ConfirmR"]');
-                if (obj.length && !obj.prop('disabled')) {
-                    ConfirmEnd(obj[0]);
-                }
-            }
-        });
-
-        allCombos.push({
-            keys:"shift w",
-            is_solitary: true,
-            on_keydown:function() {
-                // confirm left end
-                var obj = $('#confirmMatch');
-                if (obj.length && !obj.prop('disabled')) {
-                    confirmMatch(obj[0]);
-                }
-            }
-        });
-
-        KeyListener.register_many(allCombos);
 	} else {
 		KeyListener.reset();
 
@@ -952,62 +937,28 @@ function setValue(num) {
 }
 
 function gotoNext() {
-	var tabindex=$('.ActiveArrow input').attr('tabIndex');
-    var allTabs=doOrderTabs('[tabindex]', 'tabindex');
-    var found=false;
-    var newCell= null;
-    $(allTabs).each(function(idx){
-        if(found) {
-            newCell=$(this);
-            return false;
-        }
-        if($(this).attr('tabIndex')==tabindex && idx<allTabs.length-1){
-            found=true;
-        }
-    })
-    if(newCell==null) {
-        newCell=$(allTabs).last();
-    }
-    newCell.focus();
-    if(newCell.length==1) {
-        selectArrow(newCell[0], true);
-    }
+	var tabindex=parseInt($('.ActiveArrow input').attr('tabIndex'));
+	// moves forward
+	tabindex++;
+	var newCell=$('[tabindex="'+tabindex+'"]');
+	newCell.focus();
+	if(newCell.length==1) {
+		selectArrow(newCell[0], true);
+	}
 }
 
 function gotoPrevious() {
-    var tabindex=$('.ActiveArrow input').attr('tabIndex');
-    var allTabs=doOrderTabs('[tabindex]', 'tabindex', true);
-    var found=false;
-    var newCell= null;
-    $(allTabs).each(function(){
-        if(found) {
-            newCell=$(this);
-            return false;
-        }
-        if($(this).attr('tabIndex')==tabindex && $(this).attr('tabIndex')!='101'){
-            found=true;
-        }
-    });
-    if(newCell==null){
-        newCell=$('[tabindex="101"]');
-    }
-    newCell.focus();
-    if(newCell.length==1) {
-        selectArrow(newCell[0], true);
-    }
-}
-
-function doOrderTabs(selector, attrName, reverse=false) {
-    return $($(selector).toArray().sort(function(a, b){
-        var aVal = parseInt(a.getAttribute(attrName)),
-            bVal = parseInt(b.getAttribute(attrName));
-        if(reverse) {
-            return bVal - aVal;
-        } else {
-            return aVal - bVal;
-        }
-    }));
-
+	var tabindex=parseInt($('.ActiveArrow input').attr('tabIndex'));
+	// moves backwards
+	tabindex--;
+	if(tabindex<101) {
+		tabindex=101;
+	}
+	var newCell=$('[tabindex="'+tabindex+'"]');
+	newCell.focus();
+	if(newCell.length==1) {
+		selectArrow(newCell[0], true);
+	}
 }
 
 function toggleStar() {
@@ -1093,7 +1044,6 @@ function updateIrm(obj) {
 		if(data.error==0) {
 			$(obj).attr('initial', obj.value);
 			alert(data.msg);
-            buildScorecard();
 		}
 	});
 }

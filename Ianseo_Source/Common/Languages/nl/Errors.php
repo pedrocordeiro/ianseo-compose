@@ -2,8 +2,6 @@
 $lang['AllFieldsMandatory']='Alle velden zijn verplicht';
 $lang['AllMailsRedirect']='Alle meldingen worden verstuurd aan';
 $lang['Anomalies']='Afwijkingen';
-$lang['BarCodeSession']='Er is een fout in de instellingen: herstel een sessie';
-$lang['BarCodeSettings']='Er is een fout in de instellingen';
 $lang['CategoresNotDefined']='categorie definities missen';
 $lang['DirectoryNotWriteable']='De map $a mag niet beschreven worden door de web-server. Wijzig de autorisatie zodat de map beschreven kan worden.';
 $lang['ErrCodeExists']='Code bestaat al';
@@ -28,5 +26,4 @@ $lang['MissingPhpIntlModule']='Transliteratie kan worden uitgevoerd door install
 $lang['SpecialFilterDiscrepancy']='Speciaal filter is ingesteld, maar is niet actief';
 $lang['TooManyArrows']='Teveel totaal aantal pijlen: het maximum is $a';
 $lang['TooManyElimQualified']='Rondes van type $a[0] kunnen alleen worden geaccepteerd tot $a[1] schutters';
-$lang['TooManySessions']='Teveel sessies';
 ?>

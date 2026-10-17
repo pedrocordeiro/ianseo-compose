@@ -8,9 +8,9 @@ checkFullACL(($TeamEvent ? AclTeams : AclIndividuals), '', AclReadWrite);
 
 require_once('Common/Lib/CommonLib.php');
 
-$PreTeamEvent = intval($_REQUEST['Team'] ?? 0);
-$PreEvent = ($_REQUEST['d_Event'] ?? '');
-$PreMatchno = intval($_REQUEST['d_Match'] ?? -1);
+$PreTeamEvent = isset($_REQUEST['Team']) ? $_REQUEST['Team'] : 0;
+$PreEvent = isset($_REQUEST['d_Event']) ? $_REQUEST['d_Event'] : '';
+$PreMatchno = isset($_REQUEST['d_Match']) ? $_REQUEST['d_Match'] : -1;
 $PrePhase=-1;
 if($PreMatchno>=0) {
 	if($PreMatchno<2) {
@@ -20,23 +20,8 @@ if($PreMatchno>=0) {
 	}
 }
 
-$PreParams=[
-    'Team'=>$PreTeamEvent,
-];
-
-if($PreEvent) {
-    $PreParams['d_Event']=$PreEvent;
-}
-
-if($PreMatchno!=-1) {
-    $PreParams['d_Match']=$PreMatchno;
-    $PreParams['d_Phase']=$PrePhase;
-}
-$PreParams['keypad']=intval($_REQUEST['keypad']??0);
-
 $PAGE_TITLE=get_text($TeamEvent ? 'TeamFinal':'IndFinal');
 $IncludeJquery = true;
-$IncludeFA = true;
 $JS_SCRIPT = array(
     '<script src="'.$CFG->ROOT_DIR.'Common/js/keypress-2.1.5.min.js"></script>',
     '<script src="'.$CFG->ROOT_DIR.'Final/Spotting.js"></script>',
@@ -52,7 +37,6 @@ $JS_SCRIPT = array(
 			'PreMatchno' => $PreMatchno,
 			'PrePhase' => $PrePhase,
 			'ConfirmIrmMsg' => get_text('ConfirmIrmMsg','Tournament'),
-            'PreParams'=>$PreParams,
 	    )
     ),
 );
@@ -74,7 +58,7 @@ echo '<table class="Tabella" id="MatchSelector">';
             	<option value="Team" '. ($PreTeamEvent==1 ? ' selected="selected"' : '') .'>'.get_text('Team').'</option></select></td>
             <td class="Center"><select id="spotCode" onchange="updateComboPhases();"></select></td>
             <td class="Center"><select id="spotPhase" onchange="updateComboMatches();"></select></td>
-            <td class="Center"><select id="spotMatch" onchange="updateHistory();"></select></td>
+            <td class="Center"><select id="spotMatch"></select></td>
             <td class="Center"><input type="checkbox" id="spotTarget" onclick="toggleTarget()" /></td>
             <td class="Center"><input type="button" value="'.get_text('CmdOk').'" onclick="buildScorecard()"></td>
         </tr>';
@@ -83,7 +67,7 @@ echo '</table>';
 $IrmStatus='<option value="0">' . get_text('IrmStatus','Tournament') . '</option>';
 $q=safe_r_sql("select * from IrmTypes where IrmId>0 order by IrmId");
 while($r=safe_fetch($q)) {
-	$IrmStatus.='<option value="'.$r->IrmId.'">' . get_text('IRM-'.$r->IrmId,'Tournament') . '</option>';
+	$IrmStatus.='<option value="'.$r->IrmId.'">' . $r->IrmType . ' - ' . get_text($r->IrmType,'Tournament') . '</option>';
 }
 
 
@@ -109,9 +93,9 @@ if(!empty($GoBack)) {
     echo '<tr><td colspan="3" class="Opponents CmdRow">';
     echo '<div style="display:flex;justify-content: space-between">
 		<div><input type="checkbox" id="MatchAlternate" onclick="toggleAlternate(this)"/>'.get_text('AlternateMatch', 'Tournament').'</div>
-		<div><input type="checkbox" id="ActivateKeys" onclick="toggleKeypress()" '.($PreParams['keypad']? 'checked="checked"' :'').'/>'.get_text('KeyPress', 'Tournament').'</div>
+		<div><input type="checkbox" id="ActivateKeys" onclick="toggleKeypress()" />'.get_text('KeyPress', 'Tournament').'</div>
 		<div class="d-none" id="ClickMovesPositionDiv"><input type="checkbox" id="ClickMovesPosition" onclick="toggleClickMovesPosition(this)"/>'.get_text('ClickMovesPosition', 'Tournament').'</div>
-		<div class="d-none" id="ClickMovesNextDiv"><input type="checkbox" id="MoveNext" checked="checked" onclick="checkClickMovesPosition()" />'.get_text('AutoMoveNext', 'Tournament').'</div>
+		<div><input type="checkbox" id="MoveNext" checked="checked" onclick="checkClickMovesPosition()" />'.get_text('AutoMoveNext', 'Tournament').'</div>
 		<div><input type="button" id="liveButton" value="" onclick="setLive()"/></div>
 		<div id="buttonMove2Next"></div>
 		</div>';
@@ -119,33 +103,18 @@ if(!empty($GoBack)) {
 		'';
     echo '';
     echo '</td></tr>';
-}
-echo '</table>';
 
-echo '<table class="mt-2 Hidden Tabella2" id="keypadLegenda">';
-echo '<tr valign="top"><td>'.
+}
+echo '<tr id="keypadLegenda" class="Hidden"><td colspan="3">'.
     '<div class="Legenda"><div class="value">0</div>: 0, numpad_0, m, M</div>'.
     '<div class="Legenda"><div class="value">1 - 9</div>: 1...9, numpad_1 ... numpad_9</div>'.
     '<div class="Legenda"><div class="value">10</div>: numpad_-, T, t</div>'.
-    '<div class="Legenda"><div class="value">11</div>: y, Y</div>'.
-    '<div class="Legenda"><div class="value">12</div>: u, U</div>'.
+    '<div class="Legenda"><div class="value">11</div>: E, e</div>'.
     '<div class="Legenda"><div class="value">X</div>: numpad_+, X, x</div>'.
     '<div class="Legenda"><div class="value">*</div>: *, numpad_*, D, d</div>'.
     '<div class="Legenda"><div class="value">[DEL]</div>: numpad_., [DEL], [ESC]</div>'.
-    '</td>';
-echo '<td>'.
-    '<div class="Legenda"><div class="value"><i class="fa fa-lg fa-arrow-right"></i></div>: numpad_/, <i class="fa fa-lg fa-arrow-right"></i>, [TAB]</div>'.
-    '<div class="Legenda"><div class="value"><i class="fa fa-lg fa-arrow-left"></i></div>: <i class="fa fa-lg fa-arrow-left"></i>, [SHIFT+TAB]</div>'.
-    '<div class="Legenda"><div class="value"><i class="fa fa-lg fa-arrow-up"></i></div>: <i class="fa fa-lg fa-arrow-up"></i></div>'.
-    '<div class="Legenda"><div class="value"><i class="fa fa-lg fa-arrow-down"></i></div>: <i class="fa fa-lg fa-arrow-down"></i></div>'.
-    '</td>';
-echo '<td>'.
-    '<div class="Legenda"><div class="value">'.get_text('ConfirmLeft', 'Tournament').'</div>: q, Q</div>'.
-    '<div class="Legenda"><div class="value">'.get_text('ConfirmRight', 'Tournament').'</div>: e, E</div>'.
-    '<div class="Legenda"><div class="value">'.get_text('ConfirmMatch', 'Tournament').'</div>: w, W</div>'.
-    '<div class="Legenda"><div class="value">'.get_text('MoveWinner2NextPhase', 'Tournament').'</div>: p, P</div>'.
-    '<div class="Legenda"><div class="value">'.get_text('AlternateMatch', 'Tournament').'</div>: a, A</div>'.
-    '<div class="Legenda"><div class="value">'.get_text('LiveOn').'/'.get_text('LiveOff').'</div>: v, V</div>'.
+    '<div class="Legenda"><div class="value">[--&gt;]</div>: numpad_/, [--&gt;], [TAB]</div>'.
+    '<div class="Legenda"><div class="value">[&lt;--]</div>: [&lt;--], [SHIFT+TAB]</div>'.
     '</td></tr>';
 echo '</table>';
 

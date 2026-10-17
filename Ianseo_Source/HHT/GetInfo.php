@@ -54,6 +54,10 @@ exit();*/
 						$HhtAnswered[$frame['Target']][]=$frame;
 					}
 				}
+/*print '<pre>';
+print_r($Results);
+print '</pre>';
+exit();*/
 			}
 		}
 	}

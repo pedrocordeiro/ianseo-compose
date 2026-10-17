@@ -5,7 +5,6 @@ namespace PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Reader\DefaultReadFilter;
 use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
-use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use SimpleXMLElement;
 
@@ -141,8 +140,8 @@ class ColumnAndRowAttributes extends BaseParserClass
             if ($column !== null) {
                 $startColumn = Coordinate::stringFromColumnIndex((int) $column['min']);
                 $endColumn = Coordinate::stringFromColumnIndex((int) $column['max']);
-                StringHelper::stringIncrement($endColumn);
-                for ($columnAddress = $startColumn; $columnAddress !== $endColumn; StringHelper::stringIncrement($columnAddress)) {
+                ++$endColumn;
+                for ($columnAddress = $startColumn; $columnAddress !== $endColumn; ++$columnAddress) {
                     $columnAttributes[$columnAddress] = $this->readColumnRangeAttributes($column, $readDataOnly);
 
                     if ((int) ($column['max']) == 16384) {

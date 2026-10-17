@@ -13,14 +13,21 @@ $HasMatches=($_REQUEST['IncBrackets']??0);
 
 $options=[
 	'team'=>($_REQUEST['team']??0),
-	'includeTeamRank' => ($_SESSION['TourLocSubRule']=='SetFRD12023' or $_SESSION['TourLocSubRule']=='SetFRD12026'),
+	'includeTeamRank' => $_SESSION['TourLocSubRule']=='SetFRD12023',
 	];
 if(!empty($_REQUEST['Event'])) {
 	$options['events']=$_REQUEST['Event'];
 }
 $pdf = new ResultPDF(get_text('ResultsRobin','Tournament'));
-$PdfData = getRobin($options, false, (empty($_REQUEST['IncRankings']) or !empty($_REQUEST['IncBrackets'])), (empty($_REQUEST['IncBrackets']) or !empty($_REQUEST['IncRankings'])));
+$PdfData = getRobin($options);
 $rankData = $PdfData->rankData;
+
+$pdf->ShowTargetNo=($_REQUEST['ShowTargetNo']??0);
+$pdf->ShowSchedule=($_REQUEST['ShowSchedule']??0);
+$pdf->ShowSetArrows=($_REQUEST['ShowSetArrows']??0);
+
+$pdf->ShowMatches=(empty($_REQUEST['IncRankings']) or !empty($_REQUEST['IncBrackets']));
+$pdf->ShowRank=(empty($_REQUEST['IncBrackets']) or !empty($_REQUEST['IncRankings']));
 
 if(!empty($_REQUEST['ShowOris'])) {
 	// ORIS

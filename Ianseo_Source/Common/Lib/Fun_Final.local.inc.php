@@ -241,6 +241,9 @@ require_once('Final/Fun_ChangePhase.inc.php');
 		$rankData=$rank->getData();
 
 
+		/*echo "<pre>";
+		print_r($rankData);
+		echo "</pre>";exit;*/
 		$StrData = "";
 
 		if(count($rankData['sections']))
@@ -337,8 +340,6 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					f2.FinArrowPosition as pos2,
 					f1.FinTiePosition as tiepos1,
 					f2.FinTiePosition as tiepos2,
-					f1.FinSigned AS signed1,
-					f2.FinSigned AS signed2,
 					fs1.FSTarget AS target1,
 					fs2.FSTarget AS target2,
 					fs1.FSScheduledDate	AS FsDate1,
@@ -457,8 +458,6 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					tf2.TfStatus AS status2,
 					tf1.TfWinLose AS win1,
 					tf2.TfWinLose AS win2,
-					tf1.TfSigned AS signed1,
-					tf2.TfSigned AS signed2,
 					fs1.FSTarget AS target1,
 					fs2.FSTarget AS target2,
 					fs1.FSScheduledDate	AS FsDate1,
@@ -479,8 +478,6 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					tf2.TfGolds as golds2,
 					tf1.TfXNines as xnines1,
 					tf2.TfXNines as xnines2,
-					tf1.TfShootingArchers as archers1,
-					tf2.TfShootingArchers as archers2,
 					IF(tf1.TfDateTime>=tf2.TfDateTime,tf1.TfDateTime,tf2.TfDateTime) AS LastUpdate
 			";
 
@@ -569,8 +566,6 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					IF(c2.CoName IS NOT NULL, c2.CoName,'') AS countryName2,
 					f1.FinMatchNo AS match1,
 					f2.FinMatchNo AS match2,
-					f1.FinSigned AS signed1,
-					f2.FinSigned AS signed2,
 					fs1.FSTarget AS target1,
 					fs2.FSTarget AS target2,
 					f1.FinEvent AS event,
@@ -598,9 +593,10 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					Finals AS f1
 					INNER JOIN
 						Finals AS f2
-					ON f1.FinEvent=f2.FinEvent AND (f1.FinMatchNo % 2)=0 AND f1.FinMatchNo=(f2.FinMatchNo-1) AND f1.FinTournament=f2.FinTournament
+					ON f1.FinEvent=f2.FinEvent AND f1.FinMatchNo=IF((f1.FinMatchNo % 2)=0,f2.FinMatchNo-1,f2.FinMatchNo+1) AND f1.FinTournament=f2.FinTournament
+
 					INNER JOIN
-						`Events` AS ev1
+						Events AS ev1
 					ON f1.FinEvent=ev1.EvCode AND ev1.EvTeamEvent=0 AND ev1.EvTournament=" . StrSafe_DB($_SESSION['TourId']) . "
 
 					INNER JOIN
@@ -640,7 +636,7 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					ON f2.FinMatchNo=fs2.FSMatchNo AND f2.FinEvent=fs2.FSEvent AND fs2.FSTeamEvent=0 AND f2.FinTournament=fs2.FSTournament
 
 				WHERE
-					(f1.FinTournament=" . StrSafe_DB($_SESSION['TourId']) . " 
+					(f1.FinTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND (f1.FinMatchNo % 2)=0
 					AND (e1.EnFirstName IS NOT NULL OR e2.EnFirstName IS NOT NULL)) "
 					. $OtherWhere . "
 				";
@@ -679,8 +675,6 @@ require_once('Final/Fun_ChangePhase.inc.php');
 					tf2.TfMatchNo AS match2,
 					fs1.FSTarget AS target1,
 					fs2.FSTarget AS target2,
-					tf1.TfSigned AS signed1,
-					tf2.TfSigned AS signed2,
 					ev1.EvEventName AS eventName,
 					ev1.EvFinalFirstPhase as firstPhase,
 					tf1.TfEvent AS event,
@@ -814,18 +808,17 @@ function setLiveSession($TeamEvent, $event, $match, $TourId=0, $Toggle=true) {
             $MatchFilter=" ";
         }
 
-        $sql="select distinct Sch.*, cast(if(EvWinnerFinalRank>1, EvWinnerFinalRank*100 + GrPhase, 1+(1/(1+GrPhase))) as decimal(15,4)) as OrderBy, {$prefix}Live Live 
+        $sql="select Sch.*, cast(if(EvWinnerFinalRank>1, EvWinnerFinalRank*100 + GrPhase, 1+(1/(1+GrPhase))) as decimal(15,4)) as OrderBy, {$prefix}Live Live 
         from " . ($TeamEvent ? 'Team' : '') . "Finals Fin
 		left join (select * from FinSchedule
 			inner join Events on FsEvent=EvCode and FsTeamEvent=EvTeamEvent and FsTournament=EvTournament
 			inner join Grids on FsMatchNo=GrMatchNo
-            left join Session on SesTournament=FsTournament and concat_ws(' ', FsScheduledDate, FsScheduledTime) between SesDtStart and SesDtEnd and SesType in ('F') and (SesEvents='' or find_in_set(concat(EvTeamEvent,EvCode), SesEvents))
 			where FsTournament=$TourId and FsEvent='$event' and FsTeamEvent=".($TeamEvent ? 1 : 0)." and FsMatchNo = $match and FSScheduledDate>0
 			) Sch on true
 		WHERE $Where";
         $q=safe_r_sql($sql);
         if($r=safe_fetch($q)) {
-            $OldKey=unsetLiveSession($TourId);
+            unsetLiveSession($TourId);
 
             $date=date('Y-m-d H:i:s');
             if(!$r->Live) {
@@ -852,26 +845,15 @@ function setLiveSession($TeamEvent, $event, $match, $TourId=0, $Toggle=true) {
 
             // Set/unset active session in scheduler
             if($r->FSScheduledDate) {
-                $ActiveSessions=Get_Tournament_Option('ActiveSession', [], $TourId);
-                if($OldKey) {
-                    $tmp=$OldKey->StartDate
-                        .'|'.substr($OldKey->StartTime,0,5)
-                        .'|'.$OldKey->Phase
-                        .'|'.$OldKey->FirstPhase
-                        .'|'.round($OldKey->OrderBy, 4);
-                    while(($idx=array_search($tmp, $ActiveSessions)) !== false) {
-                        unset($ActiveSessions[$idx]);
-                    }
-                }
+                $ActiveSessions=array();
                 if(!$r->Live or !$Toggle) {
                     // works reverse as it is the previous state!
-                    // remove the old key if in the same session
                     $key=$r->FSScheduledDate
                         .'|'.substr($r->FSScheduledTime,0,5)
                         .'|'.$r->GrPhase
                         .'|'.$r->EvFinalFirstPhase
                         .'|'.round($r->OrderBy, 4);
-                    $ActiveSessions[]=$key;
+                    $ActiveSessions=array($key);
                 }
                 Set_Tournament_Option('ActiveSession', $ActiveSessions, false, $TourId);
             }
@@ -910,7 +892,6 @@ function unsetLiveSession($TourId, $TeamEvent=-1, $event='', $match=-1) {
             }
         }
     } else {
-        $ret=getMatchLive($TourId);
         safe_w_sql("UPDATE Finals SET FinLive='0',
             FinDateTime=" . StrSafe_DB(date('Y-m-d H:i:s')) . "
             WHERE FinTournament=$TourId
@@ -923,6 +904,5 @@ function unsetLiveSession($TourId, $TeamEvent=-1, $event='', $match=-1) {
             RrMatchDateTime=" . StrSafe_DB(date('Y-m-d H:i:s')) . "
             WHERE RrMatchTournament=$TourId
             AND RrMatchLive!='0'");
-        return $ret;
     }
 }

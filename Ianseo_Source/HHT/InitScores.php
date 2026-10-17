@@ -22,18 +22,24 @@
 	$Frames = array();
 
 	$Dist=0;
-	if(isset($_REQUEST['Dist'])) {
-        $Dist = $_REQUEST['Dist'];
-    } else if(isset($_REQUEST['x_Hht']) && $_REQUEST['x_Hht']!=-1) {
+	if(isset($_REQUEST['Dist']))
+		$Dist = $_REQUEST['Dist'];
+	else if(isset($_REQUEST['x_Hht']) && $_REQUEST['x_Hht']!=-1)
+	{
 		$Select = "Select HsDistance FROM HhtSetup WHERE HsTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND HsId=" . StrSafe_DB($_REQUEST['x_Hht']);
 		$rs = safe_w_sql($Select);
 		$MyRow = safe_fetch($rs);
 		$Dist = $MyRow->HsDistance;
 	}
 
-	if (!is_null($Command)) {
-		if ($Command=='OK') {
-			if (isset($_REQUEST['x_Session']) && $_REQUEST['x_Session']!=-1 && !is_null($HTTs) && is_array($HTTs) && !is_null($RowTour)) {
+	if (!is_null($Command))
+	{
+		if ($Command=='OK')
+		{
+
+			if (isset($_REQUEST['x_Session']) && $_REQUEST['x_Session']!=-1 &&
+				!is_null($HTTs) && is_array($HTTs) && !is_null($RowTour))
+			{
 				$Query
 					= "UPDATE "
 						. "HhtSetup "
@@ -45,20 +51,20 @@
 				$Rs=safe_w_sql($Query);
 
 //Carico i vuoti (se non è una qualifica)
-				if (is_numeric($_REQUEST['x_Session'])) {
-                    $atSql = createAvailableTargetSQL(($Session??0), $_SESSION['TourId']);
-					$Sql  = "SELECT FullTgtTarget as ChiTarget, FullTgtLetter as ChiLetter ";
-					$Sql .= "FROM ($atSql) at ";
+				if (is_numeric($_REQUEST['x_Session']))
+				{
+					$Sql  = "SELECT SUBSTRING(AtTargetNo,2," . (TargetNoPadding) . ") as ChiTarget, SUBSTRING(AtTargetNo," . (TargetNoPadding+2) . ",1) as ChiLetter ";
+					$Sql .= "FROM AvailableTarget at ";
 					$Sql .= "LEFT JOIN ";
-					$Sql .= "(SELECT QuSession, QuTarget, QuLetter FROM Qualifications AS q  ";
-					$Sql .= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament= " . StrSafe_DB($_SESSION['TourId']) . " AND EnAthlete=1) as Sq ON QuSession=FullTgtSession AND QuTarget=FullTgtTarget AND QuLetter=FullTgtLetter ";
-					$Sql .= "WHERE FullTgtSession='" . $_REQUEST['x_Session'] . "' AND Sq.QuTarget is NULL";
+					$Sql .= "(SELECT QuTargetNo FROM Qualifications AS q  ";
+					$Sql .= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament= " . StrSafe_DB($_SESSION['TourId']) . " AND EnAthlete=1) as Sq ON at.AtTargetNo=Sq.QuTargetNo ";
+					$Sql .= "WHERE AtTournament = " . StrSafe_DB($_SESSION['TourId']) . " AND LEFT(AtTargetNo,1)='" . $_REQUEST['x_Session'] . "' AND Sq.QuTargetNo is NULL";
 					$Rs = safe_r_sql($Sql);
 					//print $Sql;exit;
-					if(safe_num_rows($Rs)>0) {
-						while($myRow = safe_fetch($Rs)) {
-                            $Disable[] = intval($myRow->ChiTarget) . $myRow->ChiLetter;
-                        }
+					if(safe_num_rows($Rs)>0)
+					{
+						while($myRow = safe_fetch($Rs))
+							$Disable[] = intval($myRow->ChiTarget) . $myRow->ChiLetter;
 						safe_free_result($Rs);
 					}
 				}
@@ -68,25 +74,31 @@
 				sort($Dests);	// per essere sicuro che se c'è lo zero allora sarà all'inizio
 
 			// la if mi elimina la check "tutti"
-				if (array_search(0,$HTTs)!==false) {
-                    array_shift($Dests);
-                }
+				if (array_search(0,$HTTs)!==false)
+					array_shift($Dests);
+
+				/*print '<pre>';
+				print_r($Dests);
+				print '</pre>';
+				exit;*/
 
 			// paddo tutti i target
 				$Targets=array();
 
-				for ($i=0;$i<count($Dests);++$i) {
-                    $Targets[$i] = StrSafe_DB((is_numeric($_REQUEST['x_Session']) ? $_REQUEST['x_Session'] . '.' . $Dests[$i] : str_pad($Dests[$i], TargetNoPadding, '0', STR_PAD_LEFT)));
-                }
+				for ($i=0;$i<count($Dests);++$i)
+					$Targets[$i]= StrSafe_DB((is_numeric($_REQUEST['x_Session']) ? $_REQUEST['x_Session'] : ''). str_pad($Dests[$i],TargetNoPadding,'0',STR_PAD_LEFT));
+				//print_r($Targets);exit();
 			// score
 				$Select="";
 
-				if (is_numeric($_REQUEST['x_Session'])) {
+				if (is_numeric($_REQUEST['x_Session']))// qual
+				{
 					$Select
 						= "SELECT "
-							. "QuTarget AS TargetNo,"
-							. "QuLetter AS TargetLetter,";
-					for ($i=1;$i<=$RowTour->TtNumDist;++$i) {
+							. "SUBSTRING(QuTargetNo,2," . TargetNoPadding . ") AS TargetNo,"
+							. "RIGHT(QuTargetNo,1) AS TargetLetter,";
+					for ($i=1;$i<=$RowTour->TtNumDist;++$i)
+					{
 						$Select
 							.='IFNULL(QuD' . $i . "Score,0) AS Score" . $i . ",";
 					}
@@ -99,19 +111,22 @@
 							. "ON EnId=QuId "
 						. "WHERE "
 							. "EnTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND "
-							. "CONCAT(QuSession,'.',QuTarget) IN(" . implode(',',$Targets) . ") "
+							. "SUBSTRING(QuTargetNo,1," . (TargetNoPadding+1). ") IN(" . implode(',',$Targets) . ") "
 							. "AND EnStatus<=1 "	//???
 						. "ORDER BY "
-							. "QuSession ASC, QuTarget ASC, QuLetter ASC ";
+							. "QuTargetNo ASC ";
 
 					//		print $Select;exit;
-				} else {	// finali
+				}
+				else	// finali
+				{
 					$team=substr($_REQUEST['x_Session'],0,1);
 					$when=substr($_REQUEST['x_Session'],1);
 
 					$Select="";
 
-					if ($team==0) {
+					if ($team==0)
+					{
 						$Select
 							= "SELECT "
 								. "EvFinalAthTarget AS BitMask,"
@@ -153,7 +168,9 @@
 							. "ORDER BY "
 								. "FSTarget ASC";
 
-					} else {
+					}
+					else
+					{
 						$Select
 							= "SELECT "
 								. "EvFinalAthTarget AS BitMask,"
@@ -196,13 +213,17 @@
 
 				$Rs=safe_r_sql($Select);
 
-				if (safe_num_rows($Rs)>0) {
+				if (safe_num_rows($Rs)>0)
+				{
 					$Data= Alpha . chr(216);
 					$TargetNo='xx';
 
-					while ($MyRow=safe_fetch($Rs)) {
-						if ($TargetNo!=$MyRow->TargetNo) {
-							if ($TargetNo!='xx') {
+					while ($MyRow=safe_fetch($Rs))
+					{
+						if ($TargetNo!=$MyRow->TargetNo)
+						{
+							if ($TargetNo!='xx')
+							{
 								$Frames = array_merge($Frames, PrepareTxFrame(intval($TargetNo),$Data));
 							}
 
@@ -212,20 +233,27 @@
 						$TourTotal=0;
 						$DistTotal=0;
 
-						if (is_numeric($_REQUEST['x_Session'])) {// qual
+						if (is_numeric($_REQUEST['x_Session']))// qual
+						{
 						// imposto i valori di partenza
-							if ($Dist>0 && $Dist<=$RowTour->TtNumDist) {
+							if ($Dist>0 && $Dist<=$RowTour->TtNumDist)
+							{
 								$DistTotal=$MyRow->{'Score' . $Dist};
 
-								if (isset($_REQUEST['Sum']) && $_REQUEST['Sum']==1) {
-									for ($i=1;$i<=$Dist;++$i) {
+								if (isset($_REQUEST['Sum']) && $_REQUEST['Sum']==1)
+								{
+									for ($i=1;$i<=$Dist;++$i)
+									{
 										$TourTotal+=$MyRow->{'Score' . $i};
 									}
-								} else {
-                                    $TourTotal = $MyRow->{'Score' . $Dist};
-                                }
+								}
+								else
+									$TourTotal=$MyRow->{'Score' . $Dist};
+
 							}
-						} else {
+						}
+						else
+						{
 							$TourTotal=$MyRow->Score;
 							$DistTotal=$MyRow->Score;
 						}
@@ -243,20 +271,32 @@
 				}
 				$Frames = array_merge($Frames, PrepareTxFrame(intval($TargetNo),$Data));
 
-				if(count($Frames)>0) {
+				/*print '<pre>';
+				print_r($Frames);
+				print '</pre>';exit;*/
+
+/*foreach($Frames as $value)
+	echo OutText($value);
+//exit();*/
+				if(count($Frames)>0)
+				{
 					$ResponseFromHHT=false;
 					$Results=SendHTT(HhtParam($_REQUEST['x_Hht']),$Frames);
-					if(!is_null($Results)) {
-                        $ResponseFromHHT = true;
-                    }
-					if (count($Results)!=0) {
-						foreach($Results as $v) {
-							if ($v!=-1) {
-                                $HTTOK[] = $v;
-                            }
+					if(!is_null($Results))
+						$ResponseFromHHT=true;
+					if (count($Results)!=0)
+					{
+						foreach($Results as $v)
+						{
+							if ($v!=-1)
+								$HTTOK[]=$v;
 						}
+
+						//print_r($HTTOK);
 					}
 				}
+//exit();
+
 			}
 		}
 	}
@@ -274,7 +314,8 @@
 <form name="FrmParam" method="POST" action="<?php print $_SERVER["PHP_SELF"];?>">
 	<table class="Tabella">
 <?php
-if(!$ResponseFromHHT) {
+if(!$ResponseFromHHT)
+{
 	echo '<tr class="error" style="height:35px;"><td colspan="5" class="Center LetteraGrande">' . get_text('HTTNotConnected','HTT') . '</td></tr>';
 }
 ?>
@@ -296,24 +337,27 @@ if(!$ResponseFromHHT) {
 </form>
 
 <?php
-	if (isset($_REQUEST['x_Session']) && $_REQUEST['x_Session']!=-1) {
+	if (isset($_REQUEST['x_Session']) && $_REQUEST['x_Session']!=-1)
+	{
 		$Disable=array();
-		if (is_numeric($_REQUEST['x_Session']))	{//qual
-            $atSql = createAvailableTargetSQL(($Session??0), $_SESSION['TourId']);
-            $Sql  = "SELECT FullTgtTarget as ChiTarget, FullTgtLetter as ChiLetter ";
-            $Sql .= "FROM ($atSql) at ";
-            $Sql .= "LEFT JOIN ";
-            $Sql .= "(SELECT QuSession, QuTarget, QuLetter FROM Qualifications AS q  ";
-            $Sql .= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament= " . StrSafe_DB($_SESSION['TourId']) . " AND EnAthlete=1) as Sq ON QuSession=FullTgtSession AND QuTarget=FullTgtTarget AND QuLetter=FullTgtLetter ";
-            $Sql .= "WHERE FullTgtSession='" . $_REQUEST['x_Session'] . "' AND Sq.QuTarget is NULL";
+		if (is_numeric($_REQUEST['x_Session']))	//qual
+		{
+			$Sql  = "SELECT SUBSTRING(AtTargetNo,2," . (TargetNoPadding) . ") as ChiTarget, SUBSTRING(AtTargetNo," . (TargetNoPadding+2) . ",1) as ChiLetter ";
+			$Sql .= "FROM AvailableTarget at ";
+			$Sql .= "LEFT JOIN ";
+			$Sql .= "(SELECT QuTargetNo FROM Qualifications AS q  ";
+			$Sql .= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament= " . StrSafe_DB($_SESSION['TourId']) . " AND EnAthlete=1 AND EnStatus<6) as Sq ON at.AtTargetNo=Sq.QuTargetNo ";
+			$Sql .= "WHERE AtTournament = " . StrSafe_DB($_SESSION['TourId']) . " AND LEFT(AtTargetNo,1)='" . $_REQUEST['x_Session'] . "' AND Sq.QuTargetNo is NULL ";
+
 			$Rs = safe_r_sql($Sql);
-			if(safe_num_rows($Rs)>0) {
+			if(safe_num_rows($Rs)>0)
+			{
 				while($myRow = safe_fetch($Rs))
 					$Disable[] = intval($myRow->ChiTarget) . $myRow->ChiLetter;
 			}
 
-			$Sql = "SELECT QuTarget FROM Qualifications AS q  ";
-			$Sql .= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament= " . StrSafe_DB($_SESSION['TourId']) . " AND EnAthlete=1 AND EnStatus<6 AND QuSession='" . $_REQUEST['x_Session'] . "'";
+			$Sql = "SELECT QuTargetNo FROM Qualifications AS q  ";
+			$Sql .= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament= " . StrSafe_DB($_SESSION['TourId']) . " AND EnAthlete=1 AND EnStatus<6 AND LEFT(QuTargetNo,1)='" . $_REQUEST['x_Session'] . "'";
 			$Rs = safe_r_sql($Sql);
 			$Num2Download = safe_num_rows($Rs);
 		}
@@ -329,32 +373,34 @@ if(!$ResponseFromHHT) {
 		$out.='</div><br/><br/>';
 
 		$out
-			.='<form id="FrmSetup" name="FrmSetup" method="post" action="'.basename($_SERVER['SCRIPT_NAME']).'?x_Hht=' . $_REQUEST['x_Hht'] . '&x_Session=' . $_REQUEST['x_Session'] . '">'
+			.='<form id="FrmSetup" name="FrmSetup" method="post" action="'.basename($_SERVER['SCRIPT_NAME']).'?x_Hht=' . $_REQUEST['x_Hht'] . '&x_Session=' . $_REQUEST['x_Session'] . '">' . "\n"
 				. '<input type="hidden" name="x_Hht" value="' . $_REQUEST['x_Hht'] . '"/>'
 				. '<input type="hidden" name="x_Session" value="' . $_REQUEST['x_Session'] . '"/>'
 				. '<input type="hidden" name="propagate" value="'.(!empty($_REQUEST['propagate'])).'"/>'
 				. '<input type="hidden" name="Command" value="OK"/>';
 
-			if (is_numeric($_REQUEST['x_Session']))	{// non è una finale
+			if (is_numeric($_REQUEST['x_Session']))	// non è una finale
+			{
 				$ComboDist
 					= get_text('Distance','HTT') . '&nbsp;'
-					.'<select name="Dist">'
-						. '<option value="0">---</option>';
-				for ($i=1;$i<=$RowTour->TtNumDist;++$i) {
-					$ComboDist.='<option value="' . $i . '"' . ($Dist==$i ? ' selected' : '') . '>' . $i . '</option>';
+					.'<select name="Dist">' . "\n"
+						. '<option value="0">---</option>' . "\n";
+				for ($i=1;$i<=$RowTour->TtNumDist;++$i)
+				{
+					$ComboDist.='<option value="' . $i . '"' . ($Dist==$i ? ' selected' : '') . '>' . $i . '</option>' . "\n";
 				}
 				$ComboDist
-					.='</select>';
+					.='</select>' . "\n";
 
 				$CheckSum='<input type="checkbox" name="Sum" value="1"' . (isset($_REQUEST['Sum']) && $_REQUEST['Sum']==1 ? ' checked="true"' : '') . '/>' . get_text('AddPreviusDists','HTT');
 
 				$out
-					.='<table class="Tabella">'
+					.='<table class="Tabella">' . "\n"
 						. '<tr>'
 							. '<td style="width:50%;" class="Center">' .  $ComboDist . '</td>'
 							. '<td style="width:50%;" class="Center">' .  $CheckSum . '</td>'
-						. '</tr>'
-					. '</table>';
+						. '</tr>' . "\n"
+					. '</table>' . "\n";
 
 				$out.='<br/><br/>';
 			}
@@ -364,10 +410,10 @@ if(!$ResponseFromHHT) {
 			$out.=SelectTableHTT(10,'FrmSetup',false,$HTTOK,array(),$Disable);
 
 			$out.='<br/><div align="center">';
-				$out.='<input type="submit" value="' . get_text('CmdOk') . '"/>';
+				$out.='<input type="submit" value="' . get_text('CmdOk') . '"/>' . "\n";
 			$out.='</div>';
 
-		$out.='</form></div>';
+		$out.='</form></div>' . "\n";
 
 		print $out;
 	}

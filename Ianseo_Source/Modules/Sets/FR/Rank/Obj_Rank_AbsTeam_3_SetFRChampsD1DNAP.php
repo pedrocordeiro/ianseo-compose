@@ -202,7 +202,7 @@ require_once('Common/Lib/ArrTargets.inc.php');
 					ClDescription, DivDescription,
 					EnId,EnCode,ifnull(EdExtra,EnCode) as LocalBib, EnSex,EnNameOrder,EnFirstName,upper(EnFirstName) EnFirstNameUpper,EnName,EnClass,EnDivision,EnAgeClass,EnSubClass,EnCoCode,EnDob,
 					EvNumQualified AS QualifiedNo, EvFirstQualified, EvQualPrintHead,
-					QuSession AS Session, CONCAT(QuTarget, QuLetter) AS TargetNo,
+					SUBSTRING(QuTargetNo,1,1) AS Session, SUBSTRING(QuTargetNo,2) AS TargetNo,
 					TeHits AS Arrows_Shot, QuScore, QuGold, QuXnine, TeScore,TeRank, TeGold, TeXnine, ToGolds, ToXNine,TeHits,
 				    concat(rtrim(QuD1Arrowstring),rtrim(QuD2Arrowstring),rtrim(QuD3Arrowstring),rtrim(QuD4Arrowstring),rtrim(QuD5Arrowstring),rtrim(QuD6Arrowstring),rtrim(QuD7Arrowstring),rtrim(QuD8Arrowstring)) as DetailedArrows,
 					TeRank, EvRunning, IF(EvRunning=1,IFNULL(ROUND(TeScore/TeHits,3),0),0) as RunningScore,
@@ -233,7 +233,7 @@ require_once('Common/Lib/ArrTargets.inc.php');
 					INNER JOIN Qualifications ON EnId=QuId
 					INNER JOIN Divisions ON EnDivision=DivId AND EnTournament=DivTournament
 					INNER JOIN Classes ON EnClass=ClId AND EnTournament=ClTournament
-				    left join ExtraData on EdId=EnId and EdType='Z' and EdExtra!=''
+				    left join ExtraData on EdId=EnId and EdType='Z'
 				/* Contatori per CT (gialli)*/
 					LEFT JOIN (
 						SELECT TeEvent as sqyEvent,Count(*) as Quanti, TeSO as sqyRank, TeTournament as sqyTournament

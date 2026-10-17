@@ -13,8 +13,7 @@ foreach($AllowedTypes as $val) {
 }
 foreach(array(3, 6, 37) as $val) {
     $SetType['PAR']['rules'][$val]=array(
-        'SetOneClass',
-        'SetAllClass',
+        'SetStandard',
         'SetIPCandWA',
     );
 }

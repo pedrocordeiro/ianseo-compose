@@ -48,7 +48,7 @@ $json_array=array();
 $options['tournament']=$TourId;
 $options['events']=$EvCode;
 $options['matchno']=$MatchId;
-$options['extended']=1;
+$options['extended']=$showArrowsPosition;
 
 $BasePosition=array('X' => -1000,
 	'Y' => -1000,
@@ -225,7 +225,7 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                             //   $vPos=$BasePosition;
                                         }
                                         if (!empty($vItem['shootingArchers'][$j])) {
-                                            $tmpEnd['Shooters'][] = $vItem['shootingArchers'][$j];
+                                            $tmpEnd['Shooter'][] = $vItem['shootingArchers'][$j];
                                         }
 
                                         if (isset($vItem['oppArrowPosition'][$j]) and isset($vItem['oppArrowPosition'][$j]['D'])) {
@@ -243,7 +243,7 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                             //$vPos=$BasePosition;
                                         }
                                         if (!empty($vItem['oppShootingArchers'][$j])) {
-                                            $tmpOppEnd['Shooters'][] = $vItem['oppShootingArchers'][$j];
+                                            $tmpOppEnd['Shooter'][] = $vItem['oppShootingArchers'][$j];
                                         }
 
                                     }
@@ -400,7 +400,7 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                             //    $vPos=$BasePosition;
                                         }
                                         if (!empty($vItem['shootingArchers'][$j])) {
-                                            $tmpEnd['Shooters'][] = $vItem['shootingArchers'][$j];
+                                            $tmpEnd['Shooter'][] = $vItem['shootingArchers'][$j];
                                         }
 
                                         if(isset($vItem['oppArrowPosition'][$j]) and isset($vItem['oppArrowPosition'][$j]['D'])) {
@@ -418,7 +418,7 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                             //   $vPos = $BasePosition;
                                         }
                                         if (!empty($vItem['oppShootingArchers'][$j])) {
-                                            $tmpOppEnd['Shooters'][] = $vItem['oppShootingArchers'][$j];
+                                            $tmpOppEnd['Shooter'][] = $vItem['oppShootingArchers'][$j];
                                         }
                                     }
                                 }
@@ -675,10 +675,6 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                     $tmpR += array("EndConfirmed"=>($vItem['oppStatus']==3 || $vItem['oppStatus']==1), "Winner"=>($vItem["oppWinner"]? true:false), "IRM"=>$vItem["oppIrmText"], 'ToWin' => '', 'Score'=>($vSec['meta']['matchMode'] ? $vItem['oppSetScore'] : $vItem['oppScore']));
                     $tmpL += array("PositionAvailable"=>boolval($vItem['arrowpositionAvailable']));
                     $tmpR += array("PositionAvailable"=>boolval($vItem['oppArrowpositionAvailable']));
-                    if($EvType==1) {
-                        $tmpL += array("ShootingarchersAvailable"=>boolval($vItem['shootingarchersAvailable']));
-                        $tmpR += array("ShootingarchersAvailable"=>boolval($vItem['oppShootingarchersAvailable']));
-                    }
                     $tmpL += array("ClosestToCenter"=>boolval($vItem['closest']));
                     $tmpR += array("ClosestToCenter"=>boolval($vItem['oppClosest']));
 
@@ -736,19 +732,6 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                     $runningEndSo = 1;
                     $vItem['arrowstring']=str_pad($vItem['arrowstring'], $objParam->arrows*$objParam->ends, ' ', STR_PAD_RIGHT);
                     $vItem['oppArrowstring']=str_pad($vItem['oppArrowstring'], $objParam->arrows*$objParam->ends, ' ', STR_PAD_RIGHT);
-                    $tmpAth=array();
-                    if($EvType==1) {
-                        if (!empty($vSec["athletes"][$vItem["teamId"]][$vItem["subTeam"]])) {
-                            foreach ($vSec["athletes"][$vItem["teamId"]][$vItem["subTeam"]] as $kAth => $vAth) {
-                                $tmpAth[$vAth["id"]] = $vAth["localBib"];
-                            }
-                        }
-                        if (!empty($vSec["athletes"][$vItem["oppTeamId"]][$vItem["oppSubTeam"]])) {
-                            foreach ($vSec["athletes"][$vItem["oppTeamId"]][$vItem["oppSubTeam"]] as $kAth => $vAth) {
-                                $tmpAth[$vAth["id"]] = $vAth["localBib"];
-                            }
-                        }
-                    }
                     if($vSec['meta']['matchMode']) {
                         $setAssPoint = explode("|",$vItem['setPointsByEnd']);
                         $oppSetAssPoint = explode("|",$vItem['oppSetPointsByEnd']);
@@ -793,9 +776,9 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                             }
                             $tmpEnd = array('EndNum' => strval($i + 1), 'EndScore' => (!empty($endScore[$i]) ? $endScore[$i] : 0), 'PointAssigned' => strval((!empty($setAssPoint[$i]) ? $setAssPoint[$i] : 0)), 'RunningScore' => strval($running[0]), 'ShootFirst' => ($vItem["shootFirst"] & pow(2, $i)) != 0, 'Arrows' => $arrValue);
                             $tmpOppEnd = array('EndNum' => strval($i + 1), 'EndScore' => (!empty($oppEndScore[$i]) ? $oppEndScore[$i] : 0), 'PointAssigned' => strval((!empty($oppSetAssPoint[$i]) ? $oppSetAssPoint[$i] : 0)), 'RunningScore' => strval($running[1]), 'ShootFirst' => ($vItem["oppShootFirst"] & pow(2, $i)) != 0, 'Arrows' => $oppArrValue);
-                            if ($showArrowsPosition or ($EvType==1 and $vItem['shootingarchersAvailable'] and $vItem['oppShootingarchersAvailable'])) {
+                            if ($showArrowsPosition) {
                                 foreach (range($i * $objParam->arrows, $i * $objParam->arrows + $objParam->arrows -1) as $j) {
-                                    if ($showArrowsPosition and isset($vItem['arrowPosition'][$j]) and isset($vItem['arrowPosition'][$j]['D'])) {
+                                    if (isset($vItem['arrowPosition'][$j]) and isset($vItem['arrowPosition'][$j]['D'])) {
                                         $vPos = $vItem['arrowPosition'][$j];
                                         $vPos["pD"] = round($vPos['D'] + $vPos['R'],1);
                                         if ($vPos['X'] == 0 AND $vPos['Y'] == 0) {
@@ -810,10 +793,10 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                         //   $vPos=$BasePosition;
                                     }
                                     if (!empty($vItem['shootingArchers'][$j])) {
-                                        $tmpEnd['Shooters'][] = $tmpAth[$vItem['shootingArchers'][$j]];
+                                        $tmpEnd['Shooter'][] = $vItem['shootingArchers'][$j];
                                     }
 
-                                    if ($showArrowsPosition and isset($vItem['oppArrowPosition'][$j]) and isset($vItem['oppArrowPosition'][$j]['D'])) {
+                                    if (isset($vItem['oppArrowPosition'][$j]) and isset($vItem['oppArrowPosition'][$j]['D'])) {
                                         $vPos = $vItem['oppArrowPosition'][$j];
                                         $vPos["pD"] = round($vPos['D'] + $vPos['R'],1);
                                         if ($vPos['X'] == 0 AND $vPos['Y'] == 0) {
@@ -828,8 +811,9 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                         //$vPos=$BasePosition;
                                     }
                                     if (!empty($vItem['oppShootingArchers'][$j])) {
-                                        $tmpOppEnd['Shooters'][] = $tmpAth[$vItem['oppShootingArchers'][$j]];
+                                        $tmpOppEnd['Shooter'][] = $vItem['oppShootingArchers'][$j];
                                     }
+
                                 }
                             }
                             $end[] = $tmpEnd;
@@ -911,26 +895,12 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                 }
                             }
 
-                            $tmpShooters=array();
-                            $tmpOppShooters=array();
-                            for($soCnt=($objParam->ends*$objParam->arrows)+$i*$objParam->so; $soCnt<($objParam->ends*$objParam->arrows)+$i*$objParam->so+$objParam->so; $soCnt++) {
-                                if (!empty($vItem['shootingArchers'][$soCnt])) {
-                                    $tmpShooters[] = $tmpAth[$vItem['shootingArchers'][$soCnt]];
-                                }
-
-                                if (!empty($vItem['oppShootingArchers'][$soCnt])) {
-                                    $tmpOppShooters[] = $tmpAth[$vItem['oppShootingArchers'][$soCnt]];
-                                }
-                            }
-
                             $end[] = array('EndNum' => 'SO', 'SONum'=>strval($i+1), 'EndScore' => strval(ValutaArrowString(substr($vItem['tiebreak'], $i*$objParam->so, $objParam->so))),
                                     'PointAssigned' => strval(($SoShot==($i+1) AND $vItem['tie']) ? 1 : 0), 'RunningScore' => $vItem['setScore'], 'ShootFirst' => ($vItem["shootFirst"] & pow(2, $objParam->ends)) != 0, 'Arrows' => $arrValue) +
-                                (($showArrowsPosition and count($tmpPos)) ? array("Positions"=>$tmpPos) : array())+
-                                (count($tmpShooters) ? array("Shooters"=>$tmpShooters) : array());
+                                (($showArrowsPosition and count($tmpPos)) ? array("Positions"=>$tmpPos) : array());
                             $oppEnd[] = array('EndNum' => 'SO', 'SONum'=>strval($i+1), 'EndScore' => strval(ValutaArrowString(substr($vItem['oppTiebreak'], $i*$objParam->so, $objParam->so))),
                                     'PointAssigned' => strval(($SoShot==($i+1) AND $vItem['oppTie']) ? 1 : 0), 'RunningScore' => $vItem['oppSetScore'], 'ShootFirst' => ($vItem["oppShootFirst"] & pow(2, $objParam->ends)) != 0, 'Arrows' => $oppArrValue) +
-                                (($showArrowsPosition and count($tmpOppPos)) ? array("Positions"=>$tmpOppPos) : array())+
-                                (count($tmpOppShooters) ? array("Shooters"=>$tmpOppShooters) : array());
+                                (($showArrowsPosition and count($tmpOppPos)) ? array("Positions"=>$tmpOppPos) : array());
 
                             if (strlen(str_replace(' ', '', substr($vItem['tiebreak'], $i*$objParam->so, $objParam->so)))== $objParam->so AND strlen(str_replace(' ', '', substr($vItem['oppTiebreak'], $i*$objParam->so, $objParam->so)))== $objParam->so) {
                                 $runningEndSo = $i + 2;
@@ -981,9 +951,9 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                             }
                             $tmpEnd = array('EndNum' => strval($i + 1), 'EndScore' => strval(!empty($endScore[$i]) ? $endScore[$i] : 0), 'RunningScore' => strval($running[0]), 'ShootFirst' => ($vItem["shootFirst"] & pow(2, $i)) != 0, 'Arrows' => $arrValue);
                             $tmpOppEnd = array('EndNum' => strval($i + 1), 'EndScore' => strval(!empty($oppEndScore[$i]) ? $oppEndScore[$i] : 0), 'RunningScore' => strval($running[1]), 'ShootFirst' => ($vItem["oppShootFirst"] & pow(2, $i)) != 0, 'Arrows' => $oppArrValue);
-                            if ($showArrowsPosition or ($EvType==1 and $vItem['shootingarchersAvailable'] and $vItem['oppShootingarchersAvailable'])) {
+                            if ($showArrowsPosition) {
                                 foreach (range($i * $objParam->arrows, $i * $objParam->arrows + $objParam->arrows -1) as $j) {
-                                    if($showArrowsPosition and isset($vItem['arrowPosition'][$j]) and isset($vItem['arrowPosition'][$j]['D'])) {
+                                    if(isset($vItem['arrowPosition'][$j]) and isset($vItem['arrowPosition'][$j]['D'])) {
                                         $vPos=$vItem['arrowPosition'][$j];
                                         $vPos["pD"] = round($vPos['D'] + $vPos['R'],1);
                                         if ($vPos['X'] == 0 AND $vPos['Y'] == 0) {
@@ -998,10 +968,10 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                         //    $vPos=$BasePosition;
                                     }
                                     if (!empty($vItem['shootingArchers'][$j])) {
-                                        $tmpEnd['Shooters'][] = $tmpAth[$vItem['shootingArchers'][$j]];
+                                        $tmpEnd['Shooter'][] = $vItem['shootingArchers'][$j];
                                     }
 
-                                    if($showArrowsPosition and isset($vItem['oppArrowPosition'][$j]) and isset($vItem['oppArrowPosition'][$j]['D'])) {
+                                    if(isset($vItem['oppArrowPosition'][$j]) and isset($vItem['oppArrowPosition'][$j]['D'])) {
                                         $vPos=$vItem['oppArrowPosition'][$j];
                                         $vPos["pD"] = round($vPos['D'] + $vPos['R'],1);
                                         if ($vPos['X'] == 0 AND $vPos['Y'] == 0) {
@@ -1016,7 +986,7 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                         //   $vPos = $BasePosition;
                                     }
                                     if (!empty($vItem['oppShootingArchers'][$j])) {
-                                        $tmpOppEnd['Shooters'][] = $tmpAth[$vItem['oppShootingArchers'][$j]];
+                                        $tmpOppEnd['Shooter'][] = $vItem['oppShootingArchers'][$j];
                                     }
                                 }
                             }
@@ -1098,26 +1068,12 @@ foreach($Data['sections'] as $kSec=>$vSec) {
                                 }
                             }
 
-                            $tmpShooters=array();
-                            $tmpOppShooters=array();
-                            for($soCnt=($objParam->ends*$objParam->arrows)+$i*$objParam->so; $soCnt<($objParam->ends*$objParam->arrows)+$i*$objParam->so+$objParam->so; $soCnt++) {
-                                if (!empty($vItem['shootingArchers'][$soCnt])) {
-                                    $tmpShooters[] = $tmpAth[$vItem['shootingArchers'][$soCnt]];
-                                }
-
-                                if (!empty($vItem['oppShootingArchers'][$soCnt])) {
-                                    $tmpOppShooters[] = $tmpAth[$vItem['oppShootingArchers'][$soCnt]];
-                                }
-                            }
-
                             $end[] = array('EndNum' => 'SO', 'SONum'=>strval($i+1), 'EndScore' => strval(ValutaArrowString(substr($vItem['tiebreak'], $i*$objParam->so, $objParam->so))),
                                     'RunningScore' => strval($running[0]), 'ShootFirst' => ($vItem["shootFirst"] & pow(2, $objParam->ends)) != 0, 'Arrows' => $arrValue) +
-                                (($showArrowsPosition and count($tmpPos)) ? array("Positions"=>$tmpPos) : array())+
-                                (count($tmpShooters) ? array("Shooters"=>$tmpShooters) : array());
+                                (($showArrowsPosition and count($tmpPos)) ? array("Positions"=>$tmpPos) : array());
                             $oppEnd[] = array('EndNum' => 'SO', 'SONum'=>strval($i+1), 'EndScore' => strval(ValutaArrowString(substr($vItem['oppTiebreak'], $i*$objParam->so, $objParam->so))),
                                     'RunningScore' => strval($running[1]), 'ShootFirst' => ($vItem["oppShootFirst"] & pow(2, $objParam->ends)) != 0, 'Arrows' => $oppArrValue) +
-                                (($showArrowsPosition and count($tmpOppPos)) ? array("Positions"=>$tmpOppPos) : array())+
-                                (count($tmpOppShooters) ? array("Shooters"=>$tmpOppShooters) : array());
+                                (($showArrowsPosition and count($tmpOppPos)) ? array("Positions"=>$tmpOppPos) : array());
                             if (strlen(str_replace(' ', '', substr($vItem['tiebreak'], $i*$objParam->so, $objParam->so)))== $objParam->so AND strlen(str_replace(' ', '', substr($vItem['oppTiebreak'], $i*$objParam->so, $objParam->so)))== $objParam->so) {
                                 $runningEndSo = $i + 2;
                             } else {

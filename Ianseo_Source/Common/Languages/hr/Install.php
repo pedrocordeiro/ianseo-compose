@@ -23,6 +23,7 @@ $lang['Failed']='NEUSPJEŠNO!';
 $lang['Failing install']='Molimo ažurirajte PHP instalacije prije ponovnog pokretanja IANSEO.';
 $lang['File permission error']='Morate provjeriti dozvole na direktorij IANSEO instalacije:
 treba biti omogućeno pisanje od strane korisnika koji izvodi poslužitelj ili world-writable.';
+$lang['FreeOnlineResults']='<b>Besplatni online pubblishing:</b> s osnovnom internetskom vezom možete pokazati svijetu ono što se događa za vrijeme natjecanja. To je besplatno, pa zašto čekati? Nakon kreiranja natjecanja, potraži kod putem točki izbornika «{$a}».';
 $lang['Host']='Domaćin (Host)';
 $lang['Install-0']='kritična pogreška';
 $lang['Install-1 Title']='PHP checking';
@@ -129,6 +130,7 @@ $lang['System value']='sustav vrijednosti';
 $lang['UpdatePrepared']='Vaša instalacija će se automatski ažurirati. Imajte na umu da bi backup svih turnira prije početka.Postupak ažuriranja može potrajati dugo, ovisno o vezi i elementima koje je potrebno nadograditi. <br/> Imajte na umu da bilo koji izvorne datoteke će se ukloniti, osim sadržaja «modules / Custom» mape.';
 $lang['Updating']='Ažuriranje lokalne instalacije Ianseo';
 $lang['UpdatingLanguages']='Ažuriranje instaliranih jezika';
+$lang['UpgradeFinished']='Postupak nadogradnje je završio.';
 $lang['User']='Korisničko ime';
 $lang['Value']='Vrijednost (indeksiranih polja predmeta: key1:: vrijednost1 | key2:: vrijednost2)';
 $lang['WhatIanseoDoes01']='<b>u skladu sa WA pravilima:</b> Ianseo je uvijek u toku sa WA pravilima.  Developeri su dostupni za prilagodbe kako bi odgovarao nacionalnim i natjecanjima sa posebnim pravilima!';

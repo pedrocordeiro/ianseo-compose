@@ -97,6 +97,7 @@ $lang['LastEndDist']='この距離の最終回が終了しました。次の距�
 $lang['LastEndSession']='最終エンドが終了しました。
 スコアカードを押すと、入力内容確認が出来ます。
 完了する場合は、設定画面を押して設定画面に戻ります。';
+$lang['LockAll']='全てをロックする';
 $lang['LRSwipeLabel']='左/右スワイプ時の感度設定';
 $lang['ManageLockedSessions']='ISK使用制限の設定';
 $lang['Manual']='サーバーに接続';
@@ -162,7 +163,6 @@ $lang['StagePool2']='ワールドゲームズ ２ プール形式';
 $lang['StagePool4']='WA 4 プール形式';
 $lang['StageQ']='予選ラウンド';
 $lang['Status']='ステータス：';
-$lang['Superuser']='管理者';
 $lang['SwipeDown']='<strong>下へスワイプ</strong></br>現在の選手の前のエンドに移動する。';
 $lang['SwipeLeft']='<strong>左へスワイプ</strong><br/>同じエンドの次の選手に移動する。';
 $lang['SwipeRight']='<strong>右へスワイプ</strong></br>同じエンドの前の選手に移動する。';
@@ -175,6 +175,7 @@ $lang['Total']='累計<br/>得点';
 $lang['TruncateMatches']='未取込みのデータ削除（マッチ戦）';
 $lang['TruncateQual']='未取込みのデータ削除（ランキングラウンド）';
 $lang['Unknown']='不明';
+$lang['UnlockAll']='全てのロックを外す';
 $lang['Update']='アップデート';
 $lang['UpdateLang']='日本語アップデート';
 $lang['Url']='URL:';

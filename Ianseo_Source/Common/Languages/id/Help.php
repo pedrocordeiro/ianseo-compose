@@ -1,29 +1,19 @@
 <?php
-$lang['AclNotSuperuser']='Tanpa akses "SUPERUSER" Anda akan terkunci dari bagian ini dan oleh karena itu Anda tidak dapat mengaktifkan Kebijakan Akses';
 $lang['AuthTourCode']='Daftar kode turnamen yang dipisahkan koma yang dapat dikelola oleh pengguna.<br>Karakter pengganti yang diizinkan: "%"';
 $lang['AutoCheckinAlreadyDone']='Anda sudah check-in<br>Jika Anda perlu mengubah informasi apa pun, lanjutkan ke meja akreditasi';
 $lang['AutoCheckinConfirm']='Jika semua detail sudah benar, tekan CONFIRM CHECK-IN<br> Jika tidak, tekan CANCEL dan lanjutkan ke meja akreditasi';
 $lang['AutoCheckinSearch']='Scan Kode QR yang Anda terima atau ketik nama Anda';
 $lang['AutoCHK-CanEdit']='Izinkan operator check-in untuk mengedit Nama, Email, Negara/Klub, dll';
-$lang['AutoCHK-CanEditCategory']='Edit Kategori';
-$lang['AutoCHK-CanEditEntry']='Edit Detail Entri';
-$lang['AutoCHK-CanEditExtras']='Edit Tambahan';
-$lang['AutoCHK-CanEditTgt']='Edit Pengaturan Target';
 $lang['AutoCHK-Code']='Daftar Kompetisi, satu per baris<br> Kode kompetisi pertama akan digunakan sebagai header di kios check-in otomatis';
-$lang['AutoCHK-IP']='Daftar IP perangkat check-in otomatis. Satu Alamat IP per baris, sesuai dengan salah satu format berikut:<br> IP Perangkat<br> IP Perangkat | Antrian Printer Akreditasi<br> IP Perangkat | Antrian Printer Akreditasi | Antrian Printer Kartu Nama<br> IP Perangkat | Antrian Printer Akreditasi | Antrian Printer Kartu Nama | Antrian Printer Kartu<br> Antrian Printer dalam format: Nama Antrian [ @ Server Printer ]<br> Jika tidak ada Antrian Printer yang ditentukan, maka dialog cetak standar akan ditampilkan';
-$lang['AutoCHK-IPBowStorage']='Daftar IP titik penyimpanan Bow. Satu alamat IP per baris.';
-$lang['AutoCHK-IPGoodiesDistribution']='Daftar IP titik distribusi Goodie Bags. Satu Alamat IP per baris yang sesuai dengan salah satu format berikut:<br> IP Perangkat<br> IP Perangkat | Kode Kompetisi<br> Tambahkan Kode Kompetisi untuk membatasi operasi IP pada turnamen tertentu';
+$lang['AutoCHK-IP']='Daftar IP perangkat check-in otomatis. Satu Alamat IP per baris';
 $lang['AutoCHK-IPinfo']='Daftar IP poin info diri. Satu Alamat IP per baris';
 $lang['AutoCHK-IPnoMgm']='Daftar IP kios check-in mandiri. Satu Alamat IP per baris, cocok dengan salah satu format berikut:<br> IP Perangkat<br> IP Perangkat | Antrian Printer Akreditasi <br> IP Perangkat | Antrian Printer Akreditasi | Name Tag Antrian Printer<br> Antrian Printer berupa: Nama Antrian [ @ Printer Server ]';
-$lang['AutoCHK-IPPaidPractice']='Daftar IP poin latihan berbayar. Satu alamat IP per baris. Satu alamat IP per baris yang sesuai dengan salah satu format berikut:<br> IP Perangkat<br> IP Perangkat|1 untuk hanya menerima kartu latihan Jalur Cepat';
-$lang['AutoCHK-KioskEditPin']='PIN 4 digit untuk mengedit data pada perangkat yang mendukung pengeditan.';
 $lang['AutoCHK-Print']='Secara otomatis menampilkan dialog cetak';
 $lang['AutoImportSettings']='<b>Hanya untuk Pengguna Ahli</b><br>Mengubah perilaku default dapat mengakibatkan hasil yang tidak akurat.<br> Penting untuk menghitung ulang semua peringkat yang telah di-setup sebagai "manual" SEBELUM dikirim ke ianseo.net atau mencetak hasil secara umum sebelum pendistribusian dalam hal apapun.';
 $lang['ChangeComponents']='<p>Untuk melanjutkan perubahan, hapus dulu atlet yang tidak ada dalam urutan tim lagi untuk mengaktifkan opsi yang memungkinkan.</p>
 &#9654&nbsp;Skor termasuk dalam total babak kualifikasi tim<br>
 &#9655&nbsp;Skor tidak termasuk dalam total babak kualifikasi tim';
 $lang['CombiCompList']='Daftar Kode Kompetisi, dipisahkan koma';
-$lang['DeleteChannel']='Hapus Saluran. Ini akan menghapus semua pemecahan dari saluran dan saluran itu sendiri.';
 $lang['ExportAdvanced']='Juga mengekspor data Entri dan Negara untuk dibuat jika hilang di titik akhir';
 $lang['ExportCategories']='Pilih kategori/acara yang akan diekspor (tidak ada pilihan berarti semuanya)';
 $lang['ExportDistances']='Pilih jarak yang akan diekspor (tidak ada pilihan berarti semua jarak)';
@@ -37,25 +27,16 @@ $lang['FontStyle']='Gaya huruf pada CSS';
 $lang['FontWeight']='Tebal huruf pada CSS';
 $lang['GetBarcodeSeparator']='Setelah mencetak lembar referensi barcode, baca «SEPARATOR» barcode untuk mengaktifkan item pembaca yang benar.';
 $lang['HomePage']='Halaman ini tempat Anda dapat memilih atau membuat turnamen.';
-$lang['IfaaFlintIndoorHelp']='Sel dengan garis tepi merah menunjukkan sesi dengan pemanah dari kategori tersebut.<br/> Klik pada Judul Sesi akan memilih semua kategori yang sudah ada dalam sesi tersebut.</br> Pilih sesi tujuan tempat sesi akan digabungkan.';
 $lang['ISK-LockedSessionHelp']='{$a} ikon menunjukkan apakah aplikasi dapat memproses skor atau tidak dalam sesi yang dimaksud';
-$lang['ISK-regexSignature']='Biarkan kosong agar sesuai persis dengan Kode QR Akreditasi';
 $lang['ISK-ServerUrlPin']='<b>JANGAN BAGIKAN NOMOR INI</b><br>Gunakan PIN pilihan Anda (4 Digit Numerik) yang akan digunakan untuk mengakses kompetisi Anda.<br>
 Perangkat dapat memproses skor di kompetisi Anda hanya dengan membaca QR-Code yang dibuat oleh IANSEO.<br>
 Dalam hal input manual di aplikasi Ianseo Scorekeeper LITE, kode Kompetisi yang digunakan adalah <b>{$a}</b>';
 $lang['QrCodeLandscape']='satu atau dua kali "<" akan menggambar panah ke kiri satu atau dua kali ">" akan menggambar panah ke kanan satu atau dua kali "^" akan menggambar panah ke atas satu atau dua kali "v" akan menggambar panah ke bawah';
 $lang['QrCodePortrait']='bidang ini mampu membaca HTML. Jika Anda menyisipkan sesuatu yang ditandai oleh &lt;qrcode&gt;...&lt;/qrcode&gt; maka konten akan diubah menjadi QRCode';
-$lang['RecordGrayLine']='Tipe rekor yang sama dan kategori yang sama sudah ada dengan skor yang lebih tinggi.<br> Periksa aturan dan tanggal untuk pencatatan rekor.';
-$lang['RecordHelp']='Bantuan baris / sel berwarna';
-$lang['RecordPinkCell']='Skor dan kategori yang sama merupakan rekor tingkat yang lebih tinggi.<bt>Tulis dalam PDF hanya yang paling penting.</bt>';
 $lang['ScoreBarCodeShortcuts']='Baca Barcode yang tercetak di kartu skor.<br/>
 Memasukkan # secara manual diikuti dengan nama atlet mencari database untuk menemukan atlet tersebut<br/>
 Memasukkan @ diikuti dengan nomor target akan mencari target tersebut. Jarak HARUS diatur. Sesi harus ditentukan (digit pertama) dan target diisi 0 hingga 3 digit.';
 $lang['ScoreboardFreetext-Texts']='Insert {{date}} to insert the date in english format (ie: january 4, 2024).<br> Insert {{date-lang}} to insert a date in local language (ie: {{date-de}} to have 4. Januar 2024)<br> Insert {{time}} to have the ticking time in ISO format (ie: 15:03:23)<br> Insert {{time-am}} to have ticking time in AM/PM format (ie: 3:03:23 PM)<br> Insert {{counter-datetime}} to have a full date countdown (ie: [[[days:]hours:]minutes:]seconds layout, where datetime is the time to reach in ISO format 2024-12-04T09:00:00 for local time)<br> There can only be one of these fields in a text';
-$lang['Sport80-DeleteEntries']='Hapus entri yang tidak ada di Sport80.';
-$lang['Sport80-ForceUpdate']='Operasi ini akan menimpa semua perubahan yang dilakukan dalam sistem dengan informasi asli yang berasal dari Sistem Registrasi Sport80.<br>Disarankan untuk membuat cadangan sebelum melanjutkan.<br>Lanjutkan hanya jika Anda benar-benar yakin.';
-$lang['Sport80-LoadEntries']='Menambahkan entri baru dan menerapkan pembaruan pada entri yang sudah ada dengan data yang berasal dari Sistem Sport80.<br> Menghapus entri yang tidak ada di Sport80';
-$lang['Sport80-UpdateEntries']='Menambahkan entri baru dan menerapkan pembaruan pada entri yang sudah ada dengan data yang berasal dari Sistem Sport80.<br> Entri yang sudah ada tidak akan dihapus meskipun tidak ada di Sport80.';
 $lang['TargetRequests-Printout']='Mencetak QrCode dari target yang diminta agar perangkat pribadi dapat dengan cepat ditetapkan ulang ke target yang benar.<br> Pilih grup perangkat mana yang ingin Anda cetak dan rentang sasaran target:<br> 1-10 mencetak QrCOde dari target 1 hingga 10<br> 1,7,12-15 mencetak QrCOde target 1, 7 dan dari 12 hingga 15';
 $lang['TargetScoring-Printout']='Mencetak QrCode dari target yang diminta untuk proses skoring pada Jarak Target Sesi yang diperlukan dengan ISK NG Lite. Ini adalah kode QR yang sama yang dapat Anda temukan di scorecard<br> Pilih sesi mana yang ingin Anda cetak dan rentang target sasaran:<br> 1-10 mencetak QrCOde dari target 1 hingga 10<br> 1 ,7,12-15 mencetak QrCOde target 1, 7 dan dari 12 hingga 15';
 $lang['TV-ChannelSetup']='= Pengaturan Saluran =

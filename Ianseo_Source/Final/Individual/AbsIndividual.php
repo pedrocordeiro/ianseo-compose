@@ -246,9 +246,6 @@ if(count($EventCodes) != 0) {
                 $endRank = 1;
 	            $obj=getEventArrowsParams($Event,64, 0);
                 foreach ($section['items'] as $item) {
-                    if($item['rankBeforeSO']==0) {
-                        continue;
-                    }
                     if (($item['rankBeforeSO'] + $item['ct']) >= $section['meta']['firstQualified']) {
                         //Stop if Rank >QualifiedNo and no SO
                         if ($item['rank'] > ($section['meta']['qualifiedNo'] + $section['meta']['firstQualified'] - 1) AND $item['so'] == 0) {
@@ -271,7 +268,7 @@ if(count($EventCodes) != 0) {
                             if ($item['rankBeforeSO'] != $endRank) {
                                 $wasCTSO = true;
                                 $autoCTallowed = true;
-                                echo '<td class="Center w-5"><select name="R' . $nn . '"'. (($item['ct'] != 1 and $item['so'] == 0)  ? ' ctFlag="'.$item['rankBeforeSO'].','.$item['ct'].'"' : '') .'>';
+                                echo '<td class="Center w-5"><select name="R' . $nn . '"'. ($item['ct'] != 1 ? ' ctFlag="'.$item['rankBeforeSO'].','.$item['ct'].'"' : '') .'>';
                                 for ($i = $item['rankBeforeSO']; $i <= $endRank; ++$i) {
                                     echo '<option value="' . $i . '"' . (($i == $item['rank'] OR (isset($_REQUEST["R"][$section['meta']['event']][$item['id']]) and $i == $_REQUEST["R"][$section['meta']['event']][$item['id']])) ? ' selected' : '') . '>' . $i . '</option>';
                                 }

@@ -18,7 +18,6 @@ function saveField($Field, $Value, $EnId, $ToId) {
 	}
 
 	$Updated=false; // needs to recalculate printed items
-	$UpdatedMain=false; // needs to recalculate printed items
 	$OldControl='';
 	if(in_array($Field, $ArrayRecalc)) {
 		list($indFEventOld, $teamFEventOld, $countryOld, $divOld, $clOld, $subClOld, $zeroOld)=Params4Recalc($EnId);
@@ -60,18 +59,15 @@ function saveField($Field, $Value, $EnId, $ToId) {
 			$Value=AdjustCaseTitle($Value);
 			safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnFirstName=".StrSafe_DB($Value)." where EnId=$EnId");
 			$Updated=safe_w_affected_rows();
-			$UpdatedMain=safe_w_affected_rows();
 			break;
 		case 'name':
 			$Value=AdjustCaseTitle($Value);
 			safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnName=".StrSafe_DB($Value)." where EnId=$EnId");
 			$Updated=safe_w_affected_rows();
-			$UpdatedMain=safe_w_affected_rows();
 			break;
 		case 'subclass':
 			safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnSubClass=".StrSafe_DB($Value)." where EnId=$EnId");
 			$Updated=safe_w_affected_rows();
-			$UpdatedMain=safe_w_affected_rows();
 			break;
 		case 'dob':
 			$Value=ConvertDateLoc($Value);
@@ -97,7 +93,6 @@ function saveField($Field, $Value, $EnId, $ToId) {
 			switch($Field) {
 				case 'country_code':
 					safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnCountry=$CoId where EnId=$EnId");
-			        $UpdatedMain=safe_w_affected_rows();
 					break;
 				case 'country_code2':
 					safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnCountry2=$CoId where EnId=$EnId");
@@ -117,7 +112,6 @@ function saveField($Field, $Value, $EnId, $ToId) {
 			switch($Field) {
 				case 'country_name':
 					safe_w_sql("update Countries inner join Entries on CoId=EnCountry and CoTournament=EnTournament set CoName=".StrSafe_DB($Value)." where EnId=$EnId");
-                    $UpdatedMain=safe_w_affected_rows();
 					break;
 				case 'country_name2':
 					safe_w_sql("update Countries inner join Entries on CoId=EnCountry2 and CoTournament=EnTournament set CoName=".StrSafe_DB($Value)." where EnId=$EnId");
@@ -131,7 +125,6 @@ function saveField($Field, $Value, $EnId, $ToId) {
 			// sets the code and updates the status of the archer from the LueTable if any...
 			safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnCode=".StrSafe_DB($Value)." where EnId=$EnId");
 			$Updated=safe_w_affected_rows();
-            $UpdatedMain=safe_w_affected_rows();
 
 			if($Updated) {
 				safe_w_sql("update Entries
@@ -142,22 +135,23 @@ function saveField($Field, $Value, $EnId, $ToId) {
 			}
 			break;
 		case 'targetno':
-			$q=safe_r_sql("select QuSession, QuTarget, QuLetter from Qualifications where QuId=$EnId");
+			$Value=str_pad($Value, TargetNoPadding+1, '0', STR_PAD_LEFT);
+			$q=safe_r_sql("select QuSession, QuTargetNo from Qualifications where QuId=$EnId");
 			if($r=safe_fetch($q)) {
+				$TargetNo=$r->QuSession.$Value;
 				$Target=intval($Value);
-				$Letter=strtoupper(substr($Value, -1));
-				safe_w_sql("update Qualifications set QuTarget=$Target, QuLetter=".StrSafe_DB($Letter)." where QuId=$EnId");
+				$Letter=substr($Value, -1);
+				safe_w_sql("update Qualifications set QuTargetNo=".StrSafe_DB($TargetNo).", QuTarget=$Target, QuLetter=".StrSafe_DB($Letter)." where QuId=$EnId");
 				$Updated=safe_w_affected_rows();
-                $UpdatedMain=safe_w_affected_rows();
 			}
 			break;
 		case 'session':
 			$Value=intval($Value);
-			$q=safe_r_sql("select QuSession, QuTarget, QuLetter from Qualifications where QuId=$EnId");
+			$q=safe_r_sql("select QuSession, QuTargetNo, QuLetter, QuTarget from Qualifications where QuId=$EnId");
 			if($r=safe_fetch($q)) {
-				safe_w_sql("update Qualifications set QuSession=$Value where QuId=$EnId");
+				$TargetNo=$Value.substr($r->QuTargetNo, 1);
+				safe_w_sql("update Qualifications set QuSession=$Value, QuTargetNo=".StrSafe_DB($TargetNo)." where QuId=$EnId");
 				$Updated=safe_w_affected_rows();
-                $UpdatedMain=safe_w_affected_rows();
 			}
 			break;
 		case 'sex':
@@ -174,14 +168,12 @@ function saveField($Field, $Value, $EnId, $ToId) {
 			break;
 		case 'division':
 			safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnDivision=".StrSafe_DB($Value)." where EnId=$EnId");
-            $UpdatedMain=safe_w_affected_rows();
 			if($Updated=safe_w_affected_rows()) {
 				checkAndSetClasses($EnId);
 			}
 			break;
 		case 'class':
 			safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnClass=".StrSafe_DB($Value)." where EnId=$EnId");
-            $UpdatedMain=safe_w_affected_rows();
 			if($Updated=safe_w_affected_rows()) {
 				checkAndSetClasses($EnId);
 			}
@@ -200,9 +192,7 @@ function saveField($Field, $Value, $EnId, $ToId) {
 	// this is for the change of background
 	$JSON['newvalue']=safe_w_affected_rows();
 
-    if($UpdatedMain) {
-        safe_w_sql("update Entries set EnMainInfoUpdate='".date('Y-m-d H:i:s')."' where EnId={$EnId}");
-    }
+
 	if($Updated) {
 		// updates timestamps
 		if(in_array($Field, $ArrayLue)) {
@@ -244,6 +234,140 @@ function saveField($Field, $Value, $EnId, $ToId) {
 
 	$JSON['value']=$Value;
 	$JSON['error']=0;
+
+	// 				switch($Campo) {
+	// 					case 'EnDivision':
+	// 						$query="SELECT EnDivision FROM Entries WHERE EnId=". StrSafe_DB($Chiave). " AND EnDivision<>" . StrSafe_DB($Value) . " " ;
+	// 						$rs=safe_r_sql($query);
+
+	// 						if ($rs && safe_num_rows($rs)==1)
+	// 						{
+	// 							$recalc=true;
+
+	// 						// prendo le vecchie impostazioni
+	// 							$x=Params4Recalc($Chiave);
+	// 							if ($x!==false)
+	// 							{
+	// 								list($indFEventOld,$teamFEventOld,$countryOld,$divOld,$clOld,$zeroOld)=$x;
+	// 							}
+	// 						}
+	// 						break;
+	// 					case 'EnName':
+	// 					case 'EnFirstName':
+	// 						$Value=AdjustCaseTitle($Value);
+	// 					case 'CoName':
+	// 					case 'CoNameComplete':
+	// 						$passValue = $Value;
+	// 						break;
+	// 					case 'EnIndClEvent':
+	// 					case 'EnTeamClEvent':
+	// 					case 'EnIndFEvent':
+	// 					case 'EnTeamFEvent':
+	// 					case 'EnTeamMixEvent':
+	// 						$recalc=true;
+	// 						break;
+	// 					case 'CoParent1':
+	// 					case 'CoParent2':
+	// 						$searchSQL = "SELECT CoId FROM Countries WHERE CoCode=" . StrSafe_DB(stripslashes($Value)) . " AND CoTournament=".StrSafe_DB($_SESSION['TourId']);
+	// 						$rsSearch = safe_r_sql($searchSQL);
+	// 						if(safe_num_rows($rsSearch)==1 && $row = safe_fetch($rsSearch))
+	// 							$Value=$row->CoId;
+	// 						else
+	// 							$Value=0;
+	// 						break;
+	// 				}
+
+	// 				$Update
+	// 					= "UPDATE " . $Arr_Tabelle[$Tabella][0]  . " SET "
+	// 					. $Campo . "=" . StrSafe_DB(stripslashes($Value)) . " "
+	// 					. "WHERE " . $Arr_Tabelle[$Tabella][1] . "=" . StrSafe_DB($Chiave). " ";
+	// 				$RsUp=safe_w_sql($Update);
+	// 				if(safe_w_affected_rows()) {
+	// 					switch($Campo) {
+	// 						case 'EnName':
+	// 						case 'EnFirstName':
+	// 						case 'CoName':
+	// 						case 'CoNameComplete':
+	// 							safe_w_sql("update Qualifications set QuBacknoPrinted=0 where ". $Arr_Tabelle[$Tabella][1] . "=" . StrSafe_DB($Chiave));
+	// 							break;
+	// 					}
+	// 				}
+
+	// 				if (!$RsUp)
+	// 				{
+	// 					$Errore=1;
+	// 				}
+
+	// 				if (debug)
+	// 					print $Update .'<br><br>';
+
+	// 				$Select = "SELECT " . $Campo . " FROM " . $Arr_Tabelle[$Tabella][0] . " WHERE " . $Arr_Tabelle[$Tabella][1] . "=" . StrSafe_DB($Chiave). " ";
+	// 				if($Campo=='CoParent1' || $Campo=='CoParent2')
+	// 				{
+	// 					if($Value!=0)
+	// 						$Select = "SELECT CoCode as " . $Campo . " FROM " . $Arr_Tabelle[$Tabella][0] . " WHERE " . $Arr_Tabelle[$Tabella][1] . "=" . StrSafe_DB($Value). " ";
+	// 					else
+	// 						$Select = "SELECT '' as " . $Campo ;
+	// 				}
+
+	// 				$Rs=safe_r_sql($Select);
+
+	// 				if (debug)
+	// 					print $Select .'<br><br>';
+
+	// 				if (!$Rs || safe_num_rows($Rs)!=1)
+	// 				{
+	// 					$Errore=1;
+	// 				}
+	// 				else
+	// 				{
+	// 					$Row=safe_fetch($Rs);
+	// 					//print '..' . stripslashes($Value) ;
+	// 					if ($Row->{$Campo}!=stripslashes($passValue))
+		// 					{
+	// 						$Errore=1;
+	// 					}
+	// 					else
+	// 					{
+	// 						$Value = $Row->{$Campo};
+	// 						if ($recalc)
+	// 						{
+	// 							$x=Params4Recalc($Chiave);
+	// 							if ($x!==false)
+	// 							{
+	// 								list($indFEvent,$teamFEvent,$country,$div,$cl,$zero)=$x;
+	// 							}
+
+	// 						// ricalcolo il vecchio e il nuovo
+	// 							RecalculateShootoffAndTeams($indFEventOld,$teamFEventOld,$countryOld,$divOld,$clOld,$zeroOld);
+	// 							RecalculateShootoffAndTeams($indFEvent,$teamFEvent,$country,$div,$cl,$zero);
+
+	// 						// rank di classe x tutte le distanze
+	// 							$q="SELECT ToNumDist FROM Tournament WHERE ToId={$_SESSION['TourId']}";
+	// 							$r=safe_r_sql($q);
+	// 							$tmpRow=safe_fetch($r);
+	// 							for ($i=0; $i<$tmpRow->ToNumDist;++$i)
+		// 							{
+	// 								CalcQualRank($i,$divOld.$clOld);
+	// 								CalcQualRank($i,$div.$cl);
+	// 							}
+
+	// 						// individuale abs
+	// 							MakeIndAbs();
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 			else
+	// 				$Errore=1;
+
+	// 			print '<response>' . "\n";
+	// 			print '<error>' . $Errore . '</error>' . "\n";
+	// 			print '<which>' . $Which . '</which>' . "\n";
+	// 			print '<value>' . ((($Campo=='CoParent1' || $Campo=='CoParent2') && $passValue='') ? '' : $Value) . '</value>' . "\n";
+	// 			print '</response>' . "\n";
+	// 		}
+	// 	}
 	return $Value;
 }
 
@@ -290,7 +414,6 @@ function checkAndSetClasses($EnId) {
 	}
 	safe_w_sql("update Entries set EnTimestamp=EnTimestamp, EnAgeClass=".StrSafe_DB($Age).", EnClass=".StrSafe_DB($Shoot)." where EnId=$EnId");
 	if(safe_w_affected_rows()) {
-        safe_w_sql("update Entries set EnTimestamp='".date('Y-m-d H:i:s')."', EnMainInfoUpdate='".date('Y-m-d H:i:s')."' where EnId={$EnId}");
 		$JSON['fields']['class']=$Age;
 		$JSON['fields']['ageclass']=$Shoot;
 	}

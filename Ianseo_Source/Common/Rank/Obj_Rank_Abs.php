@@ -218,7 +218,7 @@
 			elseif($this->opts['dist'])	{
 				$tmp='QuD'.$this->opts['dist'].'Hits';
 			} else {
-				$tmp='IF((EvLockResults OR EvQualBestOfDistances),IndHits,QuHits)';
+				$tmp='QuHits';
 			}
 
 			$MyRank="Ind{$dd}Rank";
@@ -230,14 +230,10 @@
 			if ($this->opts['dist']==0 && empty($this->opts['runningDist']))
 				$only4zero=", IndTiebreak, IndTbClosest, IndTbDecoded, (IndSO>0) as isSO, IFNULL(sqY.Quanti,1) AS `NumCT`,ABS(IndSO) AS RankBeforeSO ";
 
-            $ScoringFields="IF((EvLockResults OR EvQualBestOfDistances),IndScore,QuScore) AS Score, IF((EvLockResults OR EvQualBestOfDistances),IndGold,QuGold) AS Gold, IF((EvLockResults OR EvQualBestOfDistances),IndXnine,QuXnine) AS XNine, IF((EvLockResults OR EvQualBestOfDistances),IndHits,QuHits) AS Hits";
-            if($dd) {
-                $ScoringFields="Qu{$dd}Score AS Score, Qu{$dd}Gold AS Gold,Qu{$dd}Xnine AS XNine, Qu{$dd}Hits AS Hits";
-            }
-
-			$q="SELECT ".($this->Flighted ? "concat(EvCode,EnSubClass)" : "EvCode")." as EventKey,
+			$q="
+				SELECT ".($this->Flighted ? "concat(EvCode,EnSubClass)" : "EvCode")." as EventKey,
 					EnId, EnCode, ifnull(EdExtra, EnCode) as LocalId, if(EnDob=0, '', EnDob) as BirthDate, EnOdfShortname, EnSex, EnNameOrder, upper(EnIocCode) EnIocCode, EnName AS Name, EnFirstName AS FirstName, upper(EnFirstName) AS FirstNameUpper, QuSession as Session, SesName,
-					CONCAT(QuTarget, QuLetter) AS TargetNo, FlContAssoc,
+					SUBSTRING(QuTargetNo,2) AS TargetNo, FlContAssoc,
 					EvProgr, ToNumEnds,ToNumDist,ToMaxDistScore, FdiDetails,
 					CoId, CoCode, CoName, CoMaCode, CoCaCode, EnClass, EnDivision,EnAgeClass,  EnSubClass,  ScDescription,
 					IFNULL(Td1,'.1.') as Td1, IFNULL(Td2,'.2.') as Td2, IFNULL(Td3,'.3.') as Td3, IFNULL(Td4,'.4.') as Td4, IFNULL(Td5,'.5.') as Td5, IFNULL(Td6,'.6.') as Td6, IFNULL(Td7,'.7.') as Td7, IFNULL(Td8,'.8.') as Td8,
@@ -247,11 +243,11 @@
 					QuD1Xnine, QuD2Xnine, QuD3Xnine, QuD4Xnine, QuD5Xnine, QuD6Xnine, QuD7Xnine, QuD8Xnine,
 					QuD1Arrowstring,QuD2Arrowstring,QuD3Arrowstring,QuD4Arrowstring,QuD5Arrowstring,QuD6Arrowstring,QuD7Arrowstring,QuD8Arrowstring,
 					QuScore, QuNotes, QuConfirm, QuArrow, IndNotes, (EvShootOff OR EvE1ShootOff OR EvE2ShootOff) as ShootOffSolved,
-					IF(EvRunning=1,IFNULL(ROUND(IF((EvLockResults OR EvQualBestOfDistances),IndScore/IndHits,QuScore/QuHits),3),0),0) as RunningScore,
+					IF(EvRunning=1,IFNULL(ROUND(QuScore/QuHits,3),0),0) as RunningScore,
 					EvCode,EvEventName,EvRunning, EvFinalFirstPhase, EvElim1, EvElim2, EvIsPara, coalesce(OdfTrOdfCode,'') as OdfUnitCode, EvOdfCode,
 					{$tmp} AS Arrows_Shot,
-					coalesce(RoundRobinQualified, IF(EvElim1=0 && EvElim2=0, EvNumQualified ,IF(EvElim1=0,EvElim2,EvElim1))) as QualifiedNo, EvFirstQualified, EvQualPrintHead as PrintHeader,
-					{$MyRank} AS `Rank`, " . (!empty($comparedTo) ? 'IFNULL(IopRank,0)' : '0') . " as OldRank, $ScoringFields, 
+					coalesce(RrLevGroups*RrLevGroupArchers, IF(EvElim1=0 && EvElim2=0, EvNumQualified ,IF(EvElim1=0,EvElim2,EvElim1))) as QualifiedNo, EvFirstQualified, EvQualPrintHead as PrintHeader,
+					{$MyRank} AS `Rank`, " . (!empty($comparedTo) ? 'IFNULL(IopRank,0)' : '0') . " as OldRank, Qu{$dd}Score AS Score, Qu{$dd}Gold AS Gold,Qu{$dd}Xnine AS XNine, Qu{$dd}Hits AS Hits, 
 					IndIrmType, IrmType, IrmShowRank, IrmHideDetails, ";
 			$q.="IndRecordBitmap as RecBitLevel, EvIsPara, CoMaCode, CoCaCode, "; // records management
 
@@ -274,10 +270,10 @@
 
 			$q .= "IndTimestamp, IndRankFinal, 
 					IF(EvGolds!='',EvGolds,ToGolds) AS GoldLabel, IF(EvXNine!='',EvXNine,ToXNine) AS XNineLabel,
-					ToDouble, DiEnds, DiArrows, if(EvGoldsChars='', ToGoldsChars, EvGoldsChars) as QualGoldChars, if(EvXNineChars='', ToXNineChars, EvXNineChars) as QualXNineChars,
+					ToDouble, DiEnds, DiArrows, ToGoldsChars as QualGoldChars, ToXNineChars as QualXNineChars,
 					ifnull(concat(DV2.DvMajVersion, '.', DV2.DvMinVersion) ,concat(DV1.DvMajVersion, '.', DV1.DvMinVersion)) as DocVersion,
 					date_format(ifnull(DV2.DvPrintDateTime, DV1.DvPrintDateTime), '%e %b %Y %H:%i UTC') as DocVersionDate,
-					ifnull(DV2.DvNotes, DV1.DvNotes) as DocNotes, 0 as hasShootOff
+					ifnull(DV2.DvNotes, DV1.DvNotes) as DocNotes, hasShootOff
 					{$only4zero}
 				FROM Tournament
 				INNER JOIN Entries ON ToId=EnTournament
@@ -293,15 +289,16 @@
                     AND EnTournament=CoTournament AND EnTournament={$this->tournament}
 				INNER JOIN Qualifications ON EnId=QuId
 				INNER JOIN IrmTypes ON IrmId=IndIrmType
+				inner join (
+					select max(QuD5Score) as hasShootOff, IndEvent as SOevent 
+					from Qualifications 
+					inner join Individuals on IndId=QuId and IndTournament={$this->tournament}
+					group by IndEvent
+					) hasSO on SOevent=IndEvent 
 				left join Session on SesTournament=ToId and SesOrder=QuSession and SesType='Q'
 				left join SubClass on ScTournament=ToId and ScId=EnSubClass
-				left join (
-				    select max(RrPartSourceRank) as RoundRobinQualified, RrPartTeam, RrPartEvent
-				    from RoundRobinParticipants
-				    where RrPartSourceLevel=0 and RrPartSourceGroup=0 and RrPartTournament={$this->tournament}
-				    group by RrPartEvent, RrPartTeam
-				    ) RoundRobinQualified on RrPartTeam=EvTeamEvent and RrPartEvent=EvCode and EvElimType=5
-				left join ExtraData on EdId=EnId and EdType='Z' and EdExtra!=''
+				left join RoundRobinLevel on RrLevTournament=ToId and RrLevTeam=EvTeamEvent and RrLevEvent=EvCode and RrLevLevel=1 and EvElimType=5
+				left join ExtraData on EdId=EnId and EdType='Z'
 				LEFT JOIN DocumentVersions DV1 on EvTournament=DV1.DvTournament AND DV1.DvFile = 'QUAL-IND' and DV1.DvEvent=''
 				LEFT JOIN DocumentVersions DV2 on EvTournament=DV2.DvTournament AND DV2.DvFile = 'QUAL-IND' and DV2.DvEvent=EvCode
 				LEFT JOIN  (SELECT OdfTrOdfCode, OdfTrIanseo 
@@ -479,7 +476,7 @@
 								'versionDate' => $myRow->DocVersionDate,
 								'versionNotes' => $myRow->DocNotes,
 								'lastUpdate' => '0000-00-00 00:00:00',
-								'hasShootOff' => 0,
+								'hasShootOff' => '',
 								'distanceInfo'=>$FullDistInfo,
 								'shootOffStarted'=>$myRow->hasShootOff,
 								'qualGoldChars'=>$myRow->QualGoldChars,

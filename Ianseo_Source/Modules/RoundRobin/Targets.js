@@ -1,8 +1,8 @@
 $(function() {
-    getEventDetail(true);
+    getEventDetail();
 });
 
-function getEventDetail(reload) {
+function getEventDetail() {
     history.pushState(null, '', '?Team='+$('#EvTeam').val()+'&Event='+$('#EvCode').val());
     let form={
         Team:$('#EvTeam').val(),
@@ -16,7 +16,7 @@ function getEventDetail(reload) {
         if(data.error==0) {
             let checkABCD=false;
             // Events
-            if(reload && data.events) {
+            if(data.reloadEvents) {
                 $('#EvCode').empty();
                 $.each(data.events, function() {
                     $('#EvCode').append('<option value="'+this.EvCode+'">'+this.EvCode+'-'+this.EvEventName+'</option>');
@@ -34,13 +34,9 @@ function getEventDetail(reload) {
             // Group
             $('#EvGroup').empty();
             $('#EvGroup').append('<option value="0">---</option>');
-            if(Object.keys(data.groups).length==1) {
-                $.each(data.groups, function(idx, groups) {
-                    $.each(groups.groups, function() {
-                        $('#EvGroup').append('<option value="'+this.gId+'">'+this.gName+'</option>');
-                    });
-                });
-            }
+            $.each(data.groups, function() {
+                $('#EvGroup').append('<option value="'+this.gId+'">'+this.gName+'</option>');
+            });
             $('#EvGroup').val(data.evGroup);
 
             // Round

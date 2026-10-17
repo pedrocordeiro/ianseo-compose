@@ -79,7 +79,7 @@ function UpdatePreOpen($TournamentID) {
 		safe_w_sql("update Scheduler
 			left join Session on SchTournament=SesTournament and SchSesOrder=SesOrder and SchSesType=SesType
 			set SchDay=date(SchDateStart), SchStart=time(SchDateStart), SchDuration=TIMESTAMPDIFF(MINUTE, SchDateStart, SchDateEnd), SchText=SchDescr, SchTitle=SesName
-			where SchTournament=$TournamentID",false,array(1062));
+			where SchTournament=$TournamentID");
 		$q=safe_r_sql("select * from Scheduler where SchTournament=$TournamentID and SchDay>0 and SchStart>0 order by SchDay, SchStart, SchOrder desc");
 		$oldKeys=array();
 		while($r=safe_fetch($q)) {
@@ -92,7 +92,7 @@ function UpdatePreOpen($TournamentID) {
 			$oldKeys[]=$key;
 			if(!$good) {
 				$SQL="update Scheduler set SchStart='".substr($key,-8)."' where SchDay='$r->SchDay' and SchStart='$r->SchStart' and SchDuration='$r->SchDuration' and SchSesOrder=$r->SchSesOrder and SchOrder=$r->SchOrder and SchSesType='$r->SchSesType' limit 1";
-				safe_w_sql($SQL,false,array(1062));
+				safe_w_sql($SQL);
 			}
 		}
 		to_save_version($TournamentID,'2014-04-01 00:00:00');
@@ -185,16 +185,6 @@ function UpdatePreOpen($TournamentID) {
     if($version<'2024-09-20 08:00:07') {
         updateAclTemplates_20240920($TournamentID);
         to_save_version($TournamentID, '2024-09-20 08:00:07');
-    }
-
-    if($version<'2025-04-07 11:00:05') {
-        updateNfaaIndoor_20250407($TournamentID);
-        to_save_version($TournamentID, '2025-04-07 11:00:05');
-    }
-
-    if($version<'2026-06-17 19:20:01') {
-        updateRemoveDNFnoRank_20260607($TournamentID);
-        to_save_version($TournamentID, '2026-06-17 19:20:01');
     }
 
     to_save_version($TournamentID, $DbVersion);

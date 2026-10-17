@@ -37,6 +37,7 @@ if(!empty($_REQUEST['export'])) {
 
 $TourId=0;
 if(!empty($_SESSION['TourId'])) $TourId=$_SESSION['TourId'];
+if(!empty($_REQUEST['TourId'])) $TourId=$_REQUEST['TourId'];
 $lvl = 0;
 if($TourId) {
     $lvl = checkFullACL(AclOutput,'outTv', AclReadOnly, true, $TourId);
@@ -129,7 +130,7 @@ if(!IsBlocked(BIT_BLOCK_MEDIA)) {
                 while($r=safe_fetch($q)) {
                     $ImName=$CFG->DOCUMENT_PATH.'TV/Photos/TV-'.$_SESSION['TourCodeSafe'].'-'.($r->TVCName=='IdCardFooter' ? $r->TVCName : $r->TVCId).'.jpg';
                     if(!file_exists($ImName) or filemtime($ImName) < $r->TVCTimestamp) {
-                        if($im=@imagecreatefromstring($r->TVCContent)) {
+                        if($im=imagecreatefromstring($r->TVCContent)) {
                             imagejpeg($im, $ImName, 90);
                         }
                     }

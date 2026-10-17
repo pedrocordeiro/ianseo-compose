@@ -1,38 +1,18 @@
 <?php
-$lang['AclNotSuperuser']='Without "SUPERUSER" access you will be locked out of this section and therefore you cannot enable Access Policies';
 $lang['AuthTourCode']='Comma separated list of tournaments codes that can be managed by the user.<br>Allowed wildchar: "%"';
 $lang['AutoCheckinAlreadyDone']='You are already checked in<br>If you need to change any information proceed to the accreditation desk';
 $lang['AutoCheckinConfirm']='If all the details are correct press CONFIRM CHECK-IN<br> 
 Otherwise press CANCEL and proceed to the accreditation desk';
 $lang['AutoCheckinSearch']='Scan the QR Code you received or type your name';
 $lang['AutoCHK-CanEdit']='Allow check-in operators to edit Names, E-Mails, Country/Club, etc';
-$lang['AutoCHK-CanEditCategory']='Edit Category';
-$lang['AutoCHK-CanEditEntry']='Edit Entry Details';
-$lang['AutoCHK-CanEditExtras']='Edit Extras';
-$lang['AutoCHK-CanEditTgt']='Edit Target Assignment';
 $lang['AutoCHK-Code']='List of Competitions, one per line<br> First competition code will be used as header in auto-checkin kiosks';
-$lang['AutoCHK-IP']='List of IP of auto check-in devices. One IP Address per line, matching one of the following formats:<br>
-Device IP<br>
-Device IP | Accreditation Printer Queue <br>
-Device IP | Accreditation Printer Queue | Name Tag Printer Queue<br>
-Device IP | Accreditation Printer Queue | Name Tag Printer Queue | Card Printer Queue<br>
-Printer Queue in form: Queue Name [ @ Printer Server ]<br>
-If no Printer Queue is defined, then the standard print dialog will show';
-$lang['AutoCHK-IPBowStorage']='List of IP of Bow Storage points. One IP Address per line';
-$lang['AutoCHK-IPGoodiesDistribution']='List of IP of Goodie Bags distribution points. One IP Address per line matching one of the following formats:<br>
-Device IP<br>
-Device IP | CompetitionCode<br>
-Add a Competition Code to limit IP operation on a specific tournament';
+$lang['AutoCHK-IP']='List of IP of auto check-in devices. One IP Address per line';
 $lang['AutoCHK-IPinfo']='List of IP of self info points. One IP Address per line';
 $lang['AutoCHK-IPnoMgm']='List of IP of self check-in kiosks. One IP Address per line, matching one of the following formats:<br>
 Device IP<br>
 Device IP | Accreditation Printer Queue <br>
 Device IP | Accreditation Printer Queue | Name Tag Printer Queue<br>
 Printer Queue in form: Queue Name [ @ Printer Server ]';
-$lang['AutoCHK-IPPaidPractice']='List of IP of Paid Practice points. One IP Address per line. One IP Address per line matching one of the following formats:<br>
-Device IP<br>
-Device IP|1 for Accepting only Fast Lane practice pass';
-$lang['AutoCHK-KioskEditPin']='4 Digit PIN for Edit data in edit-enabled devices';
 $lang['AutoCHK-Print']='Automatically show print dialog';
 $lang['AutoImportSettings']='<b>Only for Expert Users</b><br>Changing the default behavior could result in inaccurate results.<br>
 It is important to recalculate all the ranks that have been setup as "manually" BEFORE sending to ianseo.net or printing results and in general before every distribution of any kind.';
@@ -67,11 +47,7 @@ $lang['FontStyle']='Style of the font in CSS';
 $lang['FontWeight']='Weight of the font in CSS';
 $lang['GetBarcodeSeparator']='After printing the barcodes reference sheet, read the «SEPARATOR» barcode in order to activate the correct reader items.';
 $lang['HomePage']='This is the page where you can select or create a tournament.';
-$lang['IfaaFlintIndoorHelp']='Cells with a red border show the sessions with archers of that category<br/>
-Click on the Session Headings will select all the categories already in that session</br>
-Select the destination session where the session will be merged.';
 $lang['ISK-LockedSessionHelp']='{$a} icons show if the app can score or not in that session.';
-$lang['ISK-regexSignature']='Leave empty to match the exact Accreditation QR Code';
 $lang['ISK-ServerUrlPin']='<b>DO NOT SHARE THIS NUMBER</b><br>Use a PIN of your choice (4 Numeric Digits) to be used to access your competition.<br>
 Devices can score in your competition only reading the QR-Code printed by IANSEO.<br>
 In case of manual input in Ianseo Scorekeeper LITE app, the Competition code to use is <b>{$a}</b>';
@@ -80,9 +56,6 @@ a single or double ">" will draw a right arrow
 a single or double "^" will draw an up arrow
 a single or double "v" will draw a down arrow';
 $lang['QrCodePortrait']='the field is HTML-capable. If you insert something surrounded by &lt;qrcode&gt;...&lt;/qrcode&gt; the content will be changed into a QrCode';
-$lang['RecordGrayLine']='Same type of record and same category already present with a higher score.<br> Check rules and dates for record assignation.';
-$lang['RecordHelp']='Colored rows/cells help';
-$lang['RecordPinkCell']='Same score and category is a record of a higher level.<bt>Write in PDF only the most important one.</bt>';
 $lang['ScoreBarCodeShortcuts']='Read the barcode printed on the scorecard.<br/>
 Inserting manually a # followed by the name of the athlete searches the database to find that athlete<br/>
 Inserting a @ followed by a target number searches for that target. Distance MUST be set. Session should be specified (first digit) and target is 0-padded to 3 digits.';
@@ -92,12 +65,6 @@ Insert {{time}} to have the ticking time in ISO format (ie: 15:03:23)<br>
 Insert {{time-am}} to have ticking time in AM/PM format (ie: 3:03:23 PM)<br>
 Insert {{counter-datetime}} to have a full date countdown (ie: [[[days:]hours:]minutes:]seconds layout, where datetime is the time to reach in ISO format 2024-12-04T09:00:00 for local time)<br>
 There can only be one of these fields in a text';
-$lang['Sport80-DeleteEntries']='Delete Entries that are not present in Sport80';
-$lang['Sport80-ForceUpdate']='This operation will overwrite all the changes done in the system with the original information coming from Sport80 Registration System.<br>Be advised to make a backup before proceeding.<br>Proceed only if you are extremely sure.';
-$lang['Sport80-LoadEntries']='Add new entries and applies updates to existing ones with data coming from Sport80 System.<br>
-Delete Entries that are not present in Sport80';
-$lang['Sport80-UpdateEntries']='Add new entries and applies updates to existing ones with data coming from Sport80 System.<br>
-Existing entries will not be deleted even if not present in Sport80';
 $lang['TargetRequests-Printout']='Prints the QrCodes of the requested targets to allow personal devices to quickly be reassigned to the correct target.<br>
 Select which group(s) of devices you want to print and the range of target butts:<br>
 1-10 prints QrCOde from target 1 to 10<br>

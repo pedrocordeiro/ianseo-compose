@@ -12,8 +12,8 @@ $TourType=11;
 
 $tourDetTypeName		= '3D';
 $tourDetNumDist			= ($SubRule<4 ? '1' : '2' );
-$tourDetNumEnds = ($SubRule == 1 || $SubRule == 4) ? '24' : (($SubRule == 2) ? '28' : (($SubRule == 3) ? '32' : '28')); //ML 25.05.2025
-$tourDetMaxDistScore = ($SubRule == 1 || $SubRule == 4) ? '528' : (($SubRule == 2) ? '616' : (($SubRule == 3) ? '704' : '616')); //ML 25.05.2025
+$tourDetNumEnds			= '24';
+$tourDetMaxDistScore	= '528';
 $tourDetMaxFinIndScore	= '44';
 $tourDetMaxFinTeamScore	= '132';
 $tourDetCategory		= '8'; // 0: Other, 1: Outdoor, 2: Indoor, 4:Field, 8:3D

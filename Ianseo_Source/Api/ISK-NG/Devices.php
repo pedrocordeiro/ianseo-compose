@@ -70,7 +70,6 @@ $JS_SCRIPT=array(
         'usePersonal' => ($UsePersonalDevices ? true : false),
         'tourCode' => $_SESSION["TourCode"],
         'reqAppVersion' => reqAppVersion,
-        'reqGateVersion' => reqGateVersion,
         'SocketIP'=>getModuleParameter('ISK-NG', 'SocketIP', gethostbyname($_SERVER['HTTP_HOST'])),
         'SocketPort'=>getModuleParameter('ISK-NG', 'SocketPort', '12346'),
         'scheduleOpts' => array_values($scheduleOpts),
@@ -92,7 +91,6 @@ $JS_SCRIPT=array(
         'txtDevDisconnected'=>get_text('DevDisconnected', 'Api'),
         'txtOnlyToday'=>get_text('ScheduleToday', 'Tournament'),
         'txtUnfinished'=>get_text('ScheduleUnfinished', 'Tournament'),
-        'txtViewTeamComponent'=>module_exists('ExtendedORIS') ? '<input type="checkbox" value="1" checked="checked">'.get_text('ViewTeamComponents', 'Tournament') : ""
     )),
     ($_SESSION["UseApi"] == ISK_NG_LIVE_CODE ? '<script type="text/javascript" src="./socket.js"></script>' : '<script></script>'),
     '<script type="text/javascript" src="./Devices.js"></script>',
@@ -181,7 +179,7 @@ echo '<div id="PopUp" class="PopUp"><div class="PopUpContent">'.
             '<tr><td class="Right">'.get_text('API-Group', 'Api').'</td><td id="PopGroup"></td></tr>'.
             '<tr><td class="Right">'.get_text('Target').'</td><td id="PopTarget"></td></tr>'.
             '<tr><td class="Right Bold">'.get_text('NewGroup', 'Api').'</td><td><select id="NewGroup">'.$tmpOptionsGrp.'</select></td></tr>'.
-            '<tr><td class="Right Bold">'.get_text('NewTarget', 'Api').'</td><td><input type="number" id="NewTarget" min="1" max="9999"></td></tr>'.
+            '<tr><td class="Right Bold">'.get_text('NewTarget', 'Api').'</td><td><input type="number" id="NewTarget" min="1" max="999"></td></tr>'.
         '</table>'.
         '<div class="PopUpFooter">'.
             '<input type="button" id="PopupImport" value="'.get_text('CmdOk').'" onclick="setGroupTarget()">'.

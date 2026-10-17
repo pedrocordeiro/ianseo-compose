@@ -15,7 +15,6 @@ use PhpOffice\PhpSpreadsheet\Exception as SpreadsheetException;
 use PhpOffice\PhpSpreadsheet\Helper\Dimension as CssDimension;
 use PhpOffice\PhpSpreadsheet\Helper\Html as HelperHtml;
 use PhpOffice\PhpSpreadsheet\Reader\Security\XmlScanner;
-use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Color;
@@ -35,7 +34,7 @@ class Html extends BaseReader
 
     private const STARTS_WITH_BOM = '/^(?:\xfe\xff|\xff\xfe|\xEF\xBB\xBF)/';
 
-    private const DECLARES_CHARSET = '/\bcharset=/i';
+    private const DECLARES_CHARSET = '/ charset=/i';
 
     /**
      * Input encoding.
@@ -339,7 +338,7 @@ class Html extends BaseReader
                 }
                 if (isset($attributeArray['style'])) {
                     $alignStyle = $attributeArray['style'];
-                    if (preg_match('/\btext-align:\s*(left|right|center|justify)\b/', $alignStyle, $matches) === 1) {
+                    if (preg_match('/\\btext-align:\\s*(left|right|center|justify)\\b/', $alignStyle, $matches) === 1) {
                         $sheet->getComment($column . $row)->setAlignment($matches[1]);
                     }
                 }
@@ -486,7 +485,7 @@ class Html extends BaseReader
             $this->processDomElement($child, $sheet, $row, $column, $cellContent);
             $column = $this->releaseTableStartColumn();
             if ($this->tableLevel > 1) {
-                StringHelper::stringIncrement($column);
+                ++$column;
             } else {
                 ++$row;
             }
@@ -499,7 +498,7 @@ class Html extends BaseReader
     {
         if ($child->nodeName === 'col') {
             $this->applyInlineStyle($sheet, -1, $this->currentColumn, $attributeArray);
-            StringHelper::stringIncrement($this->currentColumn);
+            ++$this->currentColumn;
         } elseif ($child->nodeName === 'tr') {
             $column = $this->getTableStartColumn();
             $cellContent = '';
@@ -576,7 +575,7 @@ class Html extends BaseReader
     private function processDomElementThTd(Worksheet $sheet, int &$row, string &$column, string &$cellContent, DOMElement $child, array &$attributeArray): void
     {
         while (isset($this->rowspan[$column . $row])) {
-            StringHelper::stringIncrement($column);
+            ++$column;
         }
         $this->processDomElement($child, $sheet, $row, $column, $cellContent);
 
@@ -596,7 +595,7 @@ class Html extends BaseReader
             //create merging rowspan and colspan
             $columnTo = $column;
             for ($i = 0; $i < (int) $attributeArray['colspan'] - 1; ++$i) {
-                StringHelper::stringIncrement($columnTo);
+                ++$columnTo;
             }
             $range = $column . $row . ':' . $columnTo . ($row + (int) $attributeArray['rowspan'] - 1);
             foreach (Coordinate::extractAllCellReferencesInRange($range) as $value) {
@@ -615,23 +614,20 @@ class Html extends BaseReader
             //create merging colspan
             $columnTo = $column;
             for ($i = 0; $i < (int) $attributeArray['colspan'] - 1; ++$i) {
-                StringHelper::stringIncrement($columnTo);
+                ++$columnTo;
             }
             $sheet->mergeCells($column . $row . ':' . $columnTo . $row);
             $column = $columnTo;
         }
 
-        StringHelper::stringIncrement($column);
+        ++$column;
     }
 
     protected function processDomElement(DOMNode $element, Worksheet $sheet, int &$row, string &$column, string &$cellContent): void
     {
         foreach ($element->childNodes as $child) {
             if ($child instanceof DOMText) {
-                $domText = (string) preg_replace('/\s+/', ' ', trim($child->nodeValue ?? ''));
-                if ($domText === "\u{a0}") {
-                    $domText = '';
-                }
+                $domText = (string) preg_replace('/\s+/u', ' ', trim($child->nodeValue ?? ''));
                 if (is_string($cellContent)) {
                     //    simply append the text if the cell content is a plain text string
                     $cellContent .= $domText;
@@ -858,7 +854,7 @@ class Html extends BaseReader
         } elseif (isset($attributeArray['rowspan'], $attributeArray['colspan'])) {
             $columnTo = $column;
             for ($i = 0; $i < (int) $attributeArray['colspan'] - 1; ++$i) {
-                StringHelper::stringIncrement($columnTo);
+                ++$columnTo;
             }
             $range = $column . $row . ':' . $columnTo . ($row + (int) $attributeArray['rowspan'] - 1);
             $cellStyle = $sheet->getStyle($range);
@@ -868,7 +864,7 @@ class Html extends BaseReader
         } elseif (isset($attributeArray['colspan'])) {
             $columnTo = $column;
             for ($i = 0; $i < (int) $attributeArray['colspan'] - 1; ++$i) {
-                StringHelper::stringIncrement($columnTo);
+                ++$columnTo;
             }
             $range = $column . $row . ':' . $columnTo . $row;
             $cellStyle = $sheet->getStyle($range);
@@ -1046,10 +1042,7 @@ class Html extends BaseReader
         $name = $attributes['alt'] ?? null;
 
         $drawing = new Drawing();
-        $drawing->setPath($src, false, allowExternal: $this->allowExternalImages);
-        if ($drawing->getPath() === '') {
-            return;
-        }
+        $drawing->setPath($src);
         $drawing->setWorksheet($sheet);
         $drawing->setCoordinates($column . $row);
         $drawing->setOffsetX(0);

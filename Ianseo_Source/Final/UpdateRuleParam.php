@@ -83,15 +83,7 @@ switch($_REQUEST['fld']) {
 	case 'checkXnines':
 		$SQL="update Events set EvCheckXNines=" . intval($_REQUEST['val']) . $Where;
 		break;
-    case 'lockresults':
-        $SQL="update Events set EvLockResults=" . intval($_REQUEST['val']) . $Where;
-        $RedoBrackets=true;
-        break;
-    case 'qualbestofdistances':
-        $SQL="update Events set EvQualBestOfDistances=" . intval($_REQUEST['val']) . $Where;
-        $RedoBrackets=true;
-        break;
-    case 'parentWinner':
+	case 'parentWinner':
 		$SQL="update Events set EvCodeParentWinnerBranch=" . intval($_REQUEST['val']) . $Where;
 		break;
 	case 'parent':
@@ -112,16 +104,22 @@ switch($_REQUEST['fld']) {
 $RsIns=safe_w_sql($SQL);
 
 if (safe_w_affected_rows()) {
-    safe_w_sql("UPDATE Events SET EvTourRules=''" . $Where);
+	safe_w_sql("UPDATE Events SET EvTourRules=''" . $Where );
+}
 
-    if ($RedoBrackets or $ResetSO) {
-        // rebuild Teams/Individuals
-        if ($Team) {
-            MakeTeamsAbs(null, null, null);
-        } else {
-            MakeIndAbs();
-        }
+if($RedoBrackets OR $ResetSO) {
+// rebuild Teams/Individuals
+    if ($Team) {
+        MakeTeamsAbs(null, null, null);
+    } else {
+        MakeIndAbs();
+    }
 
+    if ($RedoBrackets) {
+        // TODO: need to destroy and recreate the brackets
+        ResetShootoff($_REQUEST['event'], $Team, 0);
+    } elseif ($ResetSO) {
+        // reset of the Event's SO
         ResetShootoff($_REQUEST['event'], $Team, 0);
     }
 }

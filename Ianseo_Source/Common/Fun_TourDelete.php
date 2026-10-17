@@ -81,7 +81,6 @@ function tour_delete($TourId) {
 		"TeamFinComponent" => "TfcTournament",
         "TeamFinComponentLog" => "TfclTournament",
 		"TeamFinals" => "TfTournament",
-		"TeamQualificationDistances" => "TqdTournament",
 		"Teams" => "TeTournament",
 		"TourRecords" => "TrTournament",
 		"Tournament" => "ToId",
@@ -92,8 +91,8 @@ function tour_delete($TourId) {
 
 	RemoveOdf($TourId, $TourCode);
 
-    safe_w_BeginTransaction();
-	foreach($TableArray as $Key=>$Value) {
+	foreach($TableArray as $Key=>$Value)
+	{
 		$Sql = "DELETE FROM " . $Key . " WHERE " . $Value . " = " . StrSafe_DB($TourId);
 		safe_w_sql($Sql);
 	}
@@ -117,7 +116,6 @@ function tour_delete($TourId) {
 	safe_w_sql($Sql);
     $Sql = "UPDATE IskDevices SET IskDvTournament=0 WHERE IskDvTournament = " . StrSafe_DB($TourId);
     safe_w_sql($Sql);
-    safe_w_Commit();
 	// removea all media
 	RemoveMedia($TourCode);
 
@@ -204,7 +202,6 @@ function tour_import($filename, $isString=false) {
 		'TeamDavis' => 'TeDa',
 		'TeamFinComponent' => 'Tfc',
         'TeamFinComponentLog' => 'Tfcl',
-		'TeamQualificationDistances' => 'Tqd',
 		'Teams' => 'Te',
 		'TournamentDistances' => 'Td',
 		'TournamentInvolved' => 'Ti',
@@ -230,7 +227,6 @@ function tour_import($filename, $isString=false) {
 		'TeamFinals' => 'TfTeam',
 		'TeamFinComponent' => 'TfcCoId',
         'TeamFinComponentLog' => 'TfclCoId',
-		'TeamQualificationDistances' => 'TqdCoId',
 		'Teams' => 'TeCoId',
 		'TournamentInvolved' => 'TiCountry',
 		);
@@ -354,12 +350,12 @@ function tour_import($filename, $isString=false) {
 	$q=safe_r_sql("select `ToId` from `Tournament` where `ToCode`=" . strsafe_db($Gara['Tournament']['ToCode']));
 	if($r=safe_fetch($q) ){
 		// esiste un tournament con lo stesso codice... ranzo tutto!
-        tour_delete($r->ToId);
+		tour_delete($r->ToId);
 	}
 
 	// elimina i media di questa gara
 	RemoveMedia($Gara['Tournament']['ToCode']);
-    safe_w_BeginTransaction();
+
 	// Insert competition
     $query=array();
 	foreach($Gara['Tournament'] as $key=>$val) {
@@ -442,11 +438,11 @@ function tour_import($filename, $isString=false) {
 				if(is_array($field)) {
 					foreach($field as $ff) {
 						if(array_key_exists($ff,$record) && $record[$ff])
-							$Gara[$tab][$key][$ff]=($Countries[$record[$ff]]??0);
+							$Gara[$tab][$key][$ff]=$Countries[$record[$ff]];
 					}
 				} else {
 				    if(array_key_exists($field,$record) AND $record[$field] AND array_key_exists($record[$field],$Countries))
-						$Gara[$tab][$key][$field]=($Countries[$record[$field]]??0);
+						$Gara[$tab][$key][$field]=$Countries[$record[$field]];
 				}
 			}
 		}
@@ -501,7 +497,7 @@ function tour_import($filename, $isString=false) {
                     if(!is_null($val)) {
                         $query[] = "`$key` = " . strsafe_db($val);
                     } else {
-//                        $query[] = "`$key` = NULL";
+                        $query[] = "`$key` = NULL";
                     }
 				}
 			}
@@ -516,7 +512,7 @@ function tour_import($filename, $isString=false) {
                 if(is_array($field)) {
                     foreach($field as $ff) {
                         if(array_key_exists($ff,$record) && $record[$ff]) {
-                            $Gara[$tab][$key][$ff] = ($Entries[$record[$ff]]??0);
+                            $Gara[$tab][$key][$ff] = $Entries[$record[$ff]];
                         }
                     }
                 } else {
@@ -618,11 +614,19 @@ function tour_import($filename, $isString=false) {
 		}
 	}
 
+// 	// Manage OnLineIds table
+// 	foreach($Entries as $Org => $New) {
+// 		safe_w_sql("update OnLineIds set OliId=$New where OliTournament=$TourId and OliType='E' and OliId=$Org");
+// 	}
+// 	foreach($Countries as $Org => $New) {
+// 		safe_w_sql("update OnLineIds set OliId=$New where OliTournament=$TourId and OliType='C' and OliId=$Org");
+// 	}
+// 	safe_w_sql("update OnLineIds set OliId=$TourId where OliTournament=$TourId and OliType='T'");
+
 	// if for accreditation, inserts all the LocCodes!
 	if(!empty($_REQUEST['Accreditation'])) {
 		safe_w_sql("insert ignore into `ExtraData` (select `EnId`, 'Z', '', concat(`EnCode`, '-', `EnIocCode`, '-', `EnDivision`) from `Entries` where `EnTournament`=$TourId)");
 	}
-    safe_w_Commit();
 
 	// RECREATES ALL MEDIA
 	CheckPictures($Gara['Tournament']['ToCode']);

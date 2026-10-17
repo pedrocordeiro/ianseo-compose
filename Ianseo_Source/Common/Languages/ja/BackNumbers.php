@@ -8,6 +8,7 @@ $lang['BackNumbers']='ゼッケン';
 $lang['BadgeComplete']='すべてのゼッケン';
 $lang['BadgeCreate']='新規作成';
 $lang['BadgeDelete']='削除';
+$lang['BadgeDimention']='用紙サイズ';
 $lang['BadgeEdit']='編集';
 $lang['BadgeExportLayout']='レイアウトをエクスポート';
 $lang['BadgeImportLayout']='レイアウトをインポート';

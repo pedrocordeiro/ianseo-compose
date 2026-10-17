@@ -50,6 +50,8 @@ class Cell implements Stringable
 
     /**
      * The collection of cells that this cell belongs to (i.e. The Cell Collection for the parent Worksheet).
+     *
+     * @var ?Cells
      */
     private ?Cells $parent;
 
@@ -58,7 +60,10 @@ class Cell implements Stringable
      */
     private int $xfIndex = 0;
 
-    private ?array $formulaAttributes = null;
+    /**
+     * Attributes of the formula.
+     */
+    private mixed $formulaAttributes = null;
 
     private IgnoredErrors $ignoredErrors;
 
@@ -313,21 +318,7 @@ class Cell implements Stringable
         $this->updateInCollection();
         $cellCoordinate = $this->getCoordinate();
         self::updateIfCellIsTableHeader($this->getParent()?->getParent(), $this, $oldValue, $value);
-        $worksheet = $this->getWorksheet();
-        $spreadsheet = $worksheet->getParent();
-        if (isset($spreadsheet) && $spreadsheet->getIndex($worksheet, true) >= 0) {
-            $originalSelected = $worksheet->getSelectedCells();
-            $activeSheetIndex = $spreadsheet->getActiveSheetIndex();
-            $style = $this->getStyle();
-            $oldQuotePrefix = $style->getQuotePrefix();
-            if ($oldQuotePrefix !== $quotePrefix) {
-                $style->setQuotePrefix($quotePrefix);
-            }
-            $worksheet->setSelectedCells($originalSelected);
-            if ($activeSheetIndex >= 0) {
-                $spreadsheet->setActiveSheetIndex($activeSheetIndex);
-            }
-        }
+        $this->getWorksheet()->applyStylesFromArray($cellCoordinate, ['quotePrefix' => $quotePrefix]);
 
         return $this->getParent()?->get($cellCoordinate) ?? $this;
     }
@@ -798,14 +789,22 @@ class Cell implements Stringable
         return $this->updateInCollection();
     }
 
-    public function setFormulaAttributes(?array $attributes): self
+    /**
+     * Set the formula attributes.
+     *
+     * @return $this
+     */
+    public function setFormulaAttributes(mixed $attributes): self
     {
         $this->formulaAttributes = $attributes;
 
         return $this;
     }
 
-    public function getFormulaAttributes(): ?array
+    /**
+     * Get the formula attributes.
+     */
+    public function getFormulaAttributes(): mixed
     {
         return $this->formulaAttributes;
     }

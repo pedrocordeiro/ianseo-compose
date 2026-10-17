@@ -12,7 +12,7 @@ $tmpObj->Name='';
 $tmpObj->Country='';
 
 $PhaseTitles=array("1/48\nElimin. Round§", "1/24\nElimin. Round§", "1/16\nElimin. Round§", "1/8\nElimin. Round§", "Quarterfinals§", "Semifinals§", "Finals§");
-$titArray = array("Seed/QR§",'',"Name","NOC\nCode");
+$titArray = array("R. Round\nRank/Score§",'',"Name","NOC\nCode");
 $misArray = array(array(7.5, 8.5), 9, 35, 13);
 
 $FreePageWidth=$pdf->getPageWidth()-20-array_reduce($misArray, function($a,$b) {return $a + (is_array($b) ? array_sum($b) : $b);});
@@ -80,7 +80,10 @@ foreach($rankData['sections'] as $Event => $section) {
 		$page=0;
 
 		foreach($Phase['items'] as $item) {
-			$DrawMatch = !(($section['meta']['firstPhase']==48 or $section['meta']['firstPhase']==24) && $Phase>=32 && !$item["isValidMatch"] );
+
+			$DrawMatch = !( ($section['meta']['firstPhase']==48 or $section['meta']['firstPhase']==24) && $Phase>=32 && ($item['saved'] or $item['oppSaved']) );
+			$DrawMatch = ($DrawMatch and $item['id'] and $item['oppId']);
+
 			if($section['meta']['firstPhase']>32) {
 				if($item['matchNo']==8 or $item['matchNo']==10 or $item['matchNo']==12 or $item['matchNo']==14
 					or $item['matchNo']==16 or $item['matchNo']==20 or $item['matchNo']==24 or $item['matchNo']==28
@@ -115,8 +118,6 @@ foreach($rankData['sections'] as $Event => $section) {
 			$Obj1->QuNotes = $item['qualNotes'];
 			$Obj1->GrPosition = $item['qualRank'];
 			$Obj1->Score = ($section['meta']['matchMode'] ? $item['setScore'] : $item['score']);
-            $Obj1->AvgMatch = $item['avgMatch'];
-            $Obj1->AvgTie = $item['avgTie'];
 			$Obj1->ScoreDetails = '';
             $Obj1->ScoreNotes = '';
 			$Obj1->ScoreMatch = $item['score'];
@@ -129,17 +130,15 @@ foreach($rankData['sections'] as $Event => $section) {
 			$Obj1->Bold = $item['winner'] and !$item['irm'];
 			$Obj1->oppSetPoints = $item['oppSetPoints'];
 			$Obj1->OppScore = ($section['meta']['matchMode'] ? $item['oppSetScore'] : $item['oppScore']);
-            $Obj1->OppAvgMatch = $item['oppAvgMatch'];
-            $Obj1->OppAvgTie = $item['oppAvgTie'];
 			$Obj1->OppTie = $item['oppTie'];
 			$Obj1->OppFinRank = $item['oppFinRank'];
 			$Obj1->FSTarget = ($ShowTargetNo ? $item['target'] : '');
 
 			$Obj1->ScheduledDate = ($ShowSchedule ? $item['scheduledDate'] : '');
 			$Obj1->ScheduledTime = ($ShowSchedule ? $item['scheduledTime'] : '');
-            $Obj1->hideSchedule = ($ShowSchedule ? $item['hideSchedule'] : true);
 			$Obj1->Saved = ($PhaseNum>=32 AND $item['oppPosition'] and $item['oppPosition']<=$section['meta']['numSaved']) ? $PdfData->rankData['meta']['saved'] : '';
             $Obj1->DrawMatch=$DrawMatch;
+			$Obj1->ToDo = ($DrawMatch or $item['saved']);
 
 			// second athlete of match
 			$Obj2=new StdClass();
@@ -158,8 +157,6 @@ foreach($rankData['sections'] as $Event => $section) {
 			$Obj2->QuNotes = $item['oppQualNotes'];
 			$Obj2->GrPosition = $item['oppQualRank'];
 			$Obj2->Score = ($section['meta']['matchMode'] ? $item['oppSetScore'] : $item['oppScore']);
-            $Obj2->AvgMatch = $item['oppAvgMatch'];
-            $Obj2->AvgTie = $item['oppAvgTie'];
 			$Obj2->ScoreDetails = '';
             $Obj2->ScoreNotes = '';
 			$Obj2->ScoreCell = 6;
@@ -172,16 +169,14 @@ foreach($rankData['sections'] as $Event => $section) {
 			$Obj2->SetPoints = $item['oppSetPoints'];
 			$Obj2->oppSetPoints = $item['setPoints'];
 			$Obj2->OppScore = ($section['meta']['matchMode'] ? $item['setScore'] : $item['score']);
-            $Obj2->OppAvgMatch = $item['avgMatch'];
-            $Obj2->OppAvgTie = $item['avgTie'];
 			$Obj2->OppTie = $item['tie'];
 			$Obj2->OppFinRank = $item['oppFinRank'];
 			$Obj2->FSTarget = ($ShowTargetNo ? $item['oppTarget'] : '');
 			$Obj2->ScheduledDate = ($ShowSchedule ? $item['scheduledDate'] : '');
 			$Obj2->ScheduledTime = ($ShowSchedule ? $item['scheduledTime'] : '');
-            $Obj2->hideSchedule = ($ShowSchedule ? $item['hideSchedule'] : true);
 			$Obj2->Saved = ($PhaseNum>=32 AND $item['position'] and $item['position']<=$section['meta']['numSaved']) ? $PdfData->rankData['meta']['saved'] : '';
             $Obj2->DrawMatch=$DrawMatch;
+			$Obj2->ToDo = ($DrawMatch or $item['oppSaved']);
 
 			// what exactly has to print as "score" for side A...
 			$Obj1->strike=($item['finIrm']==20);
@@ -246,10 +241,12 @@ foreach($rankData['sections'] as $Event => $section) {
 				$Obj1->ScoreDetails.=' '.$item['record'];
 			} elseif($item['notes']) {
 				$Obj1->ScoreNotes.=' '.$item['notes'];
+			} elseif($item['tie']==2) {
+				$Obj1->Score='';
 			} elseif($RealScore1==0 and $RealScore2==0) {
 				$Obj1->Score='';
 				//$Obj1->ScoreDetails='';
-				if(!$item['hideSchedule'] and $Obj1->FSTarget and empty($Obj1->ScoreDetails)) {
+				if($item['oppTie']!=2 and $item['tie']!=2 and $Obj1->FSTarget and empty($Obj1->ScoreDetails)) {
 					$Obj1->ScoreDetails='T# '.$Obj1->FSTarget;
 				}
 			}
@@ -258,10 +255,12 @@ foreach($rankData['sections'] as $Event => $section) {
 				$Obj2->ScoreDetails.=' '.$item['oppRecord'];
 			} elseif($item['oppNotes']) {
 				$Obj2->ScoreNotes.=' '.$item['oppNotes'];
+			} elseif($item['oppTie']==2) {
+				$Obj2->Score='';
 			} elseif($RealScore1==0 and $RealScore2==0) {
 				$Obj2->Score='';
 				//$Obj2->ScoreDetails='';
-				if(!$item['hideSchedule'] and $Obj2->FSTarget and empty($Obj2->ScoreDetails)) {
+				if($item['oppTie']!=2 and $item['tie']!=2 and $Obj2->FSTarget and empty($Obj2->ScoreDetails)) {
 					$Obj2->ScoreDetails='T# '.$Obj2->FSTarget;
 				}
 			}
@@ -319,22 +318,34 @@ foreach($rankData['sections'] as $Event => $section) {
 
 			if($PhaseNum<=1) {
 				if($Obj1->FinRank==1) {
-					$PdfData->Events[$Event]->Medals["Gold"] = $Obj1->FirstName . ' ' . $pdf->FirstLetters($Obj1->Name) . ' ('.$Obj1->Country.')';
+					$PdfData->Events[$Event]->Medals["Gold"]->FirstName = $Obj1->FirstName;
+					$PdfData->Events[$Event]->Medals["Gold"]->Name = $Obj1->Name;
+					$PdfData->Events[$Event]->Medals["Gold"]->Country = $Obj1->Country;
 				}
 				if($Obj1->FinRank==2) {
-					$PdfData->Events[$Event]->Medals["Silver"] = $Obj1->FirstName . ' ' . $pdf->FirstLetters($Obj1->Name) . ' ('.$Obj1->Country.')';
+					$PdfData->Events[$Event]->Medals["Silver"]->FirstName = $Obj1->FirstName;
+					$PdfData->Events[$Event]->Medals["Silver"]->Name = $Obj1->Name;
+					$PdfData->Events[$Event]->Medals["Silver"]->Country = $Obj1->Country;
 				}
 				if($Obj1->FinRank==3) {
-					$PdfData->Events[$Event]->Medals["Bronze"] = $Obj1->FirstName . ' ' . $pdf->FirstLetters($Obj1->Name) . ' ('.$Obj1->Country.')';
+					$PdfData->Events[$Event]->Medals["Bronze"]->FirstName = $Obj1->FirstName;
+					$PdfData->Events[$Event]->Medals["Bronze"]->Name = $Obj1->Name;
+					$PdfData->Events[$Event]->Medals["Bronze"]->Country = $Obj1->Country;
 				}
 				if($Obj2->FinRank==1) {
-					$PdfData->Events[$Event]->Medals["Gold"] = (is_string($PdfData->Events[$Event]->Medals["Gold"]) ? $PdfData->Events[$Event]->Medals["Gold"] . ', ' :  '') . $Obj2->FirstName . ' ' . $pdf->FirstLetters($Obj2->Name) . ' ('.$Obj2->Country.')';
+					$PdfData->Events[$Event]->Medals["Gold"]->FirstName = $Obj2->FirstName;
+					$PdfData->Events[$Event]->Medals["Gold"]->Name = $Obj2->Name;
+					$PdfData->Events[$Event]->Medals["Gold"]->Country = $Obj2->Country;
 				}
 				if($Obj2->FinRank==2) {
-					$PdfData->Events[$Event]->Medals["Silver"] = (is_string($PdfData->Events[$Event]->Medals["Silver"]) ? $PdfData->Events[$Event]->Medals["Silver"] . ', ' :  '') . $Obj2->FirstName . ' ' . $pdf->FirstLetters($Obj2->Name) . ' ('.$Obj2->Country.')';
+					$PdfData->Events[$Event]->Medals["Silver"]->FirstName = $Obj2->FirstName;
+					$PdfData->Events[$Event]->Medals["Silver"]->Name = $Obj2->Name;
+					$PdfData->Events[$Event]->Medals["Silver"]->Country = $Obj2->Country;
 				}
 				if($Obj2->FinRank==3) {
-					$PdfData->Events[$Event]->Medals["Bronze"] = (is_string($PdfData->Events[$Event]->Medals["Bronze"]) ? $PdfData->Events[$Event]->Medals["Bronze"] . ', ' :  '') . $Obj2->FirstName . ' ' . $pdf->FirstLetters($Obj2->Name) . ' ('.$Obj2->Country.')';
+					$PdfData->Events[$Event]->Medals["Bronze"]->FirstName = $Obj2->FirstName;
+					$PdfData->Events[$Event]->Medals["Bronze"]->Name = $Obj2->Name;
+					$PdfData->Events[$Event]->Medals["Bronze"]->Country = $Obj2->Country;
 				}
 			}
 		}
@@ -391,7 +402,11 @@ foreach($PdfData->Events as $Event => $Pages) {
 		}
 
 		$pdf->lastY = $TopY + ($Pages->FirstPhase>=4 ? 4.5 : 1.5)*$pdf->CellVSp;
-		$pdf->PrintMedals($PhaseCounter,$Pages->Medals["Gold"], $Pages->Medals["Silver"], $Pages->Medals["Bronze"]);
+		$pdf->PrintMedals($PhaseCounter,
+			(empty($Pages->Medals["Gold"]->FirstName) ? "" : $Pages->Medals["Gold"]->FirstName), (empty($Pages->Medals["Gold"]->Name) ? "" : $Pages->Medals["Gold"]->Name),(empty($Pages->Medals["Gold"]->Country) ? "" : $Pages->Medals["Gold"]->Country),
+			(empty($Pages->Medals["Silver"]->FirstName) ? "" : $Pages->Medals["Silver"]->FirstName), (empty($Pages->Medals["Silver"]->Name) ? "" : $Pages->Medals["Silver"]->Name),(empty($Pages->Medals["Silver"]->Country) ? "" : $Pages->Medals["Silver"]->Country),
+			(empty($Pages->Medals["Bronze"]->FirstName) ? "" : $Pages->Medals["Bronze"]->FirstName), (empty($Pages->Medals["Bronze"]->Name) ? "" : $Pages->Medals["Bronze"]->Name),(empty($Pages->Medals["Bronze"]->Country) ? "" : $Pages->Medals["Bronze"]->Country));
+
 		$pdf->Finalists=$Finalists[$Event];
 		$pdf->MaxFinalists=$MaxFinalists[$Event];
 		$pdf->PrintFinalists();

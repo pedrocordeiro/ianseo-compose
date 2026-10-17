@@ -207,6 +207,9 @@ function GetHigerArrowValue($EventCode,$TeamEvent=0,$curValue='',$TourId=-1)
 	// trasformo in array $G e $X per cercarli meglio
 		$G = preg_split('//', $G, -1, PREG_SPLIT_NO_EMPTY);
 		$X = preg_split('//', $X, -1, PREG_SPLIT_NO_EMPTY);
+//print_r($G).'<br>';
+//print_r($X).'<br>';
+//exit;
 		for ($i=0;$i<strlen($MyStr);++$i)
 		{
 		/*
@@ -254,35 +257,6 @@ function GetHigerArrowValue($EventCode,$TeamEvent=0,$curValue='',$TourId=-1)
 
 /**
  * Calculates the weight of the "drops" Lancaster style, up to 8th drop, higher value wins
- * @param $FullArrowString string of arrows letters
- * @param $X string the letter representing the X
- * @return void
- */
-function CalculateDropWeightFromArrowstring($FullArrowString, $X='M') {
-    // Add is a fake miss (A) at the end to get the last sequence
-    $FullArrowString .= 'A';
-    $drops=[];
-    $totLen=strlen($FullArrowString)-1;
-    preg_match_all('/'.$X.'*[^'.$X.']/sim', $FullArrowString, $match);
-    $n=0;
-    $Weight='';
-    foreach(array_slice($match[0], 0, 10) as $num => $item) {
-        $n+=strlen($item);
-        $len=strlen($item)-1;
-        $val=ValutaArrowString(substr($item,-1));
-        if($n>$totLen) {
-            $drops[]=[$len];
-        } else {
-            $drops[]=[$len,$val];
-        }
-        // 1 ^ 14
-        $Weight.=str_pad(($len+1)*100 + $val, 4, '0', STR_PAD_LEFT);
-    }
-    $Weight=str_pad($Weight, 50, '0', STR_PAD_RIGHT);
-    return [$Weight,$drops];
-}
-/**
- * Calculates the weight of the "drops" Lancaster style, up to 8th drop, higher value wins
  * @param $QuId int of the archer
  * @param $X string the letter representing the X
  * @return void
@@ -310,7 +284,6 @@ function CalculateDropWeight($QuId, $X='M') {
             // 1 ^ 14
             $Weight.=str_pad(($len+1)*100 + $val, 4, '0', STR_PAD_LEFT);
         }
-
         $Weight=str_pad($Weight, 50, '0', STR_PAD_RIGHT);
         safe_w_sql("update Qualifications set QuTieWeight='$Weight', QuTieWeightDrops=".StrSafe_DB(json_encode($drops))." where QuId={$QuId}");
     }
@@ -489,6 +462,9 @@ function CalculateDropWeight($QuId, $X='M') {
 		//print 'R->' . $R . '<br>';
 		foreach ($Target as $Key => $Value)
 		{
+			/*print '<pre>';
+			print_r($Value);
+			print '</pre>';*/
 			if ($R==$Value['R'])
 			{
 				return $Key;
@@ -648,7 +624,7 @@ function GetMaxScores($EventCode, $MatchNo=0, $TeamEvent=0, $TourId=-1){
 
         if ($MyRow=safe_fetch($Rs)) {
             $ret['Arrows']=array('A' => array(0, '', ''));
-            $ret['HasDot']=($MyRow->TarId==24 or $MyRow->TarId==31);
+            $ret['HasDot']=($MyRow->TarId==24);
             $ret['MaxPoint']=0;
             $ret['MinPoint']=999;
             if(isset($GLOBALS['CurrentTarget'])) {
@@ -803,7 +779,7 @@ function GetMaxScores($EventCode, $MatchNo=0, $TeamEvent=0, $TourId=-1){
 	{
         $ret['TargetId']=$MyRow->TarId;
 		$ret['Arrows']=array('A' => array(0, '', ''));
-		$ret['HasDot']=($MyRow->TarId==24 or $MyRow->TarId==31);
+		$ret['HasDot']=($MyRow->TarId==24);
 		$ret['MaxPoint']=0;
 		$ret['MinPoint']=999;
 		if(isset($GLOBALS['CurrentTarget'])) {
@@ -1055,6 +1031,7 @@ function GetTargetColors($TourId, $TrgName='') {
 			}
 		}
 
+		//print_r($ret);
 		return $ret;
 	}
 
@@ -1068,14 +1045,12 @@ function GetTargetColors($TourId, $TrgName='') {
         global $extraLetter;
 		$ret=array();
 
-		$q="SELECT * FROM Targets where TarId='{$target}'";
+		$q="SELECT * FROM Targets where TarId=$target";
 		$r=safe_r_SQL($q);
 
 		if ($row=safe_fetch($r)) {
 			$ret[]='A';	// lo zero lo metto sempre
-            if($target==18) {
-                $ret[] = $extraLetter['A'];
-            }
+            $ret[]=$extraLetter['A'];
             foreach (range('B','Z') as $letter) {
 				if ($row->{$letter . '_size'}!=0) {
                     $ret[]=$letter;
@@ -1200,7 +1175,7 @@ function GetMinTargetValue($TargetLetters) {
 	$ret=99999;
 
 	foreach($TargetLetters as $Letter) {
-		if($LetterPoint[$Letter]['N']>0 and $LetterPoint[$Letter]['N']<$ret) $ret=intval($LetterPoint[$Letter]['N']);
+		if($LetterPoint[$Letter]['N']>0 and $LetterPoint[$Letter]['N']<$ret) $ret=$LetterPoint[$Letter]['N'];
 	}
 
 	return $ret;

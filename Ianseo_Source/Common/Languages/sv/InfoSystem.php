@@ -1,8 +1,6 @@
 <?php
-$lang['ByClub']='Efter Land/Klubb';
-$lang['ByEvent']='Klassvis';
 $lang['ByName']='På namn';
-$lang['ByTarget']='Efter tavla';
+$lang['ByTarget']='På tavla';
 $lang['ClassDiv']='Tävlingsklass';
 $lang['DivClas']='Skjutstil & Klass';
 $lang['Eliminations']='Eliminering';
@@ -18,5 +16,4 @@ $lang['Rankings']='Individuella Elim.- & Finalronder';
 $lang['RankingsTeam']='Lag Elim.- & Finalronder';
 $lang['Teams']='Lag';
 $lang['TypeName']='Knappa in det namn du letar efter';
-$lang['VenueTime']='Lokal tid';
 ?>

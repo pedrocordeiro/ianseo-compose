@@ -195,14 +195,6 @@ function get_which_menu($on=false) {
             $ret['PART']['ACCR'][] = get_text('MenuLM_Printout') . '|' . $CFG->ROOT_DIR . 'Accreditation/PrintOut.php';
             $ret['PART'][] = MENU_DIVIDER;
         }
-        if (subFeatureAcl($acl,AclAccreditation,'acAdvanced') >= AclReadOnly) {
-            $ret['PART']['ACCR'][] = MENU_DIVIDER;
-            $ret['PART']['ACCR'][] = get_text('MenuLM_GateSituation') . '|' . $CFG->ROOT_DIR . 'Accreditation/GateSituation.php';
-            if(subFeatureAcl($acl,AclAccreditation,'acAdvanced') == AclReadWrite) {
-                $ret['PART']['ACCR'][] = get_text('MenuLM_GateControl') . '|' . $CFG->ROOT_DIR . 'Accreditation/GateControl.php';
-                $ret['PART']['ACCR'][] = get_text('MenuLM_QrCodesGates') . '|' . $CFG->ROOT_DIR . 'Accreditation/QRcodes.php';
-            }
-        }
         if(subFeatureAcl($acl,AclParticipants,'pAdvancedEntries') == AclReadWrite) {
             $ret['PART']['SYNC'][] = get_text('MenuLM_Athletes Sync.') . '|' . $CFG->ROOT_DIR . 'Partecipants/LookupTableLoad.php';
             $ret['PART']['SYNC'][] = get_text('MenuLM_Athletes Sync.') . '|' . $CFG->ROOT_DIR . 'Partecipants/LookupTableLoad.php';
@@ -238,6 +230,7 @@ function get_which_menu($on=false) {
             $ret['QUAL'][] = MENU_DIVIDER;
             $ret['QUAL'][] = get_text('MenuLM_Scorecard Printout') . '|' . $CFG->ROOT_DIR . 'Qualification/PrintScore.php';
             $ret['QUAL'][] = get_text('MenuLM_NewBacknumbers') . '|' . $CFG->ROOT_DIR . 'Accreditation/IdCards.php?CardType=Q';
+            $ret['QUAL'][] = get_text('MenuLM_Qualification Field of Play Layout') . '|' . $CFG->ROOT_DIR . 'Qualification/FopSetup.php|||PrintOut';
             $ret['QUAL'][] = MENU_DIVIDER;
             $ret['QUAL'][] = get_text('MenuLM_Personal Rank') . '|' . $CFG->ROOT_DIR . 'Qualification/RankPersonal1.php';
             $ret['QUAL'][] = MENU_DIVIDER;
@@ -379,6 +372,7 @@ function get_which_menu($on=false) {
                 $ret['FINI'][] = get_text('MenuLM_Export Text File') . '|' . $CFG->ROOT_DIR . 'Final/ExportTSV.php';
                 $ret['FINI'][] = MENU_DIVIDER;
                 $ret['FINI'][] = get_text('MenuLM_Scorecard Printout') . '|' . $CFG->ROOT_DIR . 'Final/Individual/PrintScore.php';
+// 			$ret['FINI'][] = get_text('MenuLM_Back Number Printout') .'|'.$CFG->ROOT_DIR.'Final/Individual/PrintBackNo.php';
                 $ret['FINI'][] = get_text('MenuLM_NewBacknumbers') . '|' . $CFG->ROOT_DIR . 'Accreditation/IdCards.php?CardType=I';
             }
 			if($_SESSION['MenuFinIOn']) {
@@ -414,6 +408,7 @@ function get_which_menu($on=false) {
                 $ret['FINT'][] = get_text('MenuLM_Export Text File') . '|' . $CFG->ROOT_DIR . 'Final/ExportTSV.php';
                 $ret['FINT'][] = MENU_DIVIDER;
                 $ret['FINT'][] = get_text('MenuLM_Scorecard Printout') . '|' . $CFG->ROOT_DIR . 'Final/Team/PrintScore.php';
+// 			$ret['FINT'][] = get_text('MenuLM_Back Number Printout') .'|'.$CFG->ROOT_DIR.'Final/Team/PrintBackNo.php';
                 $ret['FINT'][] = get_text('MenuLM_NewBacknumbers') . '|' . $CFG->ROOT_DIR . 'Accreditation/IdCards.php?CardType=T';
             }
 			if($_SESSION['MenuFinTOn']) {
@@ -504,17 +499,17 @@ function get_which_menu($on=false) {
             }
             $ret['MEDI'][] = MENU_DIVIDER;
             $ret['MEDI'][] = get_text('MenuLM_Spotting') . '|' . $CFG->ROOT_DIR . 'Final/Viewer/|||_blank';
-            $ret['MEDI'][] = get_text('MenuLM_ShowTvLiveScore').'|' . $CFG->ROOT_DIR . 'Final/ShowTVScore.php?TourId=' . $_SESSION['TourCode'] . '|||TV';
+            $ret['MEDI'][] = 'ShowTvLiveScore|' . $CFG->ROOT_DIR . 'Final/ShowTVScore.php?TourId=' . $_SESSION['TourCode'] . '|||TV';
         }
 
 	} else {
 		// MENU OFF!!!
 		$ret['COMP'][] = get_text('MenuLM_Competition');
-        if (subFeatureAcl($acl,AclRoot) == AclReadWrite or possibleFeature(AclRoot, AclReadWrite)) {
+        if (subFeatureAcl($acl,AclRoot) == AclReadWrite) {
             $ret['COMP'][] = get_text('MenuLM_New') . '|' . $CFG->ROOT_DIR . 'Tournament/index.php?New=';
         }
 		$ret['COMP'][] = get_text('MenuLM_Open') .'|'.$CFG->ROOT_DIR.'index.php';
-        if (subFeatureAcl($acl,AclRoot) == AclReadWrite or possibleFeature(AclRoot, AclReadWrite)) {
+        if (subFeatureAcl($acl,AclRoot) == AclReadWrite) {
             $ret['COMP'][] = get_text('MenuLM_Import Tournament') . '|' . $CFG->ROOT_DIR . 'Tournament/TournamentImport.php';
         }
 		$ret['COMP'][] = MENU_DIVIDER;
@@ -549,15 +544,15 @@ function get_which_menu($on=false) {
 		include($Module);
 	}
 
-	if(!empty($ret['IANSEO'])) {
-		array_unshift($ret['IANSEO'], get_text('MenuLM_Ianseo'));
-	}
-
     foreach ($ret as $k=>$v) {
         if (count($ret[$k]) == 1) {
             unset($ret[$k]);
         }
     }
+
+	if(!empty($ret['IANSEO'])) {
+		array_unshift($ret['IANSEO'], get_text('MenuLM_Ianseo'));
+	}
 
 
 

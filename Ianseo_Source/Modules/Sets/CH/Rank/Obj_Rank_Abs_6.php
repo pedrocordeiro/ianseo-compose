@@ -200,8 +200,8 @@
 
 			$q="
 				SELECT
-					EnId,EnCode, upper(EnIocCode) EnIocCode, ifnull(EdExtra, EnCode) as LocalId, if(EnDob=0, '', EnDob) as BirthDate, EnOdfShortname, EnName AS Name, EnFirstName AS FirstName, upper(EnFirstName) AS FirstNameUpper, QuSession AS Session,
-					CONCAT(QuTarget, QuLetter) AS TargetNo, FlContAssoc,
+					EnId,EnCode, upper(EnIocCode) EnIocCode, ifnull(EdExtra, EnCode) as LocalId, if(EnDob=0, '', EnDob) as BirthDate, EnOdfShortname, EnName AS Name, EnFirstName AS FirstName, upper(EnFirstName) AS FirstNameUpper, SUBSTRING(QuTargetNo,1,1) AS Session,
+					SUBSTRING(QuTargetNo,2) AS TargetNo, FlContAssoc,
 					EvProgr, ToNumEnds,ToNumDist,ToMaxDistScore,
 					CoId, CoCode, CoName, CoCaCode, CoMaCode, EnClass, EnDivision,EnAgeClass,  EnSubClass,
 					IFNULL(Td1,'.1.') as Td1, IFNULL(Td2,'.2.') as Td2, IFNULL(Td3,'.3.') as Td3, IFNULL(Td4,'.4.') as Td4, IFNULL(Td5,'.5.') as Td5, IFNULL(Td6,'.6.') as Td6, IFNULL(Td7,'.7.') as Td7, IFNULL(Td8,'.8.') as Td8,
@@ -250,7 +250,7 @@
 				        else EnCountry
                     end
                     AND EnTournament=CoTournament AND EnTournament={$this->tournament}
-				left join ExtraData on EdId=EnId and EdType='Z' and EdExtra!=''
+				left join ExtraData on EdId=EnId and EdType='Z'
 				LEFT JOIN TournamentDistances ON ToType=TdType AND TdTournament=ToId AND CONCAT(TRIM(EnDivision),TRIM(EnClass)) LIKE TdClasses
 				left join DistanceInformation on EnTournament=DiTournament and DiSession=1 and DiDistance=1 and DiType='Q' ";
 			if(!empty($comparedTo))
@@ -508,6 +508,7 @@
 
 
 				// e lo aggiungo alla sezione
+					//print_r($item);
 					$section['items'][]=$item;
 
 					if ($myRow->IndTimestamp>$this->data['meta']['lastUpdate'])

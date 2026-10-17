@@ -1,8 +1,10 @@
 <?php
 /*
-													- CheckTargetNo.php -
+													- CheckTargetNo_Par.php -
 	Cerifica il targetno in Partecipants.php
 */
+
+	define('debug',false);
 
 	require_once(dirname(dirname(__FILE__)) . '/config.php');
 
@@ -17,24 +19,36 @@
 	$TargetNo = '';
 
 
-	if (trim($_REQUEST['d_q_QuTargetNo'])!='') {
-		if (!preg_match('/^[0-9]{1,' . TargetNoPadding . '}[a-z]{1}$/i',$_REQUEST['d_q_QuTargetNo'])) {
+	if (trim($_REQUEST['d_q_QuTargetNo'])!='')
+	{
+		if (!preg_match('/^[0-9]{1,' . TargetNoPadding . '}[a-z]{1}$/i',$_REQUEST['d_q_QuTargetNo']))
+		{
 			$Errore=1;
-		} else {
-			$TargetNo = intval(substr($_REQUEST['d_q_QuTargetNo'],0,-1));
-            $TargetLet = strtoupper(substr($_REQUEST['d_q_QuTargetNo'],-1)) ;
-            $atSql = createAvailableTargetSQL($_REQUEST['d_q_QuSession'],$_SESSION['TourId']);
-			$Select = "SELECT * FROM ($atSql) at WHERE FullTgtTarget=" . $TargetNo . " AND FullTgtLetter= " . StrSafe_DB($TargetLet);
+		}
+		else
+		{
+			$TargetNo = str_pad(mb_convert_case($_REQUEST['d_q_QuTargetNo'], MB_CASE_UPPER, "UTF-8"),(TargetNoPadding+1),'0',STR_PAD_LEFT);
+
+			$Select
+				= "SELECT * FROM AvailableTarget "
+				. "WHERE AtTournament=" . StrSafe_DB($_SESSION['TourId']) . " "
+				. "AND AtTargetNo=" . StrSafe_DB($_REQUEST['d_q_QuSession'] . $TargetNo) . " ";
 			$Rs=safe_r_sql($Select);
-			if (!$Rs || safe_num_rows($Rs)!=1) {
+			if (debug)
+				print $Select . '<br>';
+			if (!$Rs || safe_num_rows($Rs)!=1)
+			{
 				$TargetNo = $_REQUEST['d_q_QuTargetNo'];
 				$Errore=1;
 			}
 		}
 	}
 
-    header('Content-Type: text/xml');
+	if (!debug)
+		header('Content-Type: text/xml');
+
 	print '<response>';
 	print '<error>' . $Errore . '</error>';
-	print '<targetno><![CDATA[' . $TargetNo.$TargetLet . ']]></targetno>';
+	print '<targetno><![CDATA[' . $TargetNo . ']]></targetno>';
 	print '</response>';
+?>

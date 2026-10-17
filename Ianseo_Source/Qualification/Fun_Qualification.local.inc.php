@@ -313,6 +313,8 @@ function MakeIndAbs($Dists=null)
         }
 	}
 
+	//print_r($Dists);exit;
+
 	$affected=array();
 
 	$x=MakeIndividuals($affected);
@@ -386,18 +388,14 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 		}
 
 	// Elimino le squadre della qualifica
-		$Delete = "DELETE FROM Teams
-            WHERE TeTournament=" . StrSafe_DB($ToId)
-			. (!is_null($Societa) ? ' AND TeCoId=' . StrSafe_DB($Societa)  : '')
-			. ((!is_null($Category) AND $TipoElaborazione==0) ? ' AND TeEvent=' . StrSafe_DB($Category) : '')
-			. " AND TeFinEvent='0'";
+		$Delete
+			= "DELETE Teams, TeamComponent FROM "
+			. "Teams, TeamComponent  "
+			. "WHERE TeCoId=TcCoId AND TeEvent=TcEvent AND TeTournament=TcTournament AND TeTournament=" . StrSafe_DB($ToId)
+			. (!is_null($Societa) ? ' AND TeCoId=' . StrSafe_DB($Societa) . ' AND TcCoId=' . StrSafe_DB($Societa)  : '')
+			. ((!is_null($Category) AND $TipoElaborazione==0) ? ' AND TeEvent=' . StrSafe_DB($Category) . ' AND TcEvent=' . StrSafe_DB($Category) : '')
+			. " AND TeFinEvent='0' AND TcFinEvent='0' ";
 		$Rs=safe_w_sql($Delete);
-        $Delete = "DELETE FROM TeamComponent  
-            WHERE TcTournament=" . StrSafe_DB($ToId)
-            . (!is_null($Societa) ? ' AND TcCoId=' . StrSafe_DB($Societa)  : '')
-            . ((!is_null($Category) AND $TipoElaborazione==0) ? ' AND TcEvent=' . StrSafe_DB($Category) : '')
-            . " AND TcFinEvent='0' ";
-        $Rs=safe_w_sql($Delete);
 
 		if($TipoElaborazione==0)	//Gare Standard
 		{
@@ -603,14 +601,14 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 		elseif($TipoElaborazione==2)	// gare 3D
 		{
 			// Estraggo l'elenco delle persone
-			$Select = "SELECT EnTournament,EnId,IF(EnCountry2=0,EnCountry,EnCountry2) AS EnCountry, IF(((EnDivision='AI' OR EnDivision='AN') AND LEFT(EnClass,1)='J'),'AN',EnDivision) as Division, (LEFT(EnClass,1)='J') as Giovanile, EnClass AS Sex, QuScore,QuGold,QuXnine,QuHits
+			$Select = "SELECT EnTournament,EnId,IF(EnCountry2=0,EnCountry,EnCountry2) AS EnCountry, if(EnDivision='AI' OR EnDivision='OL' OR EnDivision='AN','AN',EnDivision) as Division, EnClass AS Sex, QuScore,QuGold,QuXnine,QuHits
 				FROM Entries 
 			    INNER JOIN Qualifications ON EnId=QuId and QuScore>0 
 				inner join IrmTypes on IrmId=QuIrmType and IrmShowRank=1
 				WHERE EnAthlete=1 AND EnTeamClEvent=1 AND EnStatus <= 1 AND QuScore>0 AND EnTournament = " . StrSafe_DB($ToId) . " "
 				. (!is_null($Societa) ? ' AND IF(EnCountry2=0,EnCountry,EnCountry2)=' . StrSafe_DB($Societa)   : '')
-				. "AND EnDivision IN ('AI','CO','AN','LB')"
-				. "ORDER BY IF(EnCountry2=0,EnCountry,EnCountry2), EnClass, QuScore DESC, QuGold DESC, QuXnine DESC, IF(((EnDivision='AI' OR EnDivision='AN') AND LEFT(EnClass,1)='J'),'AN',EnDivision), EnId ASC ";
+				. "AND EnDivision IN ('AI','OL','CO','AN','LB')"
+				. "ORDER BY IF(EnCountry2=0,EnCountry,EnCountry2), EnClass, QuScore DESC, QuGold DESC, QuXnine DESC, if(EnDivision='AI' OR EnDivision='OL' OR EnDivision='AN','AN',EnDivision), EnId ASC ";
 
 			$Rs=safe_r_sql($Select);
 			if (!$Rs)
@@ -620,14 +618,14 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 			$Peoples = -1;	// Contatore delle persone
 			$MyCountry = 0;
 			$MyEvent = '';
-			$Countries=array(0,0,0,0);
-			$Event=array(0,0,0,0);
-			$Aths = array(0,0,0,0);
-			$Scores = array(0,0,0,0);
-			$Golds = array(0,0,0,0);
-			$XNines = array(0,0,0,0);
-			$Hits = array(0,0,0,0);
-			$Divisions = array("LB" => false, "AI" => false, "AN" => false, "CO" => false);
+			$Countries=array(0,0,0);
+			$Event=array(0,0,0);
+			$Aths = array(0,0,0);
+			$Scores = array(0,0,0);
+			$Golds = array(0,0,0);
+			$XNines = array(0,0,0);
+			$Hits = array(0,0,0);
+			$Divisions = array("LB" => false, "AN" => false, "CO" => false);
 
 			//Ciclo per Scorrere l'elenco partecipanti
 			if (safe_num_rows($Rs)>0) {
@@ -635,14 +633,14 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 					//Cambio di società
 					if ($MyCountry != $MyRow->EnCountry || $MyEvent != 'XX' . $MyRow->Sex) {
 						$Peoples=-1;			//N.B. inizializzo a -1 perchè qui si incrementa Sempre ad ogni persona, altrimenti sballa gli indici degli array di appoggio
-						$Countries=array(0,0,0,0);
-						$Event=array(0,0,0,0);
-						$Aths = array(0,0,0,0);
-						$Scores = array(0,0,0,0);
-						$Golds = array(0,0,0,0);
-						$XNines = array(0,0,0,0);
-						$Hits = array(0,0,0,0);
-						$Divisions = array("LB" => false, "AI" => false, "AN" => false, "CO" => false);
+						$Countries=array(0,0,0);
+						$Event=array(0,0,0);
+						$Aths = array(0,0,0);
+						$Scores = array(0,0,0);
+						$Golds = array(0,0,0);
+						$XNines = array(0,0,0);
+						$Hits = array(0,0,0);
+						$Divisions = array("LB" => false, "AN" => false, "CO" => false);
 						$MyCountry = $MyRow->EnCountry;
 						$MyEvent = 'XX' . $MyRow->Sex;
 					}
@@ -656,8 +654,8 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 						$Golds[$Peoples]=$MyRow->QuGold;
 						$XNines[$Peoples]=$MyRow->QuXnine;
 						$Hits[$Peoples]=$MyRow->QuHits;
-						// se ho proprio 4 persone faccio la squadra
-						if ($Peoples==3 OR ($MyRow->Giovanile AND $Peoples==2)) {
+						// se ho proprio 3 persone faccio la squadra
+						if ($Peoples==2) {
 							// Insert in Teams
 							$InsertT
 								= "INSERT INTO Teams (TeCoId,TeEvent,TeTournament,TeFinEvent,TeScore,TeGold,TeXNine,TeFinal,TeHits) "
@@ -666,19 +664,19 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 								. StrSafe_DB($MyEvent) . ","
 								. StrSafe_DB($ToId) . ","
 								. "'0',"
-								. StrSafe_DB($Scores[0]+$Scores[1]+$Scores[2]+$Scores[3]) . ","
-								. StrSafe_DB($Golds[0]+$Golds[1]+$Golds[2]+$Golds[3]) . ","
-								. StrSafe_DB($XNines[0]+$XNines[1]+$XNines[2]+$XNines[3]) . ","
+								. StrSafe_DB($Scores[0]+$Scores[1]+$Scores[2]) . ","
+								. StrSafe_DB($Golds[0]+$Golds[1]+$Golds[2]) . ","
+								. StrSafe_DB($XNines[0]+$XNines[1]+$XNines[2]) . ","
 								. "'0',"
-								. StrSafe_DB($Hits[0]+$Hits[1]+$Hits[2]+$Hits[3]) . ""
+								. StrSafe_DB($Hits[0]+$Hits[1]+$Hits[2]) . ""
 								. ") ";
 							$RsT=safe_w_sql($InsertT);
-							$RsTC=array(NULL,NULL,NULL,NULL);
+							$RsTC=array(NULL,NULL,NULL);
 
 							// Insert in TeamComponent
-							for ($i=0;$i<=$Peoples;++$i) {
+							for ($i=0;$i<=2;++$i) {
 								$InsertTC
-									= "INSERT  INTO TeamComponent (TcCoId,TcTournament,TcEvent,TcFinEvent,TcId,TcOrder) "
+									= "INSERT INTO TeamComponent (TcCoId,TcTournament,TcEvent,TcFinEvent,TcId,TcOrder) "
 									. "VALUES("
 									. StrSafe_DB($Countries[$i]) . ","
 									. StrSafe_DB($ToId) . ","
@@ -689,7 +687,7 @@ function MakeTeams($Societa, $Category, $ToId=0) {
 									. ") ";
 								$RsTC[$i]=safe_w_sql($InsertTC);
 							}
-							if (!$RsT || !$RsTC[0] || !$RsTC[1] || !$RsTC[2] || (!$MyRow->Giovanile and !$RsTC[3])) {
+							if (!$RsT || !$RsTC[0] || !$RsTC[1] || !$RsTC[2]) {
                                 $Errore = 1;
                             }
 						}
@@ -938,6 +936,9 @@ function FindTeamEventsWithNull($ToId=0) {
 
 		}
 	}
+//print '<pre>';
+//print_r($events);
+//print '</pre>';
 	return $events;
 }
 
@@ -1083,7 +1084,7 @@ function MakeTeamsAbs($Societa=null, $Div=null, $Cl=null, $ToId=0)/*,$MoreTeam=t
         $Rs = safe_w_sql($Delete);
         //
         // Estraggo la lista di eventi per le finali a squadre
-        $Select = "SELECT DISTINCT EcCode, EvPartialTeam, EvMultiTeam, EvMultiTeamNo, EvMixedTeam, EvTeamCreationMode, EvRunning, EvLockResults
+        $Select = "SELECT DISTINCT EcCode, EvPartialTeam, EvMultiTeam, EvMultiTeamNo, EvMixedTeam, EvTeamCreationMode, EvRunning 
 		FROM EventClass 
 	    INNER JOIN Events ON EcCode=EvCode AND EvTeamEvent=1 AND EcTeamEvent!='0' AND EcTournament=EvTournament 
 		WHERE EcTournament=" . StrSafe_DB($ToId);
@@ -1122,27 +1123,11 @@ function MakeTeamsAbs($Societa=null, $Div=null, $Cl=null, $ToId=0)/*,$MoreTeam=t
                             $TeamNum[$MyRowDef->EcTeamEvent] = $MyRowDef->EcNumber;
 
                     }
-                    $tmp = array(array(),array(),array(),array());
-                    if($RowEv->EvLockResults) {
-                        foreach (range(1, $RowEv->EvLockResults) as $n) {
-                            $tmp[0][] = "QuD{$n}Score";
-                            $tmp[1][] = "QuD{$n}Gold";
-                            $tmp[2][] = "QuD{$n}Xnine";
-                            $tmp[3][] = "QuD{$n}Hits";
-                        }
-                        $tmp[0] = "(".implode('+', $tmp[0]).")";
-                        $tmp[1] = "(".implode('+', $tmp[1]).")";
-                        $tmp[2] = "(".implode('+', $tmp[2]).")";
-                        $tmp[3] = "(".implode('+', $tmp[3]).")";
-
-                    } else {
-                        $tmp = array('QuScore', 'QuGold', 'QuXnine', 'QuHits');
-                    }
                     $MyQuery = 'select * from (';
                     foreach ($TeamDef as $key => $value) {
                         $ifc = ifSqlForCountry($RowEv->EvTeamCreationMode);
                         $MyQuery .= "(SELECT {$ifc} AS Country, " . $key . " as CheQuery, EnId, EnSubTeam,
-						{$tmp[0]} as QuScore, {$tmp[1]} as QuGold, {$tmp[2]} as QuXnine, {$tmp[3]} as QuHits, " . ($RowEv->EvRunning == 1 ? "({$tmp[0]}/{$tmp[3]})" : "{$tmp[0]}") . " As ScoreCalc
+						QuScore, QuGold, QuXnine, QuHits, " . ($RowEv->EvRunning == 1 ? "(QuScore/QuHits)" : "QuScore") . " As ScoreCalc
 						FROM Entries 
 							INNER JOIN Qualifications ON EnId=QuId and (QuScore>0 or QuHits>0)
 						    inner join IrmTypes on IrmId=QuIrmType and IrmShowRank=1 
@@ -1168,7 +1153,7 @@ function MakeTeamsAbs($Societa=null, $Div=null, $Cl=null, $ToId=0)/*,$MoreTeam=t
                     }
                     $MyQuery = substr($MyQuery, 0, -1 * strlen("UNION ALL "))
                         . ") TeamEntries 
-					group by EnId, CheQuery
+					group by EnId
 					ORDER BY Country, EnSubTeam, CheQuery, ScoreCalc DESC, QuGold DESC, QuXnine DESC,EnId ASC ";
                     //print $RowEv->EcCode . ":<br>" . $MyQuery. "<br><br>\n";//exit;
                     $Rs = safe_r_sql($MyQuery);
@@ -1517,6 +1502,10 @@ function WriteTeamAbs($CurTeam,$CurSubTeam,$CurComponent,$EventCode,$Scores,$Gol
 		$rank->read();
 		$rankData=$rank->getData();
 
+//		print '<pre>';
+//		print_r($rankData);
+//		print '</pre>';exit;
+
 		$MyHeader = array
 		(
 			'Pos' => 4,
@@ -1707,7 +1696,8 @@ function WriteTeamAbs($CurTeam,$CurSubTeam,$CurComponent,$EventCode,$Scores,$Gol
 		return $StrData;
 	}
 
-	function recalSnapshot($Session, $Distance, $fromTarget, $toTarget) {
+	function recalSnapshot($Session, $Distance, $fromTarget, $toTarget)
+	{
 		CheckTourSession();
 		$Select
 			= "REPLACE INTO ElabQualifications SELECT EnId as ID, ";
@@ -1720,9 +1710,9 @@ function WriteTeamAbs($CurTeam,$CurSubTeam,$CurComponent,$EventCode,$Scores,$Gol
 			. "QuTimeStamp as Tstamp "
 			. "FROM Entries "
 			. "INNER JOIN Qualifications ON EnId=QuId "
-			. "WHERE EnAthlete=1 AND EnTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND QuSession!=0 AND QuTarget!=0 AND QuScore>0 AND QuSession=" . StrSafe_DB($Session) . " "
-			. "AND QuTarget>=" . intval($fromTarget) . " AND QuTarget<=" . intval($toTarget) . " "
-			. "ORDER BY QuSession, QuTarget, QuLetter ";
+			. "WHERE EnAthlete=1 AND EnTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND QuSession<>0 AND QuTargetNo<>'' AND QuScore>0 AND QuSession=" . StrSafe_DB($Session) . " "
+			. "AND QuTargetNo >='" . $Session . str_pad($fromTarget,TargetNoPadding,'0',STR_PAD_LEFT) . "A' AND QuTargetNo<='" . $Session . str_pad($toTarget,TargetNoPadding,'0',STR_PAD_LEFT) . "Z' "
+			. "ORDER BY QuTargetNo ASC ";
 		$Rs=safe_w_sql($Select);
 		return 0;
 	}
@@ -1743,9 +1733,9 @@ function WriteTeamAbs($CurTeam,$CurSubTeam,$CurComponent,$EventCode,$Scores,$Gol
 			INNER JOIN Qualifications ON EnId=QuId 
 			INNER JOIN Tournament ON EnTournament=ToId 
 			LEFT JOIN TargetFaces ON EnTournament=TfTournament and EnTargetFace=TfId 
-			WHERE EnAthlete=1 AND EnTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND QuTarget!=0 AND QuSession=" . StrSafe_DB($Session) . " 
-			AND QuTarget>=" . intval($fromTarget) . " AND QuTarget<=" . intval($toTarget) . " 
-			ORDER BY QuSession, QuTarget, QuLetter ";
+			WHERE EnAthlete=1 AND EnTournament=" . StrSafe_DB($_SESSION['TourId']) . " AND QuTargetNo<>'' AND QuSession=" . StrSafe_DB($Session) . " 
+			AND QuTargetNo >='" . $Session . str_pad($fromTarget,TargetNoPadding,'0',STR_PAD_LEFT) . "A' AND QuTargetNo<='" . $Session . str_pad($toTarget,TargetNoPadding,'0',STR_PAD_LEFT) . "Z' 
+			ORDER BY QuTargetNo ASC ";
 
 		//echo $Select."<br><br>";exit;
 		$Rs=safe_r_sql($Select);
@@ -1769,7 +1759,7 @@ function WriteTeamAbs($CurTeam,$CurSubTeam,$CurComponent,$EventCode,$Scores,$Gol
 		return $numArrows;
 	}
 
-function useArrowsSnapshotTarget($Distance, $Sessiom, $Target, $Letter, $numArrows) {
+function useArrowsSnapshotTarget($Distance, $Target, $numArrows) {
 	CheckTourSession();
 
 	$Select = "SELECT EnId as ID, ". $Distance . " AS Distance, ";
@@ -1784,8 +1774,8 @@ function useArrowsSnapshotTarget($Distance, $Sessiom, $Target, $Letter, $numArro
 		INNER JOIN Tournament ON EnTournament=ToId 
 		WHERE EnAthlete=1 
 			AND EnTournament={$_SESSION['TourId']} 
-			AND QuSession ='$Sessiom' AND QuTarget='$Target' AND QuLetter='$Letter'
-		ORDER BY QuSession ASC, QuTarget ASC, QuLetter ASC";
+			AND QuTargetNo ='$Target' 
+		ORDER BY QuTargetNo ASC ";
 
 	//echo $Select."<br><br>";exit;
 	$Rs=safe_r_sql($Select);

@@ -1,12 +1,9 @@
 <?php
-$lang['AcceptGPL-Accept']='موافق';
-$lang['AcceptLicense-Accept']='موافق';
 $lang['Database name']='إسم قاعدة البيانات';
 $lang['SetKidClass']='مراحل الشباب فقط';
 $lang['SetOneClass']='مرحلة واحدة للجميع';
 $lang['SetOrdinary']='بطولة عادية';
 $lang['SetOrdinaryFinals']='بطورة عادية بها نهائيات';
-$lang['SetSE_WaDist']='مسافات الاتحاد الدولي';
 $lang['SetUkJunNationals']='بطولة محلية للشباب';
 $lang['SetUkNationals']='بطولة محلية';
 $lang['Setup-NO']='بطولة نرويجية';
@@ -18,6 +15,7 @@ $lang['Start Ianseo']='بدء IANSEO';
 $lang['Status']='الحالة';
 $lang['Updating']='تحديث';
 $lang['UpdatingLanguages']='تحديث اللغات';
+$lang['UpgradeFinished']='تم التحديث';
 $lang['User']='اسم المستخدم';
 $lang['Value']='القيمة';
 ?>

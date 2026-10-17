@@ -94,7 +94,7 @@ function createEdits(obj, nosave) {
                 }
 
                 break;
-            case 'targetno':
+            case 'qutargetno':
             case 'tourid':
             case 'key':
             case 'id':

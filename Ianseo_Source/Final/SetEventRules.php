@@ -64,7 +64,7 @@ $ComboSubCl.= '</select>';
 include('Common/Templates/head.php');
 
 if(!$EVENT) {
-	echo get_text('ErrGenericError', 'Errors');
+	echo get_text('GenericError');
 	include('Common/Templates/tail.php');
 	die();
 }
@@ -73,7 +73,7 @@ $Select = "SELECT * FROM Events WHERE EvCode=" . StrSafe_DB($EVENT) . " AND EvTe
 $RsEv = safe_r_sql($Select);
 $RowEv=safe_fetch($RsEv);
 if(!$RowEv) {
-	echo get_text('ErrGenericError', 'Errors');
+	echo get_text('GenericError');
 	include('Common/Templates/tail.php');
 	die();
 }

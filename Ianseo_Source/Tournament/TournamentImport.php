@@ -5,6 +5,8 @@ require_once('Common/Fun_FormatText.inc.php');
 
 define("debug",false);
 
+$CFG->TRACE_QUERRIES=false;
+
 // Controlla se è arrivato un file di gara
 if($_FILES and !empty($_FILES['Gara']['tmp_name'])){
 
@@ -25,9 +27,24 @@ if($_FILES and !empty($_FILES['Gara']['tmp_name'])){
         checkFullACL(AclRoot, '', AclReadWrite, true, $TourId);
     }
 
-    if($CFG->USERAUTH AND !empty($_SESSION['AUTH_ENABLE']) AND empty($_SESSION['AUTH_ROOT']) and !possibleFeature(AclRoot, AclReadWrite,$importedToCode)) {
-        CD_redirect($CFG->ROOT_DIR);
-        exit;
+    if($CFG->USERAUTH AND !empty($_SESSION['AUTH_ENABLE']) AND empty($_SESSION['AUTH_ROOT'])) {
+        $compInList = false;
+        if($CFG->USERAUTH AND !empty($_SESSION['AUTH_ENABLE']) AND empty($_SESSION['AUTH_ROOT'])) {
+            foreach ($_SESSION["AUTH_COMP"] as $comp) {
+                if($importedToCode===$comp) {
+                    $compInList = true;
+                } else {
+                    $pattern = str_replace('%', '.*', preg_quote($comp,'/'));
+                    if(preg_match("/^{$pattern}$/i", $importedToCode)) {
+                        $compInList = true;
+                    }
+                }
+            }
+        }
+        if(!$compInList){
+            CD_redirect($CFG->ROOT_DIR);
+            exit;
+        }
     }
 
 	$TourId = tour_import($_FILES['Gara']['tmp_name']);
@@ -72,7 +89,7 @@ echo '<tr class="Spacer"><td colspan="2"></td></tr>';
 echo '<tr><th class="SubTitle">'.get_text('SelFile2Imp','HTT').'</th>';
 echo '<td>';
 if(ProgramRelease=='HEAD') echo '<input type="checkbox" name="Accreditation">'.get_text('AccreditationBooth', 'Tournament').'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-echo '<input type="file" name="Gara" accept=".ianseo">';
+echo '<input type="file" name="Gara">';
 echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" value="'.get_text('CmdImport','HTT').'"'.$onclick.'></td></tr>';
 echo '</table>';
 echo '</form>';

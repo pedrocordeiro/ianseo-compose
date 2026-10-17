@@ -814,6 +814,9 @@
 				for ($i=0;$i<$nEND;++$i)
 				{
 					$Tmp = "";
+					/*print '<pre>';
+					print_r($PosArrSx);
+					print '</pre>';*/
 					for($j=0; $j<$nARR; $j++)
 					{
 						if(@array_key_exists (($i*$nARR+$j), $PosArrSx))
@@ -867,6 +870,9 @@
 				for ($i=0;$i<$nEND;++$i)
 				{
 					$Tmp = "";
+					/*print '<pre>';
+					print_r($PosArrSx);
+					print '</pre>';*/
 					for($j=0; $j<$nARR; $j++)
 					{
 						if(@array_key_exists (($i*$nARR+$j), $PosArrDx))
@@ -944,6 +950,9 @@
 <td class="Center">
 <?php
 	$Tmp = "";
+	/*print '<pre>';
+	print_r($PosArrSx);
+	print '</pre>';*/
 	if (isset($_REQUEST['Volee']) && $_REQUEST['Volee']!='T')
 	{
 		$i=$_REQUEST['Volee']-1;
@@ -976,6 +985,9 @@
 <td class="Center">
 <?php
 	$Tmp = "";
+	/*print '<pre>';
+	print_r($PosArrSx);
+	print '</pre>';*/
 	if (isset($_REQUEST['Volee']) && $_REQUEST['Volee']!='T')
 	{
 		$i=$_REQUEST['Volee']-1;

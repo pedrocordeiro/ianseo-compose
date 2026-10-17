@@ -17,9 +17,8 @@ if(!CheckTourSession()) {
 	die();
 }
 
-$CardType=($_REQUEST['CardType']??'A');
-$CardNumber=(intval($_REQUEST['CardNumber']??0));
-$CardPage=(intval($_REQUEST['CardPage']??1));
+$CardType=(empty($_REQUEST['CardType']) ? 'A' : $_REQUEST['CardType']);
+$CardNumber=(empty($_REQUEST['CardNumber']) ? 0 : intval($_REQUEST['CardNumber']));
 $AvailableFonts=getFonts();
 
 $Select
@@ -30,28 +29,27 @@ $Rs=safe_r_sql($Select);
 
 $RowBn=emptyIdCard($OrgRow=safe_fetch($Rs));
 
-$Ratio=intval(ceil(max(2, 800/$RowBn->Settings["Width"])));
 
-$img=imagecreatetruecolor($RowBn->Settings["Width"]*$Ratio, $RowBn->Settings["Height"]*$Ratio);
+$img=imagecreatetruecolor($RowBn->Settings["Width"]*2, $RowBn->Settings["Height"]*2);
 $ColWhi=imagecolorallocate($img, 255, 255, 255); // bianco
 $ColBlk=imagecolorallocate($img, 192, 192, 192); // black e sfondo
-imagefilledrectangle($img, 0, 0, $RowBn->Settings["Width"]*$Ratio-1, $RowBn->Settings["Height"]*$Ratio-1, $ColWhi);
+imagefilledrectangle($img, 0, 0, $RowBn->Settings["Width"]*2-1, $RowBn->Settings["Height"]*2-1, $ColWhi);
 
 //Immagine di Sfondo
-if(strlen( $RowBn->Background) > 0 and $CardPage==1) {
+if(strlen( $RowBn->Background) > 0) {
 	// inserisci immagine di sfondo
-	if($sf=@imagecreatefromstring($RowBn->Background)) {
-		imagecopyresampled ($img , $sf , $RowBn->Settings["IdBgX"]*$Ratio , $RowBn->Settings["IdBgY"]*$Ratio , 0 , 0 , $RowBn->Settings["IdBgW"]*$Ratio , $RowBn->Settings["IdBgH"]*$Ratio , imagesx($sf) , imagesy($sf) );
+	if($sf=imagecreatefromstring($RowBn->Background)) {
+		imagecopyresampled ($img , $sf , $RowBn->Settings["IdBgX"]*2 , $RowBn->Settings["IdBgY"]*2 , 0 , 0 , $RowBn->Settings["IdBgW"]*2 , $RowBn->Settings["IdBgH"]*2 , imagesx($sf) , imagesy($sf) );
 	}
 } else {
 	// filetto grigino di contorno
-	imagerectangle($img, 0, 0, $RowBn->Settings["Width"]*$Ratio-1, $RowBn->Settings["Height"]*$Ratio-1, $ColBlk);
+	imagerectangle($img, 0, 0, $RowBn->Settings["Width"]*2-1, $RowBn->Settings["Height"]*2-1, $ColBlk);
 }
 
 
-$q=safe_r_sql("(select * from IdCardElements where IceTournament={$_SESSION['TourId']} and IceCardType='{$CardType}' and IceCardNumber={$CardNumber} and IceCardPage={$CardPage} and IceType!='RandomImage' order by IceOrder)
+$q=safe_r_sql("(select * from IdCardElements where IceTournament={$_SESSION['TourId']} and IceCardType='{$CardType}' and IceCardNumber={$CardNumber} and IceType!='RandomImage' order by IceOrder)
 	union
-	(select * from IdCardElements where IceTournament={$_SESSION['TourId']} and IceCardType='{$CardType}' and IceCardNumber={$CardNumber} and IceCardPage={$CardPage} and IceType='RandomImage' order by rand() limit 1)");
+	(select * from IdCardElements where IceTournament={$_SESSION['TourId']} and IceCardType='{$CardType}' and IceCardNumber={$CardNumber} and IceType='RandomImage' order by rand() limit 1)");
 
 while($r=safe_fetch($q)) {
 	draw_pip($r);
@@ -64,11 +62,11 @@ imagepng($img);
 die();
 
 function draw_pip($r) {
-	global $img, $ColBlk, $CFG, $AvailableFonts, $Ratio;
+	global $img, $ColBlk, $CFG, $AvailableFonts;
 	static $Fonts=array('arial','times','cour');
 
 	$Options=unserialize($r->IceOptions);
-	$CardFile="{$r->IceCardType}-{$r->IceCardNumber}-{$r->IceCardPage}-{$r->IceOrder}";
+	$CardFile="{$r->IceCardType}-{$r->IceCardNumber}-{$r->IceOrder}";
 
  	//error_reporting(E_ALL);
 
@@ -109,14 +107,14 @@ function draw_pip($r) {
 					$im2=imagecreatefromgif($im);
 				}
 				if($Options['H'] or $Options['W']) {
-					$h=$Options['H']*$Ratio;
-					$w=$Options['W']*$Ratio;
+					$h=$Options['H']*2;
+					$w=$Options['W']*2;
 					if(!$h) {
 						$h=$w*imagesy($im2)/imagesx($im2);
 					} elseif(!$w) {
 						$w=$h*imagesx($im2)/imagesy($im2);
 					}
-					imagecopyresampled($img, $im2, intval(round($Options['X']*$Ratio)), intval(round($Options['Y']*$Ratio)), 0, 0, intval(round($w)), intval(round($h)), imagesx($im2), imagesy($im2));
+					imagecopyresampled($img, $im2, intval(round($Options['X']*2)), intval(round($Options['Y']*2)), 0, 0, intval(round($w)), intval(round($h)), imagesx($im2), imagesy($im2));
 				}
 			}
 			break;
@@ -134,14 +132,14 @@ function draw_pip($r) {
 
 				$im2=imagecreatefrompng($tmpname);
 				if($Options['H'] or $Options['W']) {
-					$h=$Options['H']*$Ratio;
-					$w=$Options['W']*$Ratio;
+					$h=$Options['H']*2;
+					$w=$Options['W']*2;
 					if(!$h) {
 						$h=$w*imagesy($im2)/imagesx($im2);
 					} elseif(!$w) {
 						$w=$h*imagesx($im2)/imagesy($im2);
 					}
-					imagecopyresampled($img, $im2, $Options['X']*$Ratio, $Options['Y']*$Ratio, 0, 0, $w, $h, imagesx($im2), imagesy($im2));
+					imagecopyresampled($img, $im2, $Options['X']*2, $Options['Y']*2, 0, 0, $w, $h, imagesx($im2), imagesy($im2));
 				}
 				unlink($tmpname);
 			}
@@ -204,11 +202,8 @@ function draw_pip($r) {
 				switch($r->IceContent) {
 					case 'CatCode':$Text='CODE'; break;
 					case 'CatCode-EvDescr':$Text='CODE-Category'; break;
+					case 'CatDescr':$Text='Category'; break;
 					case 'CatDescrUpper':$Text='CATEGORY'; break;
-					case 'EvSubCode':$Text='SubCode'; break;
-					case 'EvSubCode-EvSubDescr':$Text='SubCode-Sub Category'; break;
-					case 'EvSubDescr':$Text='Sub Category'; break;
-					default:$Text='Category'; break;
 				}
 			}
 		case 'Session':
@@ -219,10 +214,6 @@ function draw_pip($r) {
 			if(!isset($Text)) $Text=get_text('Rank');
 		case 'FinalRanking':
 			if(!isset($Text)) $Text=get_text('FinalRanking','BackNumbers');
-		case 'SubclassRanking':
-			if(!isset($Text)) $Text=get_text('SubclassRanking','BackNumbers');
-		case 'PayoutAwarded':
-			if(!isset($Text)) $Text=get_text('PayoutAwarded','BackNumbers');
         case 'WRank':
             if(!isset($Text)) $Text=get_text('WRank','BackNumbers');
         case 'ExtraAddOns':
@@ -250,19 +241,19 @@ function draw_pip($r) {
 					if(strpos($Options['Size'],'-') !== false) {
 						list($Options['Size'],) = explode('-',$Options['Size']);
 					}
-					$size=intval($Options['Size'])*0.35278*$Ratio;
+					$size=intval($Options['Size'])*0.35278*2;
 					$pos=imagettfbbox($size, 0, $font, $Text);
 					$width=$pos[4]-$pos[0];
 					$height=$pos[1]-$pos[5];
 
-					$y=($Options['H']*$Ratio-$height)/2;
+					$y=($Options['H']*2-$height)/2;
 					switch($Options['Just']) {
-						case 1: $x=($Options['W']*$Ratio-$width)/2; break; // centered
-						case 2: $x=$Options['W']*$Ratio-$width; break; // left
+						case 1: $x=($Options['W']*2-$width)/2; break; // centered
+						case 2: $x=$Options['W']*2-$width; break; // left
 						default: $x=0; break; // right
 					}
 
-					$txt1=imagecreatetruecolor(intval(round($Options['W']*$Ratio)), intval(round($Options['H']*$Ratio)));
+					$txt1=imagecreatetruecolor(intval(round($Options['W']*2)), intval(round($Options['H']*2)));
 					$Back=imagecolorallocate($txt1, 250, 250, 250); // background
 					imagefill($txt1, 0, 0, $Back);
 					if($Options['Col']) {
@@ -285,13 +276,13 @@ function draw_pip($r) {
 					}
 
 					imagettftext ($txt1, $size, 0, intval(round($x)), intval(round($y+$size)), $color, $font, $Text);
-					imagecopymerge ($img, $txt1, intval(round($Options['X']*$Ratio)), intval(round($Options['Y']*$Ratio)), 0, 0, intval(round($Options['W']*$Ratio)), intval(round($Options['H']*$Ratio)), 100);
-					imagerectangle($img, intval(round($Options['X']*$Ratio)), intval(round($Options['Y']*$Ratio)), intval(round($Options['X']*$Ratio+$Options['W']*$Ratio-1)), intval(round($Options['Y']*$Ratio+$Options['H']*$Ratio-1)), $ColBlk);
+					imagecopymerge ($img, $txt1, intval(round($Options['X']*2)), intval(round($Options['Y']*2)), 0, 0, intval(round($Options['W']*2)), intval(round($Options['H']*2)), 100);
+					imagerectangle($img, intval(round($Options['X']*2)), intval(round($Options['Y']*2)), intval(round($Options['X']*2+$Options['W']*2-1)), intval(round($Options['Y']*2+$Options['H']*2-1)), $ColBlk);
 				}
 			} else {
 				if($Options['BackCol']) {
 					$color=imagecolorallocate($img, hexdec(substr($Options['BackCol'], 1, 2)), hexdec(substr($Options['BackCol'], 3, 2)), hexdec(substr($Options['BackCol'], 5, 2)));
-					imagefilledrectangle($img, intval(round($Options['X']*$Ratio)), intval(round($Options['Y']*$Ratio)), intval(round($Options['X']*$Ratio+$Options['W']*$Ratio-1)), intval(round($Options['Y']*$Ratio+$Options['H']*$Ratio-1)), $color);
+					imagefilledrectangle($img, intval(round($Options['X']*2)), intval(round($Options['Y']*2)), intval(round($Options['X']*2+$Options['W']*2-1)), intval(round($Options['Y']*2+$Options['H']*2-1)), $color);
 				}
 			}
 			break;
@@ -299,30 +290,17 @@ function draw_pip($r) {
 			$txt1=imagecreatefrompng($CFG->DOCUMENT_PATH.'Common/Images/edit-barcode.png');
 		case 'AthQrCode':
 			if(!isset($txt1)) $txt1=imagecreatefromjpeg($CFG->DOCUMENT_PATH.'Common/Images/qrcode.jpg');
-        case 'ImageUrl':
-            if(!isset($txt1)) $txt1=imagecreatefrompng($CFG->DOCUMENT_PATH.'Common/Images/image-url.png');
 		case 'Flag':
 			if(!isset($txt1)) $txt1=imagecreatefromjpeg($CFG->DOCUMENT_PATH.'Common/Images/Flag.jpg');
 		case 'AccessGraphics':
 			if(!isset($txt1)) $txt1=imagecreatefrompng($CFG->DOCUMENT_PATH.'Common/Images/AccessCodes.png');
 		case 'Accomodation':
 			if(!isset($txt1)) $txt1=imagecreatefrompng($CFG->DOCUMENT_PATH.'Common/Images/Accomodations.png');
-            if($Options['W']<0) {
-                $Options['W'] = 0;
-            }
-            if($Options['H']<0) {
-                $Options['H'] = 0;
-            }
-            if($Options['W']==0) {
-                $Options['W'] = imagesx($txt1)*$Options['H']/imagesy($txt1);
-            } else if($Options['H']==0) {
-                $Options['H'] = imagesy($txt1)*$Options['W']/imagesx($txt1);
-            }
-            imagecopyresampled($img, $txt1, intval(round($Options['X']*$Ratio)), intval(round($Options['Y']*$Ratio)), 0, 0, intval(round($Options['W']*$Ratio)), intval(round($Options['H']*$Ratio)), imagesx($txt1), imagesy($txt1));
+			imagecopyresampled($img, $txt1, intval(round($Options['X']*2)), intval(round($Options['Y']*2)), 0, 0, intval(round($Options['W']*2)), intval(round($Options['H']*2)), imagesx($txt1), imagesy($txt1));
 			break;
 		case 'HLine':
 			$color=imagecolorallocate($img, hexdec(substr($Options['Col'], 1, 2)), hexdec(substr($Options['Col'], 3, 2)), hexdec(substr($Options['Col'], 5, 2)));
-			imagefilledrectangle($img, intval(round($Options['X']*$Ratio)), intval(round($Options['Y']*$Ratio)), intval(round($Options['X']*$Ratio+$Options['W']*$Ratio)), intval(round($Options['Y']*$Ratio+$Options['H']*$Ratio)), $color);
+			imagefilledrectangle($img, intval(round($Options['X']*2)), intval(round($Options['Y']*2)), intval(round($Options['X']*2+$Options['W']*2)), intval(round($Options['Y']*2+$Options['H']*2)), $color);
 			break;
 	}
 

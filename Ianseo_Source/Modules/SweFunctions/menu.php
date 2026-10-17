@@ -10,3 +10,4 @@ if(!empty($on) && $_SESSION['TourLocRule'] == 'NO') {
 if(!empty($on) && $_SESSION['TourLocRule'] == 'IS') {
 	$ret['COMP']['EXPT'][] = '* Senda íslensk úrslit|'.$CFG->ROOT_DIR.'Modules/SweFunctions/';
 }
+?>

@@ -11,7 +11,7 @@ $ENTRY='';
 $q=safe_r_sql("select * from BoinxSchedule where BsTournament=$TourId and BsType='Qua_Ind'");
 
 if(($r=safe_fetch($q))) {
-	$SQL="select CONCAT(QuTarget, QuLetter) Bib
+	$SQL="select substr(QuTargetNo, 2) Bib
 		, concat(EnName, ' ', upper(EnFirstName)) Name
 		, concat(CoCode, '-', CoName) Country
 		, QuScore, QuClRank QuRank, IndRank
@@ -26,7 +26,8 @@ if(($r=safe_fetch($q))) {
 		inner join Classes on EnClass=ClId and EnTournament=ClTournament
 		left join Individuals on IndId=EnId
 		left join Events on IndEvent=EvCode and EnTournament=EvTournament
-		where CONCAT(QuSession,'|',QuTarget,QuLetter)='$r->BsExtra' and EnTournament=$TourId";
+		where QuTargetNo='$r->BsExtra' and EnTournament=$TourId
+		";
 	$q=safe_r_sql($SQL);
 	$ENTRY=safe_fetch($q);
 }

@@ -485,6 +485,7 @@ if($DATA['QUERIES'] or $DATA['IMG']) {
 		} else {
 			die("Server not responding");
 		}
+		curl_close($ch);
 	}
 }
 /*

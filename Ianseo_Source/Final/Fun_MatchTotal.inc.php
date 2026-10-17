@@ -148,23 +148,21 @@ function UpdateArrowPosition($MatchNo, $EvCode, $TeamEvent, $ArrowIndex, $Positi
             foreach($Position as $k=>$v) {
                 if (!array_key_exists($k, $ArrowData[$ArrowIndex]) OR $ArrowData[$ArrowIndex][$k] != round(floatval($v),1)) {
                     $MatchUpdated = true;
-                    if($k!='R' or empty($ArrowData[$ArrowIndex][$k])) {
-                        // do not change the radius of the arrow if it exists!
-                        $ArrowData[$ArrowIndex][$k] = round(floatval($v),1);
-                    }
+                    $ArrowData[$ArrowIndex][$k] = round(floatval($v),1);
                 }
             }
         }
         if(!is_null($Wind)) {
             foreach($Wind as $k=>$v) {
-                if ($k=="Ws" AND (!array_key_exists("Ws", $ArrowData[$ArrowIndex]) OR  $ArrowData[$ArrowIndex][$k] != round(floatval($v),1))) {
+                if ($k="Ws" AND (!array_key_exists("Ws", $ArrowData[$ArrowIndex]) OR  $ArrowData[$ArrowIndex][$k] != round(floatval($v),1))) {
                     $MatchUpdated = true;
                     $ArrowData[$ArrowIndex][$k] = round(floatval($v),1);
                 }
-                if ($k=="Wd" AND (!array_key_exists("Wd", $ArrowData[$ArrowIndex]) OR $ArrowData[$ArrowIndex][$k] != intval($v))) {
+                if ($k="Wd" AND (!array_key_exists("Wd", $ArrowData[$ArrowIndex]) OR $ArrowData[$ArrowIndex][$k] != intval($v))) {
                     $MatchUpdated = true;
                     $ArrowData[$ArrowIndex][$k] = intval($v);
                 }
+                $ArrowData[$ArrowIndex][$k]=$v;
             }
         }
         if(!is_null($Time)) {
@@ -1021,7 +1019,6 @@ function EvaluateMatch($Event, $Team, $Matchno, $CompId=0, $Recalculate=true, $P
 
     if($r->IrmType1 or $r->IrmType2) {
 		// we have an IRM, check what happens...
-        $MatchFinished = true;
 		if($r->IrmType1>=10 and $r->IrmType2>=10) {
 			// both opponents lose their match
 			// so removes the winner and ties if any
@@ -1029,15 +1026,15 @@ function EvaluateMatch($Event, $Team, $Matchno, $CompId=0, $Recalculate=true, $P
 			$UpdateSql1['FinWinLose'] = "{$Prefix}WinLose=0";
 			$UpdateSql2['FinTie'] = "{$Prefix}Tie=0";
 			$UpdateSql2['FinWinLose'] = "{$Prefix}WinLose=0";
-		} elseif($r->IrmType1) {
+		} elseif($r->IrmType1>=10) {
 			// Opp2 wins the match with a bye,
 			$UpdateSql1['FinTie'] = "{$Prefix}Tie=0";
 			$UpdateSql1['FinWinLose'] = "{$Prefix}WinLose=0";
-			$UpdateSql2['FinTie'] = "{$Prefix}Tie=".($r->IrmType1 >= 10 ? 2 : 0);
+			$UpdateSql2['FinTie'] = "{$Prefix}Tie=2";
 			$UpdateSql2['FinWinLose'] = "{$Prefix}WinLose=1";
-		} elseif($r->IrmType2) {
+		} elseif($r->IrmType2>=10) {
 			// Opp1 wins the match with a bye,
-			$UpdateSql1['FinTie'] = "{$Prefix}Tie=".($r->IrmType2 >= 10 ? 2 : 0);
+			$UpdateSql1['FinTie'] = "{$Prefix}Tie=2";
 			$UpdateSql1['FinWinLose'] = "{$Prefix}WinLose=1";
 			$UpdateSql2['FinTie'] = "{$Prefix}Tie=0";
 			$UpdateSql2['FinWinLose'] = "{$Prefix}WinLose=0";

@@ -62,9 +62,20 @@ foreach($JS_SCRIPT as $script) {
 echo '</head>';
 echo '<body'.(!empty($ONLOAD)?$ONLOAD:'').'>';
 echo '<div id="TourInfo">';
+echo '';
+
+
 InfoTournament();
-echo '</div><div id="navigation">';
-PrintMenu();
-echo '</div>';
+
 ?>
+</div>
+<div id="navigation">
+<?php
+
+// $mid->printMenu('hormenu1');
+
+PrintMenu();
+
+?>
+</div>
 <div id="Content">

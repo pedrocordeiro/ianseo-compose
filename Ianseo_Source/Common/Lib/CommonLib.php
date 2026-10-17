@@ -370,20 +370,19 @@ function getPoolGridsWA() {
 }
 
 /**
- * @param integer $MatchNo Matchno to consider (left side so even number)
- * @return int loser rank position matchno
+ * @return array as a static grid of rank => matchno
  * @see getPoolMatches();
  */
 function getPoolLooserRank($MatchNo) {
 	switch($MatchNo) {
-		case '96': return 11;
-		case '94': return 11;
-		case '46': return  9;
-		case '48': return  9;
-		case '24': return  7;
-		case '22': return  7;
-		case '10': return  5;
-		case '12': return  5;
+		case '96': return 11; break;
+		case '94': return 11; break;
+		case '46': return  9; break;
+		case '48': return  9; break;
+		case '24': return  7; break;
+		case '22': return  7; break;
+		case '10': return  5; break;
+		case '12': return  5; break;
 	}
 
 	return false;
@@ -667,7 +666,7 @@ function getApiScheduledSessions($ScheduleOptions=[]) {
         }
 		$aSQL[]="SELECT DISTINCT CONCAT(SesType,ToNumDist,SesOrder) as keyValue, SesType as Type, 'Q' as txtkey,
 				if(SesName='', SesOrder, SesName) as Description, '0' as FirstPhase,
-				IFNULL(CONCAT(SchDay, ' ', SchStart), concat('0000-00-00 00:00:00.', LPAD(SesOrder, 3, '0'))) as dtOrder, group_concat(DiEnds order by DiDistance) MaxEnds, 0 as EvElimType,
+				IFNULL(CONCAT(SchDay, ' ', SchStart), concat('0000-00-00 00:00:', SesOrder)) as dtOrder, group_concat(DiEnds order by DiDistance) MaxEnds, 0 as EvElimType,
 				SesOrder as ComboKey
 			FROM Session
 			INNER JOIN Tournament ON SesTournament=ToId
@@ -682,7 +681,7 @@ function getApiScheduledSessions($ScheduleOptions=[]) {
 		// Eliminations 1st level
 		$aSQL[]="SELECT DISTINCT CONCAT('E1',ElSession) as keyValue, 'E' as Type, 'E1' as txtkey,
 				if(SesName is null or SesName='', ElSession, SesName) as Description, '0' as FirstPhase,
-				IFNULL(CONCAT(SchDay, ' ', SchStart), concat('0000-00-00 00:00:00.', LPAD(ElSession, 3, '0'))) as dtOrder, EvElimEnds as MaxEnds, EvElimType,
+				IFNULL(CONCAT(SchDay, ' ', SchStart), concat('0000-00-00 00:00:', ElSession)) as dtOrder, EvElimEnds as MaxEnds, EvElimType,
 				'E1' as ComboKey
 			FROM Events
             inner join Tournament on ToId=EvTournament
@@ -697,7 +696,7 @@ function getApiScheduledSessions($ScheduleOptions=[]) {
 		// Eliminations 2nd level
 		$aSQL[]="SELECT DISTINCT CONCAT('E2',ElSession) as keyValue, 'E' as Type, 'E2' as txtkey,
 				if(SesName is null or SesName='', ElSession, SesName) as Description, '0' as FirstPhase, 
-				IFNULL(CONCAT(SchDay, ' ', SchStart), concat('0000-00-00 00:00:00.', LPAD(ElSession, 3, '0'))) as dtOrder, EvElim2 as MaxEnds, EvElimType,
+				IFNULL(CONCAT(SchDay, ' ', SchStart), concat('0000-00-00 00:00:', ElSession)) as dtOrder, EvElim2 as MaxEnds, EvElimType,
 				'E2' as ComboKey
 			FROM Events
             inner join Tournament on ToId=EvTournament
@@ -935,47 +934,25 @@ function getStatusFromEnds($Ends, $Group, &$JSON) {
 
 function getMatchLive($TourId) {
 	// gets the live match
-	$q=safe_r_SQL("("."Select '0' Team, FinEvent Event, FinMatchNo MatchNo, FinDateTime DateTime, 
-            EvMaxTeamPerson, EvEventName, EvFinalFirstPhase, GrPhase, EvFinArrows, EvMatchMode, FSScheduledDate as ScheduledDate, FSScheduledTime as ScheduledTime,
-            cast(if(EvWinnerFinalRank>1, EvWinnerFinalRank*100 + GrPhase, 1+(1/(1+GrPhase))) as decimal(15,4)) as OrderBy, EvFinalTargetType
+	$q=safe_r_SQL("("."Select '0' Team, FinEvent Event, FinMatchNo MatchNo, FinDateTime DateTime, EvMaxTeamPerson, EvEventName, EvFinalFirstPhase, GrPhase, EvFinArrows, EvMatchMode
 		from Finals use index (FinLive)
 		inner join Events on FinTournament=EvTournament and FinEvent=EvCode and EvTeamEvent=0
 		inner join Grids on FinMatchNo=GrMatchNo
-		left join FinSchedule on FSEvent=FinEvent and FSTeamEvent=0 and FSMatchNo=FinMatchNo and FSTournament=FinTournament
 		where FinLive='1' and FinMatchNo%2=0 and FinTournament=$TourId
 		) UNION (
-		Select '1' Team, TfEvent Event, TfMatchNo MatchNo, TfDateTime DateTime, 
-		    EvMaxTeamPerson, EvEventName, EvFinalFirstPhase, GrPhase, EvFinArrows, EvMatchMode, FSScheduledDate as ScheduledDate, FSScheduledTime as ScheduledTime,
-		    cast(if(EvWinnerFinalRank>1, EvWinnerFinalRank*100 + GrPhase, 1+(1/(1+GrPhase))) as decimal(15,4)) as OrderBy, EvFinalTargetType
+		Select '1' Team, TfEvent Event, TfMatchNo MatchNo, TfDateTime DateTime, EvMaxTeamPerson, EvEventName, EvFinalFirstPhase, GrPhase, EvFinArrows, EvMatchMode
 		from TeamFinals
 		inner join Events on TfTournament=EvTournament and TfEvent=EvCode and EvTeamEvent=1
 		inner join Grids on TfMatchNo=GrMatchNo
-		left join FinSchedule on FSEvent=TfEvent and FSTeamEvent=1 and FSMatchNo=TfMatchNo and FSTournament=TfTournament
 		where TfLive='1' and TfMatchNo%2=0 and TfTournament=$TourId
         ) UNION (
-        Select RrMatchTeam Team, RrMatchEvent Event, RrMatchMatchNo+(RrMatchRound*100)+(RrMatchGroup*10000)+(RrMatchLevel*1000000) as MatchNo, RrMatchDateTime DateTime, 
-            EvMaxTeamPerson, EvEventName, EvFinalFirstPhase, 0 GrPhase, EvFinArrows, EvMatchMode, RrMatchScheduledDate as ScheduledDate, RrMatchScheduledTime as ScheduledTime,
-            (RrMatchLevel*1000000)+(RrMatchGroup*10000)+(RrMatchRound*100) as OrderBy, EvFinalTargetType
+        Select RrMatchTeam Team, RrMatchEvent Event, RrMatchMatchNo+(RrMatchRound*100)+(RrMatchGroup*10000)+(RrMatchLevel*1000000) as MatchNo, RrMatchDateTime DateTime, EvMaxTeamPerson, EvEventName, EvFinalFirstPhase, 0 GrPhase, EvFinArrows, EvMatchMode
         from RoundRobinMatches
         inner join Events on EvTournament=RrMatchTournament and EvCode=RrMatchEvent and EvTeamEvent=RrMatchTeam
         where RrMatchLive=1 and RrMatchMatchNo%2=0 and RrMatchTournament=$TourId
 		)");
 	if($r=safe_fetch($q)) {
-		return (object) array(
-            "MatchNo"=>$r->MatchNo,
-            "Event"=>$r->Event,
-            "Phase"=>$r->GrPhase,
-            "Team"=>$r->Team,
-            'Archers'=>$r->EvMaxTeamPerson,
-            'Name'=>$r->EvEventName,
-            'FirstPhase'=>$r->EvFinalFirstPhase,
-            'FinArrows'=>$r->EvFinArrows,
-            'MatchMode'=>$r->EvMatchMode,
-            'StartDate'=>$r->ScheduledDate,
-            'StartTime'=>$r->ScheduledTime,
-            'OrderBy'=>$r->OrderBy,
-            'TargetType'=>$r->EvFinalTargetType,
-            );
+		return (object) array("MatchNo"=>$r->MatchNo, "Event"=>$r->Event, "Phase"=>$r->GrPhase, "Team"=>$r->Team, 'Archers'=>$r->EvMaxTeamPerson, 'Name'=>$r->EvEventName, 'FirstPhase'=>$r->EvFinalFirstPhase, 'FinArrows'=>$r->EvFinArrows, 'MatchMode'=>$r->EvMatchMode);
 	} else {
 		return false;
 	}
@@ -1573,7 +1550,6 @@ function get_Countries() {
         'ETH' => 'Ethiopia',
         'FIJ' => 'Fiji',
         'FIN' => 'Finland',
-        'FLK' => 'Falkland Islands',
         'FRA' => 'France',
         'FSM' => 'Federated States of Micronesia',
         'GAB' => 'Gabon',
@@ -1774,8 +1750,8 @@ function CheckBisTargets($tgt, $flip, $space='-') {
 
 /**
  * Translitterate into pure ASCII characters, and change case based on $type. See https://odf.olympictech.org/2024-Paris/general/PDF/Language_Guidelines_R-SOG-2024_LANG.pdf
- * @param string $Name Name to change
- * @param string $Type <ul><li>A(llcaps): all chars will be set uppercase</li><li>L(limited mixed): all chars will be set uppercase apart Mc[Something]</li><li>T(itle): $Name will be transformed Title Case, taking care of alikes of McCormick or O'Brien</li></ul>
+ * @param $Name Name to change
+ * @param $Type <ul><li>A(llcaps): all chars will be set uppercase</li><li>L(limited mixed): all chars will be set uppercase apart Mc[Something]</li><li>T(itle): $Name will be transformed Title Case, taking care of alikes of McCormick or O'Brien</li></ul>
  * @return array|string|string[]
  */
 function OdfCapitalise($Name, $Type='A') {

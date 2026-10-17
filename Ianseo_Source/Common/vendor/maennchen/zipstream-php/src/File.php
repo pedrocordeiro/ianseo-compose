@@ -18,7 +18,7 @@ use ZipStream\Exception\StreamNotSeekableException;
 /**
  * @internal
  */
-final class File
+class File
 {
     private const CHUNKED_READ_BLOCK_SIZE = 0x1000000;
 
@@ -95,7 +95,7 @@ final class File
 
         if ($this->enableZeroHeader) {
             // No calculation required
-        } elseif ($this->isSimulation() && $forecastSize !== null) {
+        } elseif ($this->isSimulation() && $forecastSize) {
             $this->uncompressedSize = $forecastSize;
             $this->compressedSize = $forecastSize;
         } else {
@@ -107,14 +107,12 @@ final class File
 
         $this->addFileHeader();
 
-        $detectedSize = $forecastSize ?? ($this->compressedSize > 0 ? $this->compressedSize : null);
+        $detectedSize = $forecastSize ?? $this->compressedSize;
 
         if (
-            $this->isSimulation()
-            && $detectedSize !== null
+            $this->isSimulation() &&
+            $detectedSize > 0
         ) {
-            $this->uncompressedSize = $detectedSize;
-            $this->compressedSize = $detectedSize;
             ($this->recordSentBytes)($detectedSize);
         } else {
             $this->readStream(send: true);
@@ -160,7 +158,7 @@ final class File
         if ($this->compressionMethod !== CompressionMethod::STORE) {
             return null;
         }
-        if ($this->exactSize !== null) {
+        if ($this->exactSize) {
             return $this->exactSize;
         }
         $fstat = fstat($this->unpackStream());
@@ -186,7 +184,7 @@ final class File
 
         $zip64Enabled = $footer !== '';
 
-        if ($zip64Enabled) {
+        if($zip64Enabled) {
             $this->version = Version::ZIP64;
         }
 
@@ -238,8 +236,8 @@ final class File
         // Sets Bit 11: Language encoding flag (EFS).  If this bit is set,
         // the filename and comment fields for this file
         // MUST be encoded using UTF-8. (see APPENDIX D)
-        if (mb_check_encoding($this->fileName, 'UTF-8')
-                && mb_check_encoding($this->comment, 'UTF-8')) {
+        if (mb_check_encoding($this->fileName, 'UTF-8') &&
+                mb_check_encoding($this->comment, 'UTF-8')) {
             $this->generalPurposeBitFlag |= GeneralPurposeBitFlag::EFS;
         }
     }
@@ -321,9 +319,9 @@ final class File
         $deflate = $this->compressionInit();
 
         while (
-            !feof($this->unpackStream())
-            && ($this->maxSize === null || $this->uncompressedSize < $this->maxSize)
-            && ($this->exactSize === null || $this->uncompressedSize < $this->exactSize)
+            !feof($this->unpackStream()) &&
+            ($this->maxSize === null || $this->uncompressedSize < $this->maxSize) &&
+            ($this->exactSize === null || $this->uncompressedSize < $this->exactSize)
         ) {
             $readLength = min(
                 ($this->maxSize ?? PHP_INT_MAX) - $this->uncompressedSize,
@@ -332,10 +330,6 @@ final class File
             );
 
             $data = fread($this->unpackStream(), $readLength);
-
-            if ($data === false) {
-                throw new ResourceActionException('fread', $this->unpackStream());
-            }
 
             hash_update($hash, $data);
 
@@ -347,10 +341,6 @@ final class File
                     $data,
                     feof($this->unpackStream()) ? ZLIB_FINISH : ZLIB_NO_FLUSH
                 );
-
-                if ($data === false) {
-                    throw new RuntimeException('deflate_add failed');
-                }
             }
 
             $this->compressedSize += strlen($data);
@@ -360,7 +350,7 @@ final class File
             }
         }
 
-        if ($this->exactSize !== null && $this->uncompressedSize !== $this->exactSize) {
+        if ($this->exactSize && $this->uncompressedSize !== $this->exactSize) {
             throw new FileSizeIncorrectException(expectedSize: $this->exactSize, actualSize: $this->uncompressedSize);
         }
 
@@ -369,7 +359,7 @@ final class File
 
     private function compressionInit(): ?DeflateContext
     {
-        switch ($this->compressionMethod) {
+        switch($this->compressionMethod) {
             case CompressionMethod::STORE:
                 // Noting to do
                 return null;
@@ -400,7 +390,7 @@ final class File
 
         return CentralDirectoryFileHeader::generate(
             versionMadeBy: ZipStream::ZIP_VERSION_MADE_BY,
-            versionNeededToExtract: $this->version->value,
+            versionNeededToExtract:$this->version->value,
             generalPurposeBitFlag: $this->generalPurposeBitFlag,
             compressionMethod: $this->compressionMethod,
             lastModificationDateTime: $this->lastModificationDateTime,

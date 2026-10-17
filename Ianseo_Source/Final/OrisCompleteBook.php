@@ -141,15 +141,18 @@ if($cbTeamFinal) {
 }
 
 if($cbIndFinal) {
-    $PdfData = getBracketsIndividual('',
-        true,
-        isset($_REQUEST["ShowTargetNo"]),
-        isset($_REQUEST["ShowSchedule"]),
-        true,
-        true,
-        null, false, false);
+	if(empty($BracketsInd)) {
+		$PdfData = getBracketsIndividual('',
+			true,
+			isset($_REQUEST["ShowTargetNo"]),
+			isset($_REQUEST["ShowSchedule"]),
+			true,
+			true);
 
-    $LastUpdate = max($LastUpdate, $PdfData->LastUpdate ?? $LastUpdate);
+        $LastUpdate = max($LastUpdate, $PdfData->LastUpdate ?? $LastUpdate);
+	} else {
+		$PdfData = clone $BracketsInd;
+	}
 
 	//$pdf->setOrisCode('', '', true);
 	$pdf->SetAutoPageBreak(true,(OrisPDF::bottomMargin+$pdf->extraBottomMargin));
@@ -217,7 +220,6 @@ $pdf->setEvent('Complete Results Booklet');
 $pdf->setComment('');
 $pdf->setOrisCode('SUMMARY', 'Complete Results Booklet');
 $pdf->setPhase('');
-$pdf->SetTopMargin(OrisPDF::topStart);
 $pdf->setDocUpdate($LastUpdate ?? '');
 
 $pdf->addTOCPage();

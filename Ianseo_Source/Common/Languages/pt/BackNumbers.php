@@ -10,6 +10,7 @@ $lang['CharColor']='Cor da letra';
 $lang['CharType']='Tipo de letra';
 $lang['Heigh']='Altura';
 $lang['Italic']='Itálico';
+$lang['PageDimension']='Tamanho de Página';
 $lang['PosX']='Posição (X)';
 $lang['PosY']='Posição (Y)';
 $lang['PrintBackNo']='Imprimir números traseiros';

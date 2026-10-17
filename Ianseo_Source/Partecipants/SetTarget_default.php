@@ -20,13 +20,14 @@
 ?>
 <form name="Frm" method="GET" action="">
 <?php
-
-$_REQUEST['Ses'] = ($_REQUEST['Ses']??'*');
-foreach($_GET as $ff=>$vv){
-    if($ff!='Event') {
-        print '<input type="hidden" name="' . $ff . '" value="' . $vv . '">';
-    }
-}
+	$QueryString = $_SERVER['QUERY_STRING'];
+	$Arr = explode('&',$QueryString);
+	foreach ($Arr as $Key => $Value) {
+		list($ff,$vv)=explode('=',$Value);
+		if($ff!='Event') {
+		    print '<input type="hidden" name="' . $ff . '" value="' . $vv . '">';
+		}
+	}
 ?>
 <table class="Tabella">
 <tr><th class="Title" colspan="2"><?php print get_text('ManualTargetAssignment','Tournament');?></th></tr>
@@ -80,10 +81,10 @@ foreach($_GET as $ff=>$vv){
                 '<th class="Title w-10">' . get_text('TargetType') . '</th>'.
 		    '</tr>';
 
-		$OrderBy = "QuSession ASC, QuTarget ASC, QuLetter ASC, EnDivision, EnClass ";
+		$OrderBy = "QuSession ASC, QuTargetNo ASC, EnDivision, EnClass ";
 
 		if (isset($_REQUEST['ordTarget']) && ($_REQUEST['ordTarget']=='ASC' || $_REQUEST['ordTarget']=='DESC')) {
-            $OrderBy = "QuSession " . $_REQUEST['ordTarget'] . ", QuTarget " . $_REQUEST['ordTarget'] . ", QuLetter " . $_REQUEST['ordTarget'] . ", EnDivision, EnClass ";
+            $OrderBy = "QuSession " . $_REQUEST['ordTarget'] . ", QuTargetNo " . $_REQUEST['ordTarget'] . ", EnDivision, EnClass ";
         } elseif (isset($_REQUEST['ordCode']) && ($_REQUEST['ordCode']=='ASC' || $_REQUEST['ordCode']=='DESC')) {
             $OrderBy = "EnCode " . $_REQUEST['ordCode'] . " ";
         } elseif (isset($_REQUEST['ordName']) && ($_REQUEST['ordName']=='ASC' || $_REQUEST['ordName']=='DESC')) {
@@ -99,7 +100,7 @@ foreach($_GET as $ff=>$vv){
         }
 
 		$Select = "SELECT EnId,EnCode,EnName,EnFirstName,EnSex,EnId,EnTournament,EnDivision,EnClass,EnCountry,EnStatus, EnWChair, " .
-			"CoCode,CoName,QuSession, CONCAT(QuTarget, QuLetter) AS TargetNo, TfName, QuScore, QuGold, QuXNine " .
+			"CoCode,CoName,QuSession, SUBSTRING(QuTargetNo,2) AS TargetNo, TfName, QuScore, QuGold, QuXNine " .
 			"FROM Entries INNER JOIN Qualifications ON EnId=QuId ".
 			"INNER JOIN Countries ON EnCountry=CoId AND EnTournament=CoTournament " .
             "LEFT JOIN TargetFaces ON EnTournament=TfTournament AND EnTargetFace=TfId " .
@@ -109,7 +110,6 @@ foreach($_GET as $ff=>$vv){
                 $Select .= " AND CONCAT(TRIM(EnDivision),TRIM(EnClass)) LIKE " . StrSafe_DB($_REQUEST["Event"]) . " ";
             }
 			$Select.= "ORDER BY " . $OrderBy;
-			
 		$Rs=safe_r_sql($Select);
 
 		if (safe_num_rows($Rs)>0) {
@@ -140,7 +140,8 @@ foreach($_GET as $ff=>$vv){
                 }
 				echo '</select></td>';
 				echo '<td class="Center">'.
-				    '<input type="text" size="5" maxlength="5" name="d_q_QuTargetNo_' . $MyRow->EnId . '" id="d_q_QuTargetNo_' . $MyRow->EnId . '" value="' . (!empty($MyRow->TargetNo) ? $MyRow->TargetNo : '') . '"' . ($MyRow->QuSession==0 || $MyRow->EnStatus>8 ? ' readonly' : '') . ' onBlur="javascript:UpdateTargetNo(\'d_q_QuTargetNo_' . $MyRow->EnId . '\',\'' . $_REQUEST['Ses'] . '\');">'.
+				    '<input type="text" size="4" maxlength="4" name="d_q_QuTargetNo_' . $MyRow->EnId . '" id="d_q_QuTargetNo_' . $MyRow->EnId . '" value="' . $MyRow->TargetNo . '"' . ($MyRow->QuSession==0 || $MyRow->EnStatus>8 ? ' readonly' : '') . ' onBlur="javascript:UpdateTargetNo(\'d_q_QuTargetNo_' . $MyRow->EnId . '\',\'' . $_REQUEST['Ses'] . '\');">'.
+                    (isset($MyRow->QuTargetNo) ? $MyRow->QuTargetNo : '').
 				    '</td>';
 				echo '<td class="Center">' . (empty($MyRow->EnCode) ? '&nbsp;' : $MyRow->EnCode) . '</td>';
 				echo '<td>' . ((!empty($MyRow->EnFirstName) OR !empty($MyRow->EnName)) ? $MyRow->EnFirstName . ' ' . $MyRow->EnName : '&nbsp;') . '</td>';

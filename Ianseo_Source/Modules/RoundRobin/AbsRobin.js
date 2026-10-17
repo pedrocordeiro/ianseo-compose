@@ -53,7 +53,7 @@ function buildPhases(phases, EvCode) {
     let ret='';
     let newRows=false;
     $.each(phases, function(idx) {
-        let cssClass=((this.disabled==1 || this.levDisabled==1) ? 'disabled' : '');
+        let cssClass=(this.disabled==1 ? 'disabled' : '');
         if(newRows) {
             ret+='<tr soEvent="'+EvCode+'" soLevel="'+idx+'" soGroup="1">';
         }
@@ -75,7 +75,7 @@ function buildPhases(phases, EvCode) {
             ret+='<div>'+this+'</div>';
         });
         ret+='</td>';
-        ret+=buildGroups(this.groups, EvCode, idx, this.disabled==1 ? 'disabled' : '');
+        ret+=buildGroups(this.groups, EvCode, idx, cssClass);
     });
     return ret;
 }
@@ -178,9 +178,6 @@ function gotoShootOff(form) {
         // creates the tables, one for each event
         $.each(data.tables, function() {
             let tableData=this;
-            if(this.length==0) {
-                return;
-            }
             let table='<table class="Tabella" ref="'+tableData.code+'" level="'+tableData.level+'" group="'+tableData.group+'">';
 
             // header

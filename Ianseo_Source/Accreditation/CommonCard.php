@@ -7,7 +7,7 @@ $ExtraGroup='GROUP BY EnId';
 
 $QuSession='QuSession';
 $QuSesLetter='Q';
-$QuOrder='QuSession, QuTarget, QuLetter';
+$QuOrder='QuTargetNo';
 
 $EventBased='';
 
@@ -22,13 +22,13 @@ if(empty($CardType)) $CardType='A';
 if(empty($CardNumber)) $CardNumber=0;
 
 if(empty($FIELDS)) {
-	$FIELDS="EnId, IFNULL(zextra.EdExtra,EnCode) as Bib, EnIocCode as EnIocCode, EnTournament, ToCode, ToName, ToWhere, ToWhenFrom, ToWhenTo, ToCategory,
+	$FIELDS="EnId, EnCode as Bib, EnTournament, ToCode, ToName, ToWhere, ToWhenFrom, ToWhenTo, ToCategory,
 		EnName AS Name, upper(EnFirstName) AS FirstName, EnName as GivCamel, upper(EnName) as GivCaps, EnFirstName as FamCamel, upper(EnFirstName) AS FamCaps,
-		QuSession AS Session, SesName,QuSubClassRank as SubclassRank,
+		QuSession AS Session, SesName,
 		c.CoId, c.CoCode AS NationCode, c.CoName AS Nation, upper(c.CoName) as NationCaps, 
 		ifnull(c2.CoId,0) as CoId2, ifnull(c2.CoCode,'') AS NationCode2, ifnull(c2.CoName,'') AS Nation2, upper(ifnull(c2.CoName,'')) as NationCaps2,
 		ifnull(c3.CoId,0) as CoId3, ifnull(c3.CoCode,'') AS NationCode3, ifnull(c3.CoName,'') AS Nation3, upper(ifnull(c3.CoName,'')) as NationCaps3,
-		EnClass AS ClassCode, EnDivision AS DivCode, EnAgeClass as AgeClass, DivDescription,ClDescription,ScDescription,
+		EnClass AS ClassCode, EnDivision AS DivCode, EnAgeClass as AgeClass, DivDescription,ClDescription,
 		aextra.EdExtra as HasPlastic, aextra.EdEmail as HasPaper,
 		cextra.EdExtra as EnCaption, COALESCE(RankRanking, '') as WRank, ifnull(pextra.EdExtra,0) as ExtraAddOns,
 		EnSubClass as SubClass, EnStatus as Status, EnIndClEvent AS `IC`, EnTeamClEvent AS `TC`, EnIndFEvent AS `IF`, EnTeamFEvent as `TF`,
@@ -47,7 +47,7 @@ if(!empty($_REQUEST['Specifics'])) {
 switch($CardType) {
 	case 'A': // Accreditation
 		if($_SESSION['AccreditationTourIds']) $TourId=$_SESSION['AccreditationTourIds'];
-		$FIELDS.=", (EnBadgePrinted is not null and EnBadgePrinted!=0) as Printed, '' ExtraCode, CONCAT(LPAD(QuTarget,".TargetNoPadding.",'0'), QuLetter) as TargetNo";
+		$FIELDS.=", (EnBadgePrinted is not null and EnBadgePrinted!=0) as Printed, '' ExtraCode, substr(QuTargetNo, 2) as TargetNo";
 		if(!empty($_REQUEST['PrintNotPrinted']) and empty($BibNumber)) {
 			// solo quelli non ancora stampati...
 			// EnBadgePrinted contiene data e ora della stampa del badge...
@@ -78,7 +78,7 @@ switch($CardType) {
 		}
 		break;
 	case 'Q': // Qualifications
-		$FIELDS.=", ToNumEnds as Ends, ToElabTeam, QuTarget as RealTarget, (QuBacknoPrinted is not null and QuBacknoPrinted!=0) as Printed, '' ExtraCode, CONCAT(LPAD(QuTarget,".TargetNoPadding.",'0'), QuLetter) as TargetNo";
+		$FIELDS.=", ToNumEnds as Ends, ToElabTeam, substr(QuTargetNo, 2)+0 as RealTarget, (QuBacknoPrinted is not null and QuBacknoPrinted!=0) as Printed, '' ExtraCode, substr(QuTargetNo, 2) as TargetNo";
 		if(!empty($_REQUEST['PrintNotPrinted']) and empty($BibNumber)) {
 			$Where[] = ' AND (QuBacknoPrinted is NULL or QuBacknoPrinted=0) ';
 		}
@@ -188,11 +188,10 @@ switch($CardType) {
 
 		break;
 	case 'Y': // Diploma Individual
-		$FIELDS.=", ToPrintLang, AwValue, EvCode, EvEventName, QuScore as `QRScore`, IndRank as `Rank`, IndRankFinal as RankFinal, if(QuSubClassRank>0, QuSubClassRank, IndRankFinal) as SubFinalRank, EvCode ExtraCode, (dextra.EdEmail is not null and dextra.EdEmail!='') as Printed, '' as TargetNo ";
+		$FIELDS.=", EvCode, EvEventName, QuScore as `QRScore`, IndRank as `Rank`, IndRankFinal as RankFinal, EvCode ExtraCode, (dextra.EdEmail is not null and dextra.EdEmail!='') as Printed, '' as TargetNo ";
 		$ExtraSql="INNER JOIN Individuals ON IndTournament=EnTournament AND EnId=IndId
 			INNER JOIN Events ON EvCode=IndEvent AND EvTeamEvent=0 AND EvTournament=EnTournament
-			LEFT JOIN ExtraData dextra on dextra.EdId=EnId and dextra.EdType='D' and dextra.EdEvent=EvCode
-			left join Awarded on AwEntry=EnId";
+			LEFT JOIN ExtraData dextra on dextra.EdId=EnId and dextra.EdType='D' and dextra.EdEvent=EvCode";
 		$ExtraWhere="";
 		$ExtraGroup='Group By EnId, EvCode';
 		if(empty($SORT)) {
@@ -226,7 +225,7 @@ switch($CardType) {
 	case 'Z': // Diploma Teams
 		// needs to select all components of all teams...
 		// during printout missing values will be printed as "-"
-		$FIELDS.=", ToPrintLang, AwValue, EvCode, EvEventName, if(Type&1, TeRank, '-') as `Rank`, if(Type&2 or TeRankFinal>=EvWinnerFinalRank+EvNumQualified, TeRankFinal,'-') as RankFinal, EvCode ExtraCode, (dextra.EdcEmail is not null and dextra.EdcEmail!='') as Printed, '' as TargetNo ";
+		$FIELDS.=", EvCode, EvEventName, if(Type&1, TeRank, '-') as `Rank`, if(Type&2 or TeRankFinal>=EvWinnerFinalRank+EvNumQualified, TeRankFinal,'-') as RankFinal, EvCode ExtraCode, (dextra.EdcEmail is not null and dextra.EdcEmail!='') as Printed, '' as TargetNo ";
 		$ExtraSql="INNER JOIN (select TcCoId, TcSubTeam, TcEvent, TcId, sum(Type) as Type FROM
 				(
 				(select TcCoId, TcSubTeam, TcEvent, TcId, 1 as Type from TeamComponent where TcTournament in ($TourId) and TcFinEvent=1)
@@ -237,8 +236,7 @@ switch($CardType) {
 				    TcCoId, TcSubTeam, TcEvent, TcId) TeamComponents on TcId=EnId
 			INNER JOIN Events ON EvCode=TcEvent AND EvTeamEvent=1 AND EvTournament=EnTournament
 			INNER JOIN Teams ON TcCoId=TeCoId AND TcSubTeam=TeSubTeam AND TcEvent=TeEvent AND TeTournament=EnTournament AND TeFinEvent=1
-			LEFT JOIN ExtraDataCountries dextra on dextra.EdcId=c.CoId and EdcSubTeam=TeSubTeam and dextra.EdcType='D' and dextra.EdcEvent=EvCode
-			left join Awarded on AwEntry=EnId";
+			LEFT JOIN ExtraDataCountries dextra on dextra.EdcId=c.CoId and EdcSubTeam=TeSubTeam and dextra.EdcType='D' and dextra.EdcEvent=EvCode";
 		$ExtraWhere="";
 		$ExtraGroup='Group By EnId, EvCode';
 		if(empty($SORT)) {
@@ -380,7 +378,7 @@ if(!empty($BibNumber)) {
 
 
 
-$MyQuery = "SELECT $FIELDS, QuSession as ABCDSes, QuTarget as ABCDTgt, QuLetter as ABCDLet
+$MyQuery = "SELECT $FIELDS, QuTargetNo as AbcdTarget
 	FROM Entries AS e
 	INNER JOIN Tournament on EnTournament=ToId
 	INNER JOIN Qualifications AS q ON e.EnId=q.QuId
@@ -389,7 +387,6 @@ $MyQuery = "SELECT $FIELDS, QuSession as ABCDSes, QuTarget as ABCDTgt, QuLetter 
 	INNER JOIN Countries AS c ON e.EnCountry=c.CoId AND e.EnTournament=c.CoTournament
     LEFT JOIN Countries AS c2 ON e.EnCountry2=c2.CoId AND e.EnTournament=c2.CoTournament
     LEFT JOIN Countries AS c3 ON e.EnCountry3=c3.CoId AND e.EnTournament=c3.CoTournament
-    LEFT JOIN SubClass ON ScTournament=e.EnTournament and ScId=EnSubClass
 	$ExtraSql
 	LEFT JOIN AccEntries ON AEId=EnId and AETournament=EnTournament and AeOperation=1
 	LEFT JOIN Session ON SesTournament=EnTournament and SesOrder=$QuSession and SesType='$QuSesLetter'
@@ -397,7 +394,7 @@ $MyQuery = "SELECT $FIELDS, QuSession as ABCDSes, QuTarget as ABCDTgt, QuLetter 
 	LEFT JOIN Photos AS ph ON e.EnId=ph.PhEnId
 	LEFT JOIN ExtraData cextra ON e.EnId=cextra.EdId and cextra.EdType='C'
 	LEFT JOIN ExtraData aextra ON e.EnId=aextra.EdId and aextra.EdType='A'
-	LEFT JOIN ExtraData zextra ON e.EnId=zextra.EdId and zextra.EdType='Z' and zextra.EdExtra!=''
+	LEFT JOIN ExtraData zextra ON e.EnId=zextra.EdId and zextra.EdType='Z'
     LEFT JOIN ExtraData pextra ON e.EnId=pextra.EdId and pextra.EdType='P'
     LEFT JOIN Rankings on EnTournament=RankTournament and RankEvent=IF(EvWaCategory!='',EvWaCategory,EvCode) and RankTeam=0 and EnCode=RankCode and ToIocCode='FITA' and EnIocCode in ('', 'FITA') and RankIocCode='FITA'
 	WHERE EnTournament in ($TourId)
@@ -408,15 +405,14 @@ $MyQuery = "SELECT $FIELDS, QuSession as ABCDSes, QuTarget as ABCDTgt, QuLetter 
 	ORDER BY  ".(empty($SORTSTRICT) ? "EnTournament, IcNumber, $SORT, Bib" : $SORTSTRICT);
 
 if(!empty($_REQUEST['SortACBD'])) {
-    $atSql = createAvailableTargetSQL(0, $TourId);
-    $MyQuery="select realQuery.*, FullTgtSession, FullTgtTarget, FullTgtLetter
-        from ($atSql) at
-        left join ($MyQuery) realQuery on ABCDSes=FullTgtSession AND ABCDTgt=FullTgtTarget AND ABCDLet=FullTgtLetter
-        where (FullTgtSession, FullTgtTarget) in (
-            select distinct QuSession, QuTarget 
+    $MyQuery="select realQuery.*, AtTargetNo
+        from AvailableTarget
+        left join ($MyQuery) realQuery on AtTargetNo=AbcdTarget and AtTournament=EnTournament
+        where AtTournament in ($TourId) and (AtTarget, AtSession, AtTournament) in (
+            select distinct QuTarget, QuSession, EnTournament 
             from Qualifications 
             inner join Entries on EnId=QuId and EnTournament in ($TourId)
             ".implode(' ', $Where)."
             )
-        order by FullTgtSession, FullTgtTarget, (ORD(FullTgtLetter) % 2) DESC, FullTgtLetter";
+        order by AtSession, AtTarget, AtLetter in ('B','D'), AtLetter";
 }

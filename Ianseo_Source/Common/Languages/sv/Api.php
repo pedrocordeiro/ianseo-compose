@@ -1,7 +1,7 @@
 <?php
 $lang['API-AutoGroup']='Skapa flera grupper enligt ––––>';
 $lang['API-ConfirmDeleteRow']='Är du säker på att du vill ta bort denna rad?';
-$lang['API-DeviceGrouping']='Gruppera tavlor(enheter)';
+$lang['API-DeviceGrouping']='Gruppera tavlor';
 $lang['API-EnableDeviceGrouping']='Aktivera gruppering av tavlor, ställ in Ja <b>endast</b> när du grupperat tavlor.';
 $lang['API-Group']='Grupp';
 $lang['API-TargetGrouping']='Tavelgruppering (enheter)';
@@ -61,10 +61,6 @@ $lang['ISK-enableTotals']='Aktivera Total';
 $lang['ISK-enableWIFIManagement']='Tillåt appen att hantera Wi-Fi';
 $lang['ISK-ExportDevices']='Exportera enheter';
 $lang['ISK-ForceConfirm']='Tvinga enhetsinställningar';
-$lang['ISK-ForceQRCodeScanning']='Obligatorisk QR-kod skanning';
-$lang['ISK-ForceQRCodeScanning-Help']='Konfigurering endast med QR-kod.<br>
-Manuell inställning inte möjlig.<br>
-Användbart för distanstävlingar för att undvika felaktiga inställningar och poäng rapportering.';
 $lang['ISK-Gps']='GPS-position';
 $lang['ISK-gpsFrequency']='Uppdateringsfrekvens';
 $lang['ISK-hideTotals']='Göm totalen';
@@ -73,7 +69,7 @@ $lang['ISK-LicenseNumber']='Licensnyckel för<br>Scorekeeper PRO';
 $lang['ISK-Lite-Name']='Ianseo ScoreKeeper Lite';
 $lang['ISK-Lite-NoCompCode']='Tävlingskoden saknas';
 $lang['ISK-Lite-QRCode']='Skriv ut QR-koden för Ianseo ScoreKeeper Lite';
-$lang['ISK-Lite-ServerUrl']='Server-URL (inklusive protokoll och port, om inte 80)';
+$lang['ISK-Lite-ServerUrl']='Server-URL<br>(inklusive protokoll och port, om inte 80)';
 $lang['ISK-lockPortrait']='Lås enheten i porträttläge.';
 $lang['ISK-Name']='Ianseo Scorekeeper';
 $lang['ISK-Ng-Name']='Ianseo Scorekeeper NG - LITE';
@@ -89,7 +85,7 @@ $lang['ISK-Remove']='Radera';
 $lang['ISK-RequiresApproval']='Behöver godkännande';
 $lang['ISK-SendQrSetup']='Skicka QR-kod setup';
 $lang['ISK-Sequence']='Schemalagd tävlingsfas.';
-$lang['ISK-ServerUrl']='Server-URL (inklusive protokoll och port, om inte 80)';
+$lang['ISK-ServerUrl']='Server-URL<br>(inklusive protokoll och port, om inte 80)';
 $lang['ISK-ServerUrlPin']='Säkerhetskod för tävling.';
 $lang['ISK-SettingsPIN']='Ställ in PIN';
 $lang['ISK-SocketAction']='Åtgärd';

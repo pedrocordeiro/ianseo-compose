@@ -77,8 +77,6 @@ $lang['RR_Score']='Pontuação do RR';
 $lang['StandingRecords']='Recordes atuais';
 $lang['Teams']='Equipes';
 $lang['TypeName']='Digite o nome que você está buscando';
-$lang['VenueTime']='Hora da Arena';
-$lang['ViewerTime']='Sua Hora';
 $lang['ViewIndividualResults']='Ver resultados individuais';
 $lang['ViewTeamResults']='Ver resultados de equipes';
 ?>

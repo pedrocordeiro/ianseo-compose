@@ -172,21 +172,17 @@ function selectMain() {
             });
             ties+='</select>';
             $('#tbody').empty();
-            $('#InsertDiv').empty();
             $.each(data.groups, function(gIdx) {
                 let groupId=this.id;
-
-                $('#InsertDiv').append('<div class="GroupPoints">'+this.name+'</div>');
-
-                let row='<div class="GroupDiv" group="'+groupId+'">';
+                let row='<tr group="'+groupId+'" valign="top">';
                 let numRounds=this.rounds.length
+                $('#tbody').append('<tr><th class="Title" colspan="'+data.colRound+'">'+this.name+'</th></tr>');
                 let event='';
                 $.each(this.rounds, function(rIdx) {
-                    row+='<div class="RoundTable"><table class="Tabella" group="'+groupId+'" round="'+this.id+'" >';
+                    row+='<td class="Center"><table group="'+groupId+'" round="'+this.id+'" class="w-'+data.roundWidth+'">';
                     row+='<tr><th colspan="'+numCols+'" class="Title">'+this.name+'</th></tr>';
                     row+=headers;
                     var numRows=this.rows.length;
-                    let eventHead='';
                     $.each(this.rows, function(rowIdx) {
                         if(event!=this.name) {
                             row+='<tr><th colspan="'+numCols+'" >'+this.name+'</th></tr>';
@@ -234,10 +230,10 @@ function selectMain() {
                         row+='<th class="gRank">'+this.gRank+'</th>';
                         row+='</tr>';
                     });
-                    row+='</table></div>';
+                    row+='</table></td>';
                 });
-                row+='</div>';
-                $('#InsertDiv').append(row);
+                row+='</tr>';
+                $('#tbody').append(row);
             });
         } else {
             showAlert(data.msg);

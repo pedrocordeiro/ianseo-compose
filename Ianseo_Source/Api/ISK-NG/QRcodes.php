@@ -53,9 +53,6 @@ switch($_SESSION['UseApi']??'') {
 			'askTotals'=>0,
             'enableHaptics'=>0,
 			'askSignature'=>0,
-            'regexSignature'=>'',
-            'deviceSignatureCode'=>'',
-            'takeScorecardPhoto'=>0,
             'settingsPinCode'=>'',
 		];
 		if($Items=getModuleParameter('ISK-NG', 'QRCode-Setup', [])) {
@@ -115,6 +112,17 @@ switch($_SESSION['UseApi']??'') {
 		$Content.= '<tr class="divider"></tr>';
 		$Content.= '</tbody>';
 
+
+		$Content.= '<tr><th class="Title" colspan="5">' . get_text('ISK-Gps','Api') . '</th></tr>';
+		$Content.= '<tr>
+			<th colspan="2">' . get_text('ISK-enableGPS','Api') . '</th>
+			<td colspan="3"><input type="checkbox" id="enableGPS" onClick="showGPSPart();" name="enableGPS" value="1" '. ($QrCode['enableGPS'] ? 'checked="checked"' : '') .'"></td>
+			</tr>';
+		$Content.= '<tr class="d-none" id="GpsFrequency">
+			<th colspan="2">' . get_text('ISK-gpsFrequency','Api') . '</th>
+			<td colspan="3"><input type="text" name="gpsFrequency" onchange="manageButtons()" value="'. $QrCode['gpsFrequency'] .'"></td>
+			</tr>';
+
 		$Content.= '<tr><th class="Title" colspan="5">' . get_text('ISK-Options','Api') . '</th></tr>';
 		$Content.= '<tr>
 			<th colspan="2">' . get_text('ISK-spottingMode','Api') . '</th>
@@ -124,61 +132,26 @@ switch($_SESSION['UseApi']??'') {
 			<th colspan="2">' . get_text('ISK-hideTotals','Api') . '</th>
 			<td colspan="3"><input type="checkbox" name="hideTotals" onclick="manageButtons()" '. ($QrCode['hideTotals'] ? 'checked="checked"' : '') .'"></td>
 			</tr>';
+		$Content.= '<tr>
+			<th colspan="2">' . get_text('ISK-askTotals','Api') . '</th>
+			<td colspan="3"><input type="checkbox" name="askTotals" onclick="manageButtons()" '. ($QrCode['askTotals'] ? 'checked="checked"' : '') .'"></td>
+			</tr>';
         $Content.= '<tr>
 			<th colspan="2">' . get_text('ISK-enableHaptics','Api') . '</th>
 			<td colspan="3"><input type="checkbox" name="enableHaptics" onclick="manageButtons()" '. ($QrCode['enableHaptics'] ? 'checked="checked"' : '') .'"></td>
+			</tr>';
+		$Content.= '<tr>
+			<th colspan="2">' . get_text('ISK-askSignature','Api') . '</th>
+			<td colspan="3"><select name="askSignature" onchange="manageButtons()">
+			<option value="0">'.get_text('AskSignature-0','Api').'</option>
+			<option value="1" '. ($QrCode['askSignature']==1 ? 'selected="selected"' : '') .'>'.get_text('AskSignature-1','Api').'</option>
+			<option value="2" '. ($QrCode['askSignature']==2 ? 'selected="selected"' : '') .'>'.get_text('AskSignature-2','Api').'</option>
+			</select></td>
 			</tr>';
         $Content.= '<tr>
 			<th colspan="2">' . get_text('ISK-SettingsPIN','Api') . '</th>
 			<td colspan="3"><input type="text" maxlength="4" pattern="[0-9]{4}" name="settingsPinCode" onchange="manageButtons()" value="'. $QrCode['settingsPinCode'] .'"></td>
 			</tr>';
-
-        $Content.= '<tr class="GPS hidden"><th class="Title" colspan="5">' . get_text('ISK-Gps','Api') . '</th></tr>';
-        $Content.= '<tr class="GPS hidden">
-			<th colspan="2">' . get_text('ISK-enableGPS','Api') . '</th>
-			<td colspan="3"><input type="checkbox" id="enableGPS" onClick="showGPSPart();" name="enableGPS" value="1" '. ($QrCode['enableGPS'] ? 'checked="checked"' : '') .'"></td>
-			</tr>';
-        $Content.= '<tr class="GPS hidden" id="GpsFrequency">
-			<th colspan="2">' . get_text('ISK-gpsFrequency','Api') . '</th>
-			<td colspan="3"><input type="text" name="gpsFrequency" onchange="manageButtons()" value="'. $QrCode['gpsFrequency'] .'"></td>
-			</tr>';
-
-        $Content.= '<tr><th class="Title" colspan="5">' . get_text('ISK-CheckDataFeatures','Api') . '</th></tr>';
-        $Content.= '<tr>
-			<th colspan="2">' . get_text('ISK-askTotals','Api') . '</th>
-			<td colspan="3"><input type="checkbox" name="askTotals" onclick="manageButtons()" '. ($QrCode['askTotals'] ? 'checked="checked"' : '') .'"></td>
-			</tr>';
-        $Content.= '<tr class="Signatures hidden">
-			<th colspan="2">' . get_text('ISK-askSignature','Api') . '</th>
-			<td colspan="3"><select id="askSignature" name="askSignature" onchange="manageButtons(); showRegExp()">
-			<option value="0">'.get_text('AskSignature-0','Api').'</option>
-			<option value="1" '. ($QrCode['askSignature']==1 ? 'selected="selected"' : '') .'>'.get_text('AskSignature-1','Api').'</option>
-			</select></td>
-			</tr>';
-        $Content.= '<tr class="SignaturesRegexp  hidden">
-			<th colspan="2" >' . get_text('ISK-regexSignature','Api') . '</th>
-			<td colspan="3"><input type="text" class="w-100" name="regexSignature" id="regexSignature" onchange="manageButtons(); showRegExp(); checkSignature();" value="'. $QrCode['regexSignature'] .'"><br><span class="small">'.get_text('ISK-regexSignature','Help').'</span></td>
-			</tr>';
-        $Content.= '<tr class="SignaturesRegexp  hidden">
-			<th colspan="2" >' . get_text('ISK-DeviceSignatureCode','Api') . '</th>
-			<td colspan="3"><input type="text" class="w-100" name="deviceSignatureCode" id="deviceSignatureCode" onchange="manageButtons(); showRegExp(); checkSignature();" value="'. $QrCode['deviceSignatureCode'] .'"><br><span class="small">'.get_text('ISK-regexSignature','Help').'<br>'.get_text('ISK-DeviceQrCodeField','Api').'</span></td>
-			</tr>';
-        $Content.= '<tr class="SignaturesRegexpTest hidden">
-			<th colspan="2" >' . get_text('ISK-regexSignatureTest','Api') . '</th>
-			<td colspan="3">
-			<div class="mt-1 mb-1 Left">'.get_text('BibNumber', 'BackNumbers').'<input class="mx-2" type="text" size="10" id="regexSignatureBib">
-			<input class="mx-2" type="button" value="'.get_text('CmdGetSignature','Api').'" onclick="getSignature(false)"><input type="button" value="'.get_text('CmdSignatureRandomID','Api').'" onclick="getSignature(true)"><div class="ml-2 text-secondary" id="regexSignatureName"></div></div>
-			<input type="hidden" id="deviceSignatureTest"><input type="text" class="w-90 mr-1" id="regexSignatureTest" onchange="checkSignature()"><i id="regexSignatureValid" class="fa-solid fa-lg hidden"></i></td>
-			</tr>';
-        $Content.= '<tr class="ScorePicture hidden">
-			<th colspan="2">' . get_text('ISK-takeScorecardPhoto','Api') . '</th>
-			<td colspan="3"><input type="checkbox" name="takeScorecardPhoto" onclick="manageButtons()" '. ($QrCode['takeScorecardPhoto'] ? 'checked="checked"' : '') .'"></td>
-			</tr>';
-
-        $Content.= '<tr class="Divider"><td colspan="5"></td></tr>'.
-            '<tr><th class="Title" colspan="5">' . get_text('ISK-ConnectionStatus','Api') . '</th></tr>'.
-            '<tr><td colspan="5" id="ctrConnStatus" class="socketOFF" ondblclick="changeMasterSocket()">DISCONNECTED</td></tr>'.
-            '<tr class="Divider"><td colspan="5"></td></tr>';
 		break;
 }
 
@@ -191,13 +164,8 @@ $JS_SCRIPT=array(
 			'WifiSSID' => get_text('ISK-WifiSSID','Api'),
 			'WifiPWD' => get_text('ISK-WifiPWD','Api'),
             'WifiTargetRange' => get_text('ISK-WifiTargetRange','Api'),
-            'isLive' => ($_SESSION["UseApi"] === ISK_NG_LIVE_CODE and module_exists('ISK-NG_Live')),
-            'tourCode' => $_SESSION["TourCode"],
-            'SocketIP'=>getModuleParameter('ISK-NG', 'SocketIP', gethostbyname($_SERVER['HTTP_HOST'])),
-            'SocketPort'=>getModuleParameter('ISK-NG', 'SocketPort', '12346'),
 		)),
 		'<script type="text/javascript" src="./QRcodes.js"></script>',
-        (($_SESSION['UseApi']??'')==ISK_NG_LIVE_CODE ? '<script type="text/javascript" src="./socket.js"></script>':''),
 		'<link href="isk.css" rel="stylesheet" type="text/css">',
 );
 

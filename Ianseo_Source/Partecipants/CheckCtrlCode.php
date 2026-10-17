@@ -54,10 +54,8 @@ while($MyRow=safe_fetch($RsCl)) {
 	$JSON['age'][]=$MyRow->ClId;
 }
 
-if($JSON['age'] and !in_array($Clas, $JSON['age'])) {
+if(!in_array($Clas, $JSON['age'])) {
 	$Clas=$JSON['age'][0];
-} else {
-    $Clas='';
 }
 
 // get the VALID classes based on the division and class selected
@@ -75,7 +73,7 @@ while($MyRow=safe_fetch($RsCl)) {
 	$JSON['clas']=array_merge($JSON['clas'], explode(',', $MyRow->ClValidClass));
 }
 
-$JSON['clas'] = array_values(array_unique($JSON['clas']));
+array_unique($JSON['clas']);
 
 $JSON['dob']= RevertDate($ctrlCode);
 

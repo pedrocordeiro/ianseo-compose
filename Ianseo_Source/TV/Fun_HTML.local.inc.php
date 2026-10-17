@@ -15,10 +15,7 @@
 		$tourType=(empty($xxx->ToType) ? '' : $xxx->ToType);
 		$tourSubRule=(empty($xxx->ToTypeSubRule) ? '' : $xxx->ToTypeSubRule);
 
-        if(!defined('PRINTLANG')) {
-            @define('PRINTLANG', $xxx->ToPrintLang);
-        }
-
+		@define('PRINTLANG', $xxx->ToPrintLang);
 
 		$Arr_RotPages = array
 		(
@@ -398,7 +395,7 @@ function genera_html_rot($TVsettings, $RULE) {
 		case 'QUALS':
 			include('Rot_qual_snap.php');
 			break;
-        case 'QUALT':
+		case 'QUALT';
 			include('Rot_qual_t.php');
 			break;
 		case 'ABS':

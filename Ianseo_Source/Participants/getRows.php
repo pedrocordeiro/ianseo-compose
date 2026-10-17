@@ -270,7 +270,7 @@ if (count($Rows)>0) {
 			$oldstyle=$r['key'];
 		}
 
-		$JSON['html'] .= '<tr id="ToId='.$r['tourid'].'&Session='.$r['session'].'&TargetNo='.$r['targetno'].'&EnId='.$r['id'].'" enid="'.$r['id'].'" class="EntryRow '.$styles[$ref].'">';
+		$JSON['html'] .= '<tr id="ToId='.$r['tourid'].'&QuTargetNo='.$r['qutargetno'].'&EnId='.$r['id'].'" enid="'.$r['id'].'" class="EntryRow '.$styles[$ref].'">';
 		foreach($Columns as $col) {
 			switch($col) {
 				case 'edit':
@@ -347,7 +347,7 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 	$DefTargets=getTargets($TourId);
 
 	if ($OrderBy===null) {
-		$OrderBy= "QuSession ASC, QuTarget ASC, QuLetter ASC ";
+		$OrderBy= "QuSession ASC,QuTargetNo ASC ";
 	}
 
 	$Errore = 0;
@@ -355,7 +355,7 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 	$Select="";
 	if (!$AllTargets) {
 		$Select = "SELECT $RowKey, e.*,IF(EnDob=0,'',EnDob) AS Dob,c.CoCode,c.CoName,c2.CoCode AS CoCode2,c2.CoName AS CoName2, c3.CoCode AS CoCode3, c3.CoName AS CoName3,
-			q.QuSession AS `Session`,CONCAT(q.QuTarget,q.QuLetter) AS TargetNo,ToWhenFrom,TfName, ToCode,ToId,
+			q.QuSession AS `Session`,SUBSTRING(q.QuTargetNo,2) AS TargetNo,ToWhenFrom,TfName, ToCode,ToId,QuTargetNo,
 			eextra.EdEmail, zextra.EdExtra locBib, cextra.EdExtra AccrCaption, PhPhoto is not null as HasPhoto
 			FROM Entries AS e 
 			INNER JOIN Qualifications AS q ON e.EnId=q.QuId 
@@ -365,25 +365,24 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 			LEFT JOIN Countries AS c3 ON e.EnCountry3=c3.CoId AND e.EnTournament=c3.CoTournament 
 			LEFT JOIN TargetFaces ON EnTournament=TfTournament AND EnTargetFace=TfId 
 			LEFT JOIN ExtraData eextra ON eextra.EdType='E' and eextra.EdId=EnId 
-			LEFT JOIN ExtraData zextra ON zextra.EdType='Z' and zextra.EdExtra!='' and zextra.EdId=EnId 
+			LEFT JOIN ExtraData zextra ON zextra.EdType='Z' and zextra.EdId=EnId 
 			LEFT JOIN ExtraData cextra ON cextra.EdType='C' and cextra.EdId=EnId 
 			LEFT JOIN Photos ON PhEnId=EnId 
 			WHERE e.EnTournament in ({$TourId}) $ExtraWhere 
 			ORDER BY $OrderBy";
 	} else {
-        $atSql = createAvailableTargetSQL(0,$TourId);
 		$Select = "(SELECT RowKey, EnId, EnIocCode, EnTournament, EnDivision, EnClass, EnSubClass, EnAgeClass, ToCode, ToId,
 				EnCountry, EnSubTeam, EnCountry2, EnCountry3, EnCtrlCode, Dob,
 				EnCode, EnName, EnFirstName, EnBadgePrinted, EnAthlete, EnSex, EnWChair, EnSitting, EnIndClEvent, EnTeamClEvent, EnIndFEvent, EnTeamFEvent, EnTeamMixEvent, EnDoubleSpace, 
 				EnPays, EnStatus, EnTargetFace, EnTimestamp, TfName, CoCode, CoName, CoCode2, CoName2, CoCode3, CoName3, 
-				FullTgtSession AS `Session`, CONCAT(FullTgtTarget,FullTgtLetter) AS TargetNo, sq.ToWhenFrom, EdEmail, EdExtra locBib, AccrCaption, HasPhoto  
-			FROM  ($atSql) at 
-			INNER JOIN Tournament ON ToId={$TourId}
+				SUBSTRING(AtTargetNo,1,1) AS `Session`, SUBSTRING(AtTargetNo,2) AS TargetNo, AtTargetNo QuTargetNo, sq.ToWhenFrom, EdEmail, EdExtra locBib, AccrCaption, HasPhoto  
+			FROM  AvailableTarget 
+			INNER JOIN Tournament ON AtTournament=ToId 
 			LEFT JOIN (SELECT $RowKey, EnId, EnIocCode, EnTournament, EnDivision, EnClass, EnSubClass, EnAgeClass, eextra.EdEmail, zextra.EdExtra, cextra.EdExtra AccrCaption, 
 					EnCountry, EnSubTeam, EnCountry2, EnCountry3, EnCtrlCode, IF(EnDob!='0000-00-00',EnDob,'0000-00-00 00:00:00') AS Dob, 
 					EnCode, EnName, EnFirstName, EnBadgePrinted, EnAthlete, EnSex, EnWChair, EnSitting, EnIndClEvent, EnTeamClEvent, EnIndFEvent, EnTeamFEvent, EnTeamMixEvent, EnDoubleSpace,
 					EnPays, EnStatus, EnTargetFace, EnTimestamp, TfName, c.CoCode AS CoCode, c.CoName AS CoName, c2.CoCode AS CoCode2, c2.CoName AS CoName2, c3.CoCode AS CoCode3, c3.CoName AS CoName3, 
-					q.QuSession, q.QuTarget, q.QuLetter ToWhenFrom, PhPhoto is not null as HasPhoto  
+					q.QuSession AS `Session`, SUBSTRING(q.QuTargetNo,2) AS TargetNo, q.QuTargetNo AS QuTargetNo, ToWhenFrom, PhPhoto is not null as HasPhoto  
 				FROM Entries AS e 
 				INNER JOIN Qualifications AS q ON e.EnId=q.QuId  
 				INNER JOIN Tournament ON EnTournament=ToId  
@@ -392,16 +391,17 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 				LEFT JOIN Countries AS c3 ON e.EnCountry3=c3.CoId AND e.EnTournament=c3.CoTournament  
 				LEFT JOIN TargetFaces ON EnTournament=TfTournament AND EnTargetFace=TfId  
 				LEFT JOIN ExtraData eextra ON eextra.EdType='E' and eextra.EdId=EnId  
-				LEFT JOIN ExtraData zextra ON zextra.EdType='Z' and zextra.EdExtra!='' and zextra.EdId=EnId  
+				LEFT JOIN ExtraData zextra ON zextra.EdType='Z' and zextra.EdId=EnId  
 				LEFT JOIN ExtraData cextra ON cextra.EdType='C' and cextra.EdId=EnId  
 				WHERE e.EnTournament in ({$TourId}) $ExtraWhere  
-				ORDER BY " . $OrderBy . "  ) AS sq ON QuSession=FullTgtSession AND QuTarget=FullTgtTarget AND QuLetter=FullTgtLetter  
+				ORDER BY " . $OrderBy . "  ) AS sq ON AtTournament=EnTournament AND AtTargetNo=QuTargetNo  
+			WHERE AtTournament in ({$TourId}))  
 			UNION ALL  
 			(SELECT $RowKey, EnId, EnIocCode, EnTournament, EnDivision, EnClass, EnSubClass, EnAgeClass, ToCode, ToId, 
 				EnCountry, EnSubTeam, EnCountry2, EnCountry3, EnCtrlCode, IF(EnDob!='0000-00-00',EnDob,'0000-00-00 00:00:00') AS Dob, 
 				EnCode, EnName, EnFirstName, EnBadgePrinted, EnAthlete, EnSex, EnWChair, EnSitting, EnIndClEvent, EnTeamClEvent, EnIndFEvent, EnTeamFEvent, EnTeamMixEvent, EnDoubleSpace,
 				EnPays, EnStatus, EnTargetFace, EnTimestamp, TfName, c.CoCode AS CoCode, c.CoName AS CoName, c2.CoCode AS CoCode2, c2.CoName AS CoName2, c3.CoCode AS CoCode3, c3.CoName AS CoName3, 
-				q.QuSession AS `Session`, CONCAT(q.QuTarget,q.QuLetter) AS TargetNo, ToWhenFrom, eextra.EdEmail, zextra.EdExtra locBib, cextra.EdExtra AccrCaption, PhPhoto is not null as HasPhoto  
+				q.QuSession AS `Session`, SUBSTRING(q.QuTargetNo,2) AS TargetNo, QuTargetNo, ToWhenFrom, eextra.EdEmail, zextra.EdExtra locBib, cextra.EdExtra AccrCaption, PhPhoto is not null as HasPhoto  
 			FROM  Entries 
 			INNER JOIN Qualifications AS q ON EnId=q.QuId  
 			INNER JOIN Tournament ON EnTournament=ToId  
@@ -410,9 +410,9 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 			LEFT JOIN Countries AS c2 ON EnCountry2=c2.CoId AND EnTournament=c2.CoTournament  
 			LEFT JOIN Countries AS c3 ON EnCountry3=c3.CoId AND EnTournament=c3.CoTournament  
 			LEFT JOIN ExtraData eextra ON eextra.EdType='E' and eextra.EdId=EnId  
-			LEFT JOIN ExtraData zextra ON zextra.EdType='Z' and zextra.EdExtra!='' and zextra.EdId=EnId  
+			LEFT JOIN ExtraData zextra ON zextra.EdType='Z' and zextra.EdId=EnId  
 			LEFT JOIN ExtraData cextra ON cextra.EdType='C' and cextra.EdId=EnId  
-			WHERE EnTournament in ({$TourId}) AND QuSession=0 $ExtraWhere )  
+			WHERE EnTournament in ({$TourId}) AND length(QuTargetNo)<4 $ExtraWhere )  
 			ORDER BY " . $OrderBy . " ";
 	}
 
@@ -438,6 +438,7 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 					'tourcode' => $MyRow->ToCode,
 					'picture' => $MyRow->HasPhoto,
 					'tourid' => $MyRow->ToId,
+					'qutargetno' => $MyRow->QuTargetNo,
 					'caption' => $MyRow->AccrCaption,
 					'key' => $MyRow->RowKey,
 					'id' => $MyRow->EnId,
@@ -446,7 +447,7 @@ function GetRows($RowKey, $TourId, $OrderBy=null, $AllTargets=false, $ExtraWhere
 					'locCode' => $MyRow->locBib,
 					'status' => $MyRow->EnStatus,
 					'session' => $MyRow->Session!=0 ? $MyRow->Session : '',
-					'targetno' => $MyRow->TargetNo!=0 ? $MyRow->TargetNo : '',
+					'targetno' => $MyRow->TargetNo,
 					'firstname' => stripslashes($MyRow->EnFirstName),
 					'name' => stripslashes($MyRow->EnName),
 					'email' => stripslashes($MyRow->EdEmail),

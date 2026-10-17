@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__, 3) . '/config.php');
+require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 checkFullACL(AclRoot, '', AclReadWrite);
 if (!CheckTourSession()) {
     exit;
@@ -22,7 +22,7 @@ if(!empty($_REQUEST["deleteIP"])) {
     if(!empty($_REQUEST["isTemplate"])) {
         $Sql = "DELETE FROM `AclTemplates`  WHERE `AclTeTournament`=" . StrSafe_DB($_SESSION['TourId']) . " AND `AclTePattern`=" . StrSafe_DB($_REQUEST["deleteIP"]);
         $q = safe_w_SQL($Sql);
-    } elseif($ip=checkValidIP($_REQUEST["deleteIP"])) {
+    } else if($ip = checkValidIP($_REQUEST["deleteIP"])) {
         $Sql = "DELETE FROM `AclDetails` WHERE `AclDtTournament`=" . StrSafe_DB($_SESSION['TourId']) . " AND `AclDtIP`='{$ip}'";
         $q = safe_w_SQL($Sql);
         $Sql = "DELETE FROM `ACL` WHERE `AclTournament`=" . StrSafe_DB($_SESSION['TourId']) . " AND `AclIP`='{$ip}'";
@@ -159,19 +159,9 @@ if(isset($_REQUEST["AclOnOff"]) AND preg_match("/^[0|1]$/",$_REQUEST["AclOnOff"]
     }
     $tmpSort=array_keys($tmpIP);
     natsort($tmpSort);
-
-    $Json['isSuperUser']=false;
-    $myActualip = $_SERVER["REMOTE_ADDR"];
-    if($myActualip == '127.0.0.1' OR $myActualip == '::1' OR in_array($myActualip,$CFG->ACLExcluded) OR (isAuthEnabled()[0] AND hasFullACL(AclRoot, '', AclReadWrite))) {
-        $Json['isSuperUser']=true;
-    }
     foreach ($tmpSort as $vSort) {
         $Json['AclList'][] = $tmpIP[$vSort];
-        if(!$Json['isSuperUser'] AND $myActualip==$vSort AND $tmpIP[$vSort]['Opt'][AclRoot]) {
-            $Json['isSuperUser']=true;
-        }
     }
-
     $Sql = "SELECT AclTePattern, AclTeNick, AclTeFeatures as Features
       FROM AclTemplates
       WHERE AclTeTournament=" . StrSafe_DB($_SESSION['TourId']) . "
@@ -201,12 +191,16 @@ if(isset($_REQUEST["AclOnOff"]) AND preg_match("/^[0|1]$/",$_REQUEST["AclOnOff"]
 JsonOut($Json, 'callback');
 
 function checkValidIP($ip) {
-    if($ip==filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 or FILTER_FLAG_IPV6)) {
-        return $ip;
-    } elseif(isStarIP($ip)) {
-        return $ip;
+    /*
+     /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+     */
+    if(preg_match("/^(\d{1,3}\.)+\d{1,3}$/",$ip)) {
+        return filter_var($ip, FILTER_VALIDATE_IP);
+    } else if(preg_match("/^(\d{1,3}\.)+\*$/",$ip)) {
+        return($ip);
+    } else {
+        return false;
     }
-    return false;
 }
 
 function isStarIP($ip) {

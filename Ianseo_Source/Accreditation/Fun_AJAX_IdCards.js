@@ -323,7 +323,7 @@ function pdfForm(obj) {
 
 function activate_confirm(form) {
     form.target='Badges';
-    $('#confirm_button').css('display', 'inline');
+    document.getElementById('confirm_button').style.display='inline';
 }
 
 function hide_custom() {
@@ -343,7 +343,7 @@ function show_custom() {
 }
 
 function hide_confirm() {
-    $('#confirm_button').css('display', 'none');
+    document.getElementById('confirm_button').style.display='none';
 }
 
 function hide_reset() {
@@ -370,36 +370,4 @@ function resetPrint() {
 		ShowEntries();
 	})
 	console.log(form);
-}
-
-function UpdateCardSettings(obj) {
-	let form={
-		act:'update',
-		fld:obj.id,
-		val:obj.value,
-		CardType:$('#BadgeType').val(),
-		CardNumber:$('#BadgeNumber').length==0 ? 0 : $('#BadgeNumber').val(),
-	}
-	$(obj).closest('td').removeClass('updated error');
-	$.getJSON('IdCards-Actions.php', form, function(data) {
-		if(data.error==0) {
-			$(obj).closest('td').addClass('updated');
-			if(data.loadPicture) {
-				if(data.loadPicture=='1') {
-					// remove the img
-					$('#ImgPage2').html('').addClass('d-none');
-				} else if(data.loadPicture=='2') {
-					$('#ImgPage2').html('<img src="ImgIdCard.php?CardType='+form.CardType+'&CardNumber='+form.CardNumber+'&CardPage=2">').removeClass('d-none');
-				}
-			}
-			if(data.reloadPictures) {
-				var img=$('#ImgPage1 img').attr('src');
-				$('#ImgPage1 img').removeAttr('src').attr('src', img);
-				var img=$('#ImgPage2 img').attr('src');
-				$('#ImgPage2 img').removeAttr('src').attr('src', img);
-			}
-		} else {
-			$(obj).closest('td').addClass('error');
-		}
-	})
 }

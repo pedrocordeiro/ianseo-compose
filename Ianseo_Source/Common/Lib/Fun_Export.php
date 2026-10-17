@@ -99,12 +99,9 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 		'TargetGroups' => 'Tg',
 		'TeamComponent' => 'Tc',
 		'TeamDavis' => 'TeDa',
-		'TeamEligibleComponent' => 'Tec',
 		'TeamFinals' => 'Tf',
 		'TeamFinComponent' => 'Tfc',
         'TeamFinComponentLog' => 'Tfcl',
-        'TeamFinComponentStats' => 'TfcStat',
-        'TeamQualificationDistances' => 'Tqd',
 		'Teams' => 'Te',
 		'TournamentDistances' => 'Td',
 		'TournamentInvolved' => 'Ti',
@@ -137,11 +134,9 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 			'RecBroken' => 'RecBroAthlete',
 			'RunArchery'=>'RaArcher',
 			'TeamComponent' => 'TcId',
-			'TeamEligibleComponent' => 'TecId',
 			'TeamFinals' => 'TfCoach',
 			'TeamFinComponent' => 'TfcId',
             'TeamFinComponentLog' => array('TfclIdPrev','TfclIdNext'),
-            'TeamFinComponentStats' => 'TfcStatId',
 			'Vegas'=>'VeId',
 	);
 
@@ -152,11 +147,8 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 			'ExtraDataCountries' => 'EdcId',
 			'RecBroken' => 'RecBroTeam',
 			'TeamComponent' => 'TcCoId',
-			'TeamEligibleComponent' => 'TecCoId',
 			'TeamFinComponent' => 'TfcCoId',
             'TeamFinComponentLog' => 'TfclCoId',
-            'TeamFinComponentStats' => 'TfcStatCoId',
-			'TeamQualificationDistances' => 'TqdCoId',
 			'TeamFinals' => 'TfTeam',
 			'Teams' => 'TeCoId',
 			'TournamentInvolved' => 'TiCountry',
@@ -276,7 +268,7 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 		$Gara['Tournament']['ToImgB2']=' '.bin2hex($Gara['Tournament']['ToImgB2']);
 		// gets all data in an array
 		$switches=array();
-		$q=safe_r_SQL("Select * from OnLineIds where OliServer='$InfoSystem' and OliTournament={$TourId}");
+		$q=safe_r_SQL("Select * from OnLineIds where OliServer='$InfoSystem' and OliTournament={$_SESSION['TourId']}");
 		while($r=safe_fetch($q)) {
 			$switches[$r->OliType][$r->OliId]=$r->OliOnlineId;
 		}
@@ -295,7 +287,7 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 			}
 			$Entry['EnId']=$switches['E'][$Id];
 			$Entry['EnOnlineId']=$switches['E'][$Id];
-			$Entry['EnTournament']=$switches['T'][$TourId];
+			$Entry['EnTournament']=$switches['T'][$_SESSION['TourId']];
 			$Entry['EnCountry']=$switches['C'][$Entry['EnCountry']];
 			if($Entry['EnCountry2']) $Entry['EnCountry2']=$switches['C'][$Entry['EnCountry2']];
 			if($Entry['EnCountry3']) $Entry['EnCountry3']=$switches['C'][$Entry['EnCountry3']];
@@ -312,7 +304,7 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 			}
 			$Entry['CoId']=$switches['C'][$Id];
 			$Entry['CoOnlineId']=$switches['C'][$Id];
-			$Entry['CoTournament']=$switches['T'][$TourId];
+			$Entry['CoTournament']=$switches['T'][$_SESSION['TourId']];
 			$NewEntries[$Entry['CoId']]=$Entry;
 		}
 		$Gara['Countries']=$NewEntries;
@@ -399,7 +391,7 @@ function export_tournament($TourId, $Complete=false, $InfoSystem='') {
 		if($Complete) $tabs['Flags']='Fl';
 		foreach($tabs as $tab => $Id) {
 			foreach($Gara[$tab] as $k=>$v) {
-				$Gara[$tab][$k][$Id.'Tournament']=$switches['T'][$TourId];
+				$Gara[$tab][$k][$Id.'Tournament']=$switches['T'][$_SESSION['TourId']];
 			}
 		}
 	}

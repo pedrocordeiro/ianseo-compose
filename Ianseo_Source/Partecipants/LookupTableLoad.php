@@ -28,7 +28,7 @@ if(!empty($_REQUEST['PrevWaId']) and !empty($_REQUEST['EnId']) and !empty($_REQU
 	require_once('Common/CheckPictures.php');
 	safe_w_sql("update Entries
 			inner join Tournament on EnTournament=ToId and ToId={$_SESSION['TourId']}
-			inner join LookUpEntries on LueIocCode=IF(ToIocCode='NFAA', 'FITA', ToIocCode) and LueCode=$WaId
+			inner join LookUpEntries on LueIocCode=ToIocCode and LueCode=$WaId
 			set EnCode=LueCode, EnName=LueName, EnFirstName=LueFamilyName, EnClassified=LueClassified
 			where EnId=$EnId");
 	$t=safe_r_sql("select EnFirstName, EnName, EnNameOrder from Entries where EnId={$EnId}");
@@ -99,12 +99,7 @@ if(empty($_REQUEST["Download"])
                 <div><input id="onlyMissing-'.$u->LupIocCode.'" name="OnlyMissingPhoto['.$u->LupIocCode.']" type="checkbox" disabled="disabled" checked="checked">'.get_text('OnlyMissing', 'Tournament').'</div>
                 <div><input id="force-'.$u->LupIocCode.'" name="ForceOldPhoto['.$u->LupIocCode.']" type="checkbox" disabled="disabled">'.get_text('ForceOldPhotos', 'Tournament').'</div>';
         }
-        $LupFlagsPath='';
-		if($u->LupFlagsPath && ($u->LupFlagsPath[0]!='%' or file_exists($CFG->DOCUMENT_PATH.substr($u->LupFlagsPath, 1)))) {
-            $LupFlagsPath = '<div><input name="Flags['.$u->LupIocCode.']" type="checkbox" onclick="document.getElementById(\'onlyMissingFlags-'.$u->LupIocCode.'\').disabled=!this.checked;">'.($u->LupIocCode ? '(<input type="checkbox" name="fisu"> FISU)' : '').'</div>'.
-            '<div><input id="onlyMissingFlags-'.$u->LupIocCode.'" name="onlyMissingFlags['.$u->LupIocCode.']" type="checkbox" disabled="disabled" checked="checked">'.get_text('OnlyMissing', 'Tournament').'</div>';
-        }
-
+		$LupFlagsPath    =$u->LupFlagsPath && ($u->LupFlagsPath[0]!='%' or file_exists($CFG->DOCUMENT_PATH.substr($u->LupFlagsPath, 1))) ? '<input name="Flags['.$u->LupIocCode.']" type="checkbox">'.($u->LupIocCode ? '(<input type="checkbox" name="fisu"> FISU)' : '') : '';
 		$LupRankingPath  =$u->LupRankingPath && ($u->LupRankingPath[0]!='%' or file_exists($CFG->DOCUMENT_PATH.substr($u->LupRankingPath, 1))) ? '<input name="Rank['.$u->LupIocCode.']" type="checkbox">' : '';
 		$LupClubNamesPath=$u->LupClubNamesPath && ($u->LupClubNamesPath[0]!='%' or file_exists($CFG->DOCUMENT_PATH.substr($u->LupClubNamesPath, 1))) ? '<input name="Clubs['.$u->LupIocCode.']" type="checkbox">' : '';
 		$LupRecordsPath  =$u->LupRecordsPath && ($u->LupRecordsPath[0]!='%' or file_exists($CFG->DOCUMENT_PATH.substr($u->LupRecordsPath, 1))) ? '<input name="Records['.$u->LupIocCode.']" type="checkbox">' : '';
@@ -166,9 +161,9 @@ if(empty($_REQUEST["Download"])
 			from Entries
 			inner join Countries on EnCountry=CoId
 			inner join Tournament on EnTournament=ToId
-			inner join LookUpEntries on IF(ToIocCode='NFAA', 'FITA', ToIocCode)=LueIocCode " . (empty($_REQUEST['CatWaId']) ? "and IF(RIGHT(CoCode,3)='US-', 'USA', CoCode)=LueCountry " : "") ." and ( (soundex(EnFirstName)=soundex(LueFamilyName) or soundex(EnName)=soundex(LueName)) or (soundex(EnFirstName)=soundex(LueName) or soundex(EnName)=soundex(LueFamilyName)))
+			inner join LookUpEntries on ToIocCode=LueIocCode " . (empty($_REQUEST['CatWaId']) ? "and CoCode=LueCountry " : "") ." and ( (soundex(EnFirstName)=soundex(LueFamilyName) or soundex(EnName)=soundex(LueName)) or (soundex(EnFirstName)=soundex(LueName) or soundex(EnName)=soundex(LueFamilyName)))
 			where left(EnCode, 1)='_'
-		    and EnTournament={$_SESSION['TourId']} " . (empty($_REQUEST['CatWaId']) ? "" : " and CONCAT(TRIM(EnDivision),TRIM(Enclass)) LIKE " . StrSafe_DB(str_replace("!","",$_REQUEST['CatWaId']))) . "
+		    and EnTournament={$_SESSION['TourId']} " . (empty($_REQUEST['CatWaId']) ? "" : " and CONCAT(TRIM(EnDivision),TRIM(Enclass)) LIKE " . StrSafe_DB($_REQUEST['CatWaId'])) . "
 			order by 
 			    EnFirstName=LueFamilyName and EnName=LueName and (EnDob=LueCtrlCode or EnDob=0) desc,
 			    EnDob>0 and EnDoB=LueCtrlCode desc,
@@ -195,9 +190,7 @@ if(empty($_REQUEST["Download"])
 					$Style=' style="background-color:#ffff80"';
 				} elseif($r->EnDob==$r->LueCtrlCode) {
 					$Style=' style="background-color:#80ffff"';
-				} elseif(strpos($_REQUEST['CatWaId']??'','!')!==false) {
-                    continue;
-                }
+				}
 				echo '<tr'.$Style.'>';
 				echo '<td>'.$r->EnCode.'</td>';
 				echo '<td><a href="'.go_get(array('EnId'=>$r->EnId, 'WaId'=>$r->LueCode)).'">'.$r->LueCode.'</a></td>';
@@ -220,6 +213,7 @@ if(empty($_REQUEST["Download"])
 } else {
 	//ini_set('memory_limit', '512M');
 	set_time_limit(0);
+	$CFG->TRACE_QUERRIES=false;
 
 	require_once('Common/Lib/Fun_DateTime.inc.php');
 	$IocToUpdate=array();
@@ -263,7 +257,7 @@ if(empty($_REQUEST["Download"])
 		if($u->LupFlagsPath and !empty($_REQUEST["Flags"][$u->LupIocCode])) {
 			echo $head;
 			$head='';
-			DoLookupFlags($u, isset($_REQUEST["onlyMissingFlags"][$u->LupIocCode]));
+			DoLookupFlags($u);
 		}
 		if($u->LupRankingPath and !empty($_REQUEST["Rank"][$u->LupIocCode])) {
 			echo $head;
@@ -307,7 +301,7 @@ function DoLookupEntries($u, $file='') {
 	$DataSource = file_get_contents($file ? $file : $u->LupPath);
 
 	if (!$DataSource) {
-    	echo "No Database<br>";
+    	echo "No Database<br>\n";
     	return;
 	}
 
@@ -325,11 +319,11 @@ function DoLookupEntries($u, $file='') {
 		// Extranet
 		if($Archers=json_decode($DataSource)) {
 			safe_w_sql("delete from LookUpEntries where LueIocCode='$u->LupIocCode'");
-
+			;
 			echo ($ord++).') '.get_text('MsgLookup3','Tournament').'<br/>';
 			@flush();
 			@ob_flush();
-            safe_w_BeginTransaction();
+
 			foreach($Archers as $r) {
 				$Data="LueCode=".StrSafe_DB(isset($r->WaId) ? $r->WaId : $r->Id)."
 					, LueIocCode=".StrSafe_DB(isset($u->LupIocCode) ? $u->LupIocCode : $u->Type)."
@@ -350,12 +344,11 @@ function DoLookupEntries($u, $file='') {
 				safe_w_sql($Sql);
 				if(($NumRows++ % 100) == 0)
 					echo "- ";
-				if(($NumRows % 5000) == 0)
+				if(($NumRows % 2000) == 0)
 					echo "<br>";
 				@flush();
 				@ob_flush();
 			}
-            safe_w_Commit();
 			safe_w_sql("update LookUpPaths set LupLastUpdate='".date('Y-m-d H:i:s')."' where LupIocCode='$u->LupIocCode'");
 		}
 	} else {
@@ -403,18 +396,22 @@ function DoLookupEntries($u, $file='') {
 		if (!preg_match('/CLUBS/',$buffer)) die('Bad file format!');
 
 		safe_w_sql("delete from LookUpEntries where LueIocCode='$ioc'");
-        safe_w_BeginTransaction();
+
 		echo ($ord++).') '.get_text('MsgLookup3','Tournament').'<br/>';
 		@flush();
 		@ob_flush();
 
 		$clubs=array();
 	// la riga è: code nome nomebreve
-		while (($buffer=fgets($fp))!==false) {
+		while (($buffer=fgets($fp))!==false)
+		{
 			$buffer=substr($buffer,0,-1);	// per togliere il newline finale
+
 			if ($buffer=='ENTRIES')
 				break;
+
 			$row=explode("\t",$buffer);
+
 			$clubs[$row[0]]=array($row[1],$row[2]);
 		}
 
@@ -431,7 +428,7 @@ function DoLookupEntries($u, $file='') {
 
 		// fino all'indice 10 ho dati che non riguardano la classe e dall'11 ho le terne delle classi
 
-			$Sql="INSERT IGNORE into LookUpEntries set "
+			$Sql="REPLACE into LookUpEntries set "
 				. "LueCode=".StrSafe_DB($row[0])
 				. ", LueIocCode=".StrSafe_DB($ioc)
 				. ", LueFamilyName=". StrSafe_DB($row[2])
@@ -452,13 +449,17 @@ function DoLookupEntries($u, $file='') {
 				. ", LueDefault=%3\$s"
 				;
 
-			for ($i=11;$i<count($row);$i+=3) {
+			for ($i=11;$i<count($row);$i+=3)
+			{
+//				print $row[$i] . ' - ' . $row[$i+1] . ' - ' .$row[$i+2].'<br>';
+//				$q=sprintf($Sql, StrSafe_DB($row[$i]), StrSafe_DB($row[$i+1]), StrSafe_DB($row[$i+2]));
+//				print $q.'<br><br>';
 				safe_w_sql(sprintf($Sql, StrSafe_DB($row[$i]), StrSafe_DB($row[$i+1]), StrSafe_DB($row[$i+2])));
 			}
 
 			if(($NumRows++ % 100) == 0)
 				echo "- ";
-			if(($NumRows % 5000) == 0)
+			if(($NumRows % 2000) == 0)
 				echo "<br>";
 			@flush();
 			@ob_flush();
@@ -466,7 +467,7 @@ function DoLookupEntries($u, $file='') {
 
 		fclose($fp);
 		@unlink($file);
-        safe_w_Commit();
+
 		safe_w_sql("insert into LookUpPaths set LupIocCode='$ioc', LupLastUpdate='$date' on duplicate key update LupLastUpdate='$date'");
 	}
 
@@ -546,19 +547,17 @@ function DoLookupPhoto($u, $OnlyMissing=false, $ForceOld=false) {
 	}
 }
 
-function DoLookupFlags($u, $OnlyMissing=false) {
+function DoLookupFlags($u) {
 	require_once('Common/CheckPictures.php');
     $q=safe_r_sql("SELECT DISTINCT CoCode, CoName 
         from Countries  
         left join Flags ON FlTournament=CoTournament AND FlCode=CoCode 
-        where CoTournament={$_SESSION['TourId']} 
-          ".($OnlyMissing ? " AND (FlCode is null or FlSVG = '' or FlJPG = '') " : '')."
-          AND CoId IN (
-            SELECT EnCountry from Entries WHERE EnTournament={$_SESSION['TourId']} AND (EnIocCode='' OR EnIocCode='$u->LupIocCode')
+        where CoTournament={$_SESSION['TourId']} AND CoId IN (
+            SELECT EnCountry from Entries WHERE EnTournament={$_SESSION['TourId']} AND EnIocCode='$u->LupIocCode'
             UNION 
-            SELECT EnCountry2 from Entries WHERE EnTournament={$_SESSION['TourId']} AND (EnIocCode='' OR EnIocCode='$u->LupIocCode')
+            SELECT EnCountry2 from Entries WHERE EnTournament={$_SESSION['TourId']} AND EnIocCode='$u->LupIocCode'
             UNION 
-            SELECT EnCountry3 from Entries WHERE EnTournament={$_SESSION['TourId']} AND (EnIocCode='' OR EnIocCode='$u->LupIocCode')
+            SELECT EnCountry3 from Entries WHERE EnTournament={$_SESSION['TourId']} AND EnIocCode='$u->LupIocCode'
             UNION
             SELECT TiCountry from TournamentInvolved WHERE TiTournament={$_SESSION['TourId']})
         order by CoCode");
@@ -571,7 +570,7 @@ function DoLookupFlags($u, $OnlyMissing=false) {
 	}
     $FlagsDone=[];
 	while($r=safe_fetch($q)) {
-        $FlagToCheck=(($u->LupIocCode=='FITA' and preg_match('/^[A-Za-z]{3}$/',substr($r->CoCode,0,3))) ? substr($r->CoCode,0,3) : $r->CoCode);
+        $FlagToCheck=($u->LupIocCode=='FITA' ? substr($r->CoCode,0,3) : $r->CoCode);
 
         if($u->LupIocCode=='FITA' and ($FlagsDone[$FlagToCheck]??'')) {
             $SQL="FlCode='$r->CoCode',
@@ -599,7 +598,7 @@ function DoLookupFlags($u, $OnlyMissing=false) {
 			}
 			if($imgtmp) {
 				$tmpnam=tempnam('/tmp', 'img');
-				if($img=@imagecreatefromstring($imgtmp)) {
+				if($img=imagecreatefromstring($imgtmp)) {
                     imagejpeg($img, $tmpnam, 95);
 				    $imJPG=file_get_contents($tmpnam);
 				}

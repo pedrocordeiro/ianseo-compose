@@ -1,4 +1,5 @@
 <?php
+
 if(!empty($on) AND $_SESSION["TourLocRule"]=='FR' AND subFeatureAcl($acl,AclCompetition,'cData') >= AclReadOnly) {
     $ret['COMP']['EXPT'][] = MENU_DIVIDER;
     $ret['COMP']['EXPT'][] = get_text('MenuLM_Export-FR-Results') . '|' . $CFG->ROOT_DIR . 'Modules/Sets/FR/exports/';
@@ -14,16 +15,43 @@ if(!empty($on) AND $_SESSION["TourLocRule"]=='FR' AND subFeatureAcl($acl,AclComp
     }
 
 	switch($_SESSION['TourLocSubRule']) {
+		case 'SetFRCoupeFrance':
+            $q=safe_r_sql("select EvCode, count(*) as ExAequo
+                from Individuals
+                inner join Events on EvTournament=IndTournament and EvCode=IndEvent and EvTeamEvent=0 and EvFinalFirstPhase=0
+                inner join Qualifications on QuId=IndId
+                inner join (select EvCode TieCode, count(*) as ExAequo, QuScore as TieScore
+                    from Individuals
+                    inner join Events on EvTournament=IndTournament and EvCode=IndEvent and EvTeamEvent=0 and EvFinalFirstPhase=0
+                    inner join Qualifications on QuId=IndId
+                    where IndTournament={$_SESSION['TourId']} and IndRank between 1 and 4
+                    group by EvCode, QuScore
+                    having ExAequo>1) Ties on TieCode=IndEvent and QuScore=TieScore
+                where IndTournament={$_SESSION['TourId']}
+                group by EvCode, QuScore
+                having ExAequo>1
+                order by EvProgr, QuScore desc");
+            if(safe_num_rows($q)>0) {
+                $tmp = get_text('MenuLM_Check shoot-off before Rank');
+                $ev=[];
+                while($r=safe_fetch($q)) {
+                    $ev[]=$r->EvCode;
+                }
+                $tmp .= ' <b class="ShootOffMenu">(' . implode('-', $ev) . ')</b>';
+                $tmp .= '|' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Manage/AbsTae.php';
+                $ret['FINI'][]=MENU_DIVIDER;
+                $ret['FINI'][]=$tmp;
+            }
+            break;
 		case 'SetFRChampsD1DNAP':
 		case 'SetFRD12023':
-		case 'SetFRD12026':
 			$AllInOne=getModuleParameter('FFTA', 'D1AllInOne', 0);
 
 			$SubMenu=get_text($_SESSION['TourLocSubRule'], 'Install');
 			$tmp= array($SubMenu);
 	        $tmp[]=get_text('Setup', 'ISK'). '|' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Manage/configure.php';
 	        $tmp[]=get_text('MenuLM_Target Assignment') . '|' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Manage/';
-			if($_SESSION['TourLocSubRule']=='SetFRD12023' or $_SESSION['TourLocSubRule']=='SetFRD12026') {
+			if($_SESSION['TourLocSubRule']=='SetFRD12023') {
 				if (subFeatureAcl($acl,AclRobin,'') >= AclReadOnly) {
 					$tmp[]=get_text('ScorecardsTeams', 'Tournament') . '|' . $CFG->ROOT_DIR . 'Modules/RoundRobin/PrintScore.php?team=1';
 				}
@@ -45,7 +73,7 @@ if(!empty($on) AND $_SESSION["TourLocRule"]=='FR' AND subFeatureAcl($acl,AclComp
 				$ret['SetFRChampsD1DNAP']=$tmp;
 			}
 
-			if($_SESSION['TourLocSubRule']=='SetFRD12023' or $_SESSION['TourLocSubRule']=='SetFRD12026') {
+			if($_SESSION['TourLocSubRule']=='SetFRD12023') {
 				$ret['SetFRChampsD1DNAP'][] = MENU_DIVIDER;
 				if (subFeatureAcl($acl,AclRobin,'') == AclReadWrite) {
 					$tmp = get_text('DifferentEventSoManagementButton', 'RoundRobin') . '';
@@ -86,45 +114,4 @@ if(!empty($on) AND $_SESSION["TourLocRule"]=='FR' AND subFeatureAcl($acl,AclComp
 			unset($ret['ROBIN']);
 			break;
 	}
-
-	switch($_SESSION['TourType']) {
-		//Beursault
-	case 50:
-		break;
-	default:
-            $q=safe_r_sql("select EvCode, count(*) as ExAequo
-                from Individuals
-                inner join Events on EvTournament=IndTournament and EvCode=IndEvent and EvTeamEvent=0 and EvFinalFirstPhase=0
-                inner join Qualifications on QuId=IndId
-                inner join (select EvCode TieCode, count(*) as ExAequo, QuScore as TieScore
-                    from Individuals
-                    inner join Events on EvTournament=IndTournament and EvCode=IndEvent and EvTeamEvent=0 and EvFinalFirstPhase=0
-                    inner join Qualifications on QuId=IndId
-                    where IndTournament={$_SESSION['TourId']} and IndRank between 1 and 4
-                    group by EvCode, QuScore
-                    having ExAequo>1) Ties on TieCode=IndEvent and QuScore=TieScore
-                where IndTournament={$_SESSION['TourId']}
-                group by EvCode, QuScore
-                having ExAequo>1
-                order by EvProgr, QuScore desc");
-            if(safe_num_rows($q)>0) {
-                $tmp = get_text('MenuLM_Check shoot-off before Rank');
-                $ev=[];
-                while($r=safe_fetch($q)) {
-                    $ev[]=$r->EvCode;
-                }
-                $tmp .= ' <b class="ShootOffMenu">(' . implode('-', $ev) . ')</b>';
-                $tmp .= '|' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Manage/AbsTae.php';
-                $ret['QUAL'][]=MENU_DIVIDER;
-                $ret['QUAL'][]=$tmp;
-            }
-		break;
-	}
-
-	if(isset($_SESSION['TourLocSubRule']) AND $_SESSION['TourLocSubRule']=='SetFrBeursault') {
-		if (isset($ret['QUAL']['SCOR'])) {
-			array_splice($ret['QUAL']['SCOR'], 1, 0, 'Tableau spécial Beursault' .'|'.$CFG->ROOT_DIR.'Modules/Sets/FR/Modules/Bslt/index.php');
-		}
-	}
-
 }

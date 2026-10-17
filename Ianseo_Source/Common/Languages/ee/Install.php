@@ -1,6 +1,5 @@
 <?php
 $lang['Create']='Loo kasutaja ja andmebaas';
-$lang['Credits-DebugManager']='Veaotsingu osakond';
 $lang['Credits-HHT']='HHT Integratsioon';
 $lang['Credits-IanseoTeam']='Ianseo & Ianseo Meeskond';
 $lang['Database name']='Andmebaasi nimi';

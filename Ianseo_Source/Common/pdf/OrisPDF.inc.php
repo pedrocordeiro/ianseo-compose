@@ -31,8 +31,8 @@ class OrisPDF extends IanseoPdf {
 
 
 	//Constructor
-	function __construct($DocNumber, $DocTitle, $headers='', $fullFontSet=false) {
-		parent::__construct($DocTitle, true, $headers, true, $fullFontSet);
+	function __construct($DocNumber, $DocTitle, $headers='') {
+		parent::__construct($DocTitle, true, $headers);
 		if($this->ToPaths['ToBottom']) {
             $im=getimagesize($this->ToPaths['ToBottom']);
             if($im[0]/$im[1] < 17) {
@@ -102,12 +102,12 @@ class OrisPDF extends IanseoPdf {
 		if($this->ToPaths['ToLeft']) {
 			$im=getimagesize($this->ToPaths['ToLeft']);
 			$this->Image($this->ToPaths['ToLeft'], 10, 5, 0, $ImgSizeReq);
-			$LeftStart += ($im[0] * $ImgSizeReq / $im[1])+1;
+			$LeftStart += ($im[0] * $ImgSizeReq / $im[1]);
 		}
 		if($this->ToPaths['ToRight']) {
 			$im=getimagesize($this->ToPaths['ToRight']);
 			$this->Image($this->ToPaths['ToRight'], (($this->w-10) - ($im[0] * $ImgSizeReq / $im[1])), 5, 0, $ImgSizeReq);
-			$RightStart += ($im[0] * $ImgSizeReq / $im[1])+1;
+			$RightStart += ($im[0] * $ImgSizeReq / $im[1]);
 		}
 
 		//Where & When
@@ -121,7 +121,7 @@ class OrisPDF extends IanseoPdf {
 		//Competition Name
 		$this->SetXY($LeftStart+40,5);
 		$this->SetFont($this->FontStd,'B',11);
-		$this->Cell($this->w-$LeftStart-$RightStart, 5, preg_replace("/[\r\n]+/sim", ' ', $this->Name),0,0,'L');
+		$this->Cell($this->w-$LeftStart-$RightStart-40, 5, preg_replace("/[\r\n]+/sim", ' ', $this->Name),0,0,'L');
 
 		//Event Name if available
 		if($this->Event != '') {
@@ -450,13 +450,7 @@ class OrisPDF extends IanseoPdf {
 		$Offset=35+($Bottom ? $this::topMargin+($this->getPageHeight()-50-$this->extraBottomMargin-$this::bottomMargin-$this::topMargin)/2 : 0);
 		$this->SetY($Offset, true);
 		$this->SetFont('','B',14);
-        $PhaseName=$Phase['matchName'];
-        if(array_key_exists('elimType',$Section) and $Section['elimType']==3 and isset($this->PoolMatches[$Data['matchNo']])) {
-            $PhaseName=$this->PoolMatches[$Data['matchNo']];
-        } elseif(array_key_exists('elimType',$Section) and $Section['elimType']==4 and isset($this->PoolMatchesWA[$Data['matchNo']])) {
-            $PhaseName=$this->PoolMatchesWA[$Data['matchNo']];
-        }
-		$this->Cell(0,0, $PhaseName, '', '1','C');
+		$this->Cell(0,0, $Phase['matchName'], '', '1','C');
 		$this->SetFont('','',12);
 		$this->Cell(0,0, (is_null($Data['scheduledKey']) ? '' : date('D j M Y', strtotime($Data['scheduledKey'])).' ').$Meta['fields']['scheduledTime'].': '.$Data['scheduledTime'], '', '1','C');
         if($Data['odfMatchName']!=0) {
@@ -822,13 +816,13 @@ class OrisPDF extends IanseoPdf {
                 $this->ln();
                 $this->setX(($this->getPageWidth()-((2*$CellWidthLong+4*$JudgesLabel)+10))/2);
                 $this->Cell(2*$JudgesLabel, $CellHeight, $TeamComponents[$Data['teamId']][$Data['subTeam']][$i]['familyUpperName'] . ' '. $TeamComponents[$Data['teamId']][$Data['subTeam']][$i]['givenName'], 1,0, 'L');
-                $this->Cell($CellWidthLong, $CellHeight, isset($AthAvg[0][$i]) ? number_format($AthAvg[0][$i],2,'.','') : '',1, 0, 'C');
+                $this->Cell($CellWidthLong, $CellHeight, number_format($AthAvg[0][$i],2,'.',''),1, 0, 'C');
                 $this->SetFont($this->FontSymbol);
                 $this->SetSymbolColor();
                 $this->Cell(10, $CellHeight, $symbols[$i][0], 'LTB', 0, 'C');
                 $this->SetDefaultColor();
                 $this->SetFont($this->FontStd);
-                $this->Cell($CellWidthLong, $CellHeight, isset($AthAvg[1][$i]) ? number_format($AthAvg[1][$i],2,'.','') : '',1, 0, 'C');
+                $this->Cell($CellWidthLong, $CellHeight, number_format($AthAvg[1][$i],2,'.',''),1, 0, 'C');
                 $this->Cell(2*$JudgesLabel, $CellHeight, $TeamComponents[$Data['oppTeamId']][$Data['oppSubTeam']][$i]['familyUpperName'] . ' '. $TeamComponents[$Data['oppTeamId']][$Data['oppSubTeam']][$i]['givenName'], 1,0, 'L');
             }
         }

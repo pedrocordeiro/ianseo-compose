@@ -1,6 +1,7 @@
 <?php
 $lang['EventWillBeReset']='【注意】「$a[0]」「 $a[1]」「$a[2]」を変更すると、設定された大会のパラメータがすべてデフォルトに戻ります。ご注意ください。';
 $lang['ExportAllComps']='全ての大会情報をバックアップ';
+$lang['FreeOnlineResults']='<b>試合結果公開:</b> インターネット接続があれば、試合結果をIanseoにフリーで公開することが出来ます。あなたの試合結果を世界に公開しましょう！大会情報が出来たら、接続コードを申請しましょう（メニュー «{$a}»）。';
 $lang['Module']='モジュール';
 $lang['NoSubRules']='サブルールなし';
 $lang['NothingToDo']='Ianseoは最新のバージョンにアップデートされています。定期的にアップデートを頂くようにお願いします。';
@@ -15,7 +16,7 @@ $lang['SetAllClass']='全てのクラス';
 $lang['SetJ-CClass']='ジュニアとキャデット';
 $lang['SetJ-SClass']='ジュニアと成年';
 $lang['SetOneClass']='全てひとつのクラス';
-$lang['Setup-Default']='<b>WA競技規則（日本の試合はこれを選択して下さい）</b>';
+$lang['Setup-Default']='<b>WA競技規則（日本の試合もこれを選択して下さい）</b>';
 $lang['Setup-PAR']='パラ大会（IPCルール）';
 $lang['SpecialUpdate']='Testing installation';
 $lang['Start Ianseo']='IANSEOヘ移動';

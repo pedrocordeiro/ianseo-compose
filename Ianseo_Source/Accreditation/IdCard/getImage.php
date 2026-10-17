@@ -3,10 +3,11 @@
 	CheckTourSession(true);
     checkFullACL(AclAccreditation, 'acStandard', AclReadWrite, false);
 
+	print_r($_COOKIE);
+
 	$JS_SCRIPT=array(
 		'<script type="text/javascript" src="Fun_AJAX_GetImage.js"></script>',
 		'<script type="text/javascript" src="../Fun_JS.js"></script>',
-        '<link rel="stylesheet" type="text/css" href="./IdCard.css">',
 		);
 
 	$txtHeader="";
@@ -25,52 +26,50 @@
 	$w=300;
 
 	$camurl=(empty($_REQUEST['CamUrl']) ? "" : urldecode($_REQUEST['CamUrl']));
-	if(!$camurl) $camurl=($_COOKIE['CamUrl']??'');
+	if(!$camurl) $camurl=$_COOKIE['CamUrl'];
 	$boundary="\n--";
 
+	$f = @fopen($camurl,"r") ;
 
-	if($camurl) {
-        $f = @fopen($camurl,"r") ;
-        if($f) {
-            $r="";
-            $im = null;
-            if(preg_match('/\.jpg$/i',$camurl) != 0) {
-                while(!feof($f))
-                    $r .= fread($f,4096);
-                $im=imagecreatefromstring($r);
-            } else {
-                while (substr_count($r,"Content-Length") != 2)
-                    $r.=fread($f,512);
-                $start = strpos($r,chr(255));
-                $end   = strpos($r,$boundary,$start)-1;
+	if($camurl and $f) {
+		$r="";
+		$im = null;
+		if(preg_match('/\.jpg$/i',$camurl) != 0) {
+			while(!feof($f))
+				$r .= fread($f,4096);
+			$im=imagecreatefromstring($r);
+		} else {
+			while (substr_count($r,"Content-Length") != 2)
+				$r.=fread($f,512);
+			$start = strpos($r,chr(255));
+			$end   = strpos($r,$boundary,$start)-1;
 
-                $frame = substr("$r",$start,$end - $start);
-                $im=imagecreatefromstring($frame);
-            }
+			$frame = substr("$r",$start,$end - $start);
+			$im=imagecreatefromstring($frame);
+		}
 
-            $X=imagesx($im);
-            $Y=imagesy($im);
-            $w=intval($X*0.45);
-            $x=($X-$w)-2;
-            $y=$Y-intval($w*4/3)-2;
-        }
+		$X=imagesx($im);
+		$Y=imagesy($im);
+		$w=intval($X*0.45);
+		$x=($X-$w)-2;
+		$y=$Y-intval($w*4/3)-2;
 	}
 
 	$ONLOAD=(' onLoad="javascript:reloadPicture()"');
 	include('Common/Templates/head-popup.php');
 ?>
 
-<table class="Tabella ImgToGrab">
+<table class="Tabella">
 	<tr><th colspan="2"><?php  echo $txtHeader; ?></th></tr>
 	<tr>
-	<td width="100%" class="Center"><img id="imgGrabbed" src="./grabImage.php" alt="Grab" onClick="javascript:centerBox(event);"/></td>
+	<td width="80%" class="Center"><img id="imgGrabbed" src="./grabImage.php" alt="Grab" onClick="javascript:centerBox(event);"/></td>
 	<script type="text/javascript">
 	<!--
 		var myImg = document.getElementById("imgGrabbed");
-		// myImg.onmousedown = GetCoordinates;
+		myImg.onmousedown = GetCoordinates;
 	//-->
 	</script>
-	<td class="Center">
+	<td width="20%" class="Center">
 	<table class="Tabella">
 		<tr>
 			<td colspan="2" class="Center"><a href="javascript:moveBox('N');">Su</a></td>
@@ -87,8 +86,8 @@
 			<td class="Center"><a href="javascript:moveBox('O');">Zoom +</a></td>
 		</tr>
 		<tr>
-			<td class="Center nowrap"><a href="javascript:moveBox('II');">Zoom ---</a></td>
-			<td class="Center NoWrap"><a href="javascript:moveBox('OO');">Zoom +++</a></td>
+			<td class="Center"><a href="javascript:moveBox('II');">Zoom ---</a></td>
+			<td class="Center"><a href="javascript:moveBox('OO');">Zoom +++</a></td>
 		</tr>
 
 

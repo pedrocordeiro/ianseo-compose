@@ -16,36 +16,26 @@ if(!empty($_REQUEST['lev'])) {
 	$File=array();
 
 	// Version
-	$File[]=sprintf("VERSION : \t%s.%s.%s\t", defined('ProgramRelease') ? ProgramRelease : 'unknown', defined('ProgramVersion') ? ProgramVersion : 'unknown', defined('ProgramBuild') ? preg_replace('/\s/', '-', ProgramBuild) : 'unknown');
-
-	// get chairperson of judges
-	$Select="SELECT TiCode Judges
-		FROM TournamentInvolved
-		inner JOIN InvolvedType ON TiType=ItId
-		WHERE TiTournament={$_SESSION['TourId']} AND ItId = 5";
-	$JudgesResp=[];
-	$q=safe_r_sql($Select);
-	while($r=safe_fetch($q)) {
-		$JudgesResp[]=$r->Judges;
-	}
+	$File[]=sprintf("VERSION : \t%s.%s\t", defined('ProgramRelease') ? ProgramRelease : 'unknown', defined('ProgramBuild') ? preg_replace('/\D/', '', ProgramBuild) : 'unknown');
 
 	// get the judges
-	$Select="SELECT TiCode Judges
+	$Select="SELECT TiCode Judges 
 		FROM TournamentInvolved  
 		inner JOIN InvolvedType ON TiType=ItId 
-		WHERE TiTournament={$_SESSION['TourId']} AND (ItJudge>0 or ItDos>0) AND ItId != 5
+		WHERE TiTournament={$_SESSION['TourId']} AND (ItJudge>0 or ItDos>0)
 		order by ItDos, ItJudge";
+	$JudgesResp='';
 	$Judges=[];
 	$Coaches=[];
 	$q=safe_r_sql($Select);
 	while($r=safe_fetch($q)) {
-		if(!count($JudgesResp)) {
-			$JudgesResp[]=$r->Judges;
-		} else {
-			$Judges[]=$r->Judges;
-		}
+        if(empty($JudgesResp)) {
+            $JudgesResp=$r->Judges;
+        } else {
+		    $Judges[]=$r->Judges;
+        }
 	}
-	$File[]="RARBITRES\t".implode("\t", $JudgesResp);
+	$File[]="RARBITRES\t{$JudgesResp}";
 	$File[]="ARBITRES\t".implode("\t", $Judges);
 	$File[]="ENTRAINEURS\t".implode("\t", $Coaches);
 
@@ -62,10 +52,7 @@ if(!empty($_REQUEST['lev'])) {
 				$Discipline='E';
 			}
 			if($COMP->ToWhenFrom>='2019-01-01') {
-                $Discipline= $_REQUEST['lev']=='SP' ? 'H' : 'T';
-			}
-			if($COMP->ToTypeSubRule=='SetFrBeursault') {
-				$Discipline='B';
+                $_REQUEST['lev']=='SP' ? 'H' : 'T';
 			}
 			break;
 		case 2:
@@ -77,9 +64,9 @@ if(!empty($_REQUEST['lev'])) {
 		case 8:
 			$Discipline='3';
 			break;
-		case 16: // invented... should be 2 more
+		//case 16: inveted... should be 2 more
 		//	$Discipline='N'; // Nature
-			$Discipline='B'; // Beursault
+		//	$Discipline='B'; // Beursault
         // PARA 18m => I
         // PARA Exterieur => H
         // Jeunesse => J
@@ -94,11 +81,10 @@ if(!empty($_REQUEST['lev'])) {
         $Filter=" and DivIsPara=1";
         $_REQUEST['lev']='S';
     }
-	$q=safe_r_sql("select EnIocCode, ucase(EnCode) as EnCode, ucase(EnFirstName) as EnFirstName, ucase(EnName) as EnName, EnDivision, EnAgeClass, EnClass, EnSex,
+	$q=safe_r_sql("select EnIocCode, EnCode, ucase(EnFirstName) as EnFirstName, ucase(EnName) as EnName, EnDivision, EnAgeClass, EnClass, EnSex, 
 			ifnull(IndEvent,'-') as IndEvent, EnId, 
 			ucase(CoName) as CoName, CoCode, 
 			QuScore, QuSession, QuD1Score, QuD2Score, QuD3Score, QuD4Score, QuHits, QuGold, QuXnine, QuD1Arrowstring,
-			QuArrow,
 			MaxArrows, MaxDistance, MaxTargetFace, 
 			IndRank, QuClRank, IndRankFinal 
 		from Qualifications
@@ -112,15 +98,7 @@ if(!empty($_REQUEST['lev'])) {
 		where EnTournament={$_SESSION['TourId']}
 		order by EnFirstName, QuSession");
 	$EnCodes=array();
-	$EnCodeBySession = [];
 	while($r=safe_fetch($q)) {
-		if (isset($EnCodeBySession["{$r->EnCode}-{$r->QuSession}"])) {
-			// Remove archers if they appear multiple times in the same session (protection in case the organizer has created custom events)
-			continue;
-		} else {
-			$EnCodeBySession["{$r->EnCode}-{$r->QuSession}"] = true;
-		}
-
         if($r->EnClass[0]=='D') {
             // Découverte/Débutant do not go in the txt file
             continue;
@@ -130,6 +108,10 @@ if(!empty($_REQUEST['lev'])) {
 			// Do not send archer in the txt file if score is 0 and no arrows recorded
 			continue;
 		}
+
+
+		// check the age class
+        $AgeClass=substr($r->EnAgeClass,0,-1);
 
         // check the shooting class
         $Class=substr($r->EnClass,0,-1);
@@ -184,23 +166,15 @@ if(!empty($_REQUEST['lev'])) {
                 break;
         }
 
-        if(empty($EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"])) {
-            $EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"]=0;
+        if(empty($EnCodes["{$r->EnCode}-{$r->EnDivision}"])) {
+            $EnCodes["{$r->EnCode}-{$r->EnDivision}"]=0;
         }
-        $EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"]++;
+        $EnCodes["{$r->EnCode}-{$r->EnDivision}"]++;
 
 		// Remove rank from archers shooting more than one session
-		if ($EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"] > 1) {
-			$r->IndRankFinal = 0;
-		}
-
-		// Remove rank from archers not shooting in events
-		if ('-' === $r->IndEvent) {
-			$r->IndRankFinal = 0;
-			// Put them also in other shoots
-			if (1 === $EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"]) {
-				$EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"]++;
-			}
+		if ($EnCodes["{$r->EnCode}-{$r->EnDivision}"] > 1) {
+			$r->QuClRank = null;
+			$r->IndRankFinal = null;
 		}
 
         $Archers[$r->IndEvent][$r->EnId]=array_fill(0, 51, '');
@@ -210,42 +184,29 @@ if(!empty($_REQUEST['lev'])) {
 		$Archers[$r->IndEvent][$r->EnId][3] = ($r->EnIocCode=='FRA' ? $r->EnCode : '999999');
 		$Archers[$r->IndEvent][$r->EnId][4] = $r->EnFirstName;
 		$Archers[$r->IndEvent][$r->EnId][5] = $r->EnName;
-		$Archers[$r->IndEvent][$r->EnId][6] = substr($r->EnAgeClass,0,-1);
+		$Archers[$r->IndEvent][$r->EnId][6] = $AgeClass;
 		$Archers[$r->IndEvent][$r->EnId][7] = $Class;
 		$Archers[$r->IndEvent][$r->EnId][8] = $r->EnSex ? 'F' : 'H';
 		$Archers[$r->IndEvent][$r->EnId][9] = $r->EnDivision;
 		$Archers[$r->IndEvent][$r->EnId][11] = $r->CoName;
 		$Archers[$r->IndEvent][$r->EnId][12] = $r->CoCode;
+		$Archers[$r->IndEvent][$r->EnId][13] = $r->QuScore;
 		$Archers[$r->IndEvent][$r->EnId][14] = 0;
-
-		if('B' === $Discipline)
-		{
-			$Archers[$r->IndEvent][$r->EnId][13] = $r->QuArrow.str_pad($r->QuScore, 3, '0', STR_PAD_LEFT);
-			$Archers[$r->IndEvent][$r->EnId][15] = $r->QuXnine;
-			$Archers[$r->IndEvent][$r->EnId][16] = $r->QuGold;
-			$Archers[$r->IndEvent][$r->EnId][22] = $r->QuArrow;
-			$Archers[$r->IndEvent][$r->EnId][23] = $r->QuD1Score ? $r->QuD1Score : '';
-		}
-		else
-		{
-			$Archers[$r->IndEvent][$r->EnId][13] = $r->QuScore;
-			$Archers[$r->IndEvent][$r->EnId][15] = $r->QuGold;
-			$Archers[$r->IndEvent][$r->EnId][16] = $r->QuXnine;
-			$Archers[$r->IndEvent][$r->EnId][22] = $r->QuD1Score ? $r->QuD1Score : '';
-			$Archers[$r->IndEvent][$r->EnId][23] = $r->QuD2Score ? $r->QuD2Score : '';
-		}
-
+		$Archers[$r->IndEvent][$r->EnId][15] = $r->QuGold;
+		$Archers[$r->IndEvent][$r->EnId][16] = $r->QuXnine;
 		$Archers[$r->IndEvent][$r->EnId][17] = $r->MaxDistance;
 		$Archers[$r->IndEvent][$r->EnId][18] = $r->MaxTargetFace;
 		$Archers[$r->IndEvent][$r->EnId][19] = date('d/m/Y', strtotime($COMP->ToWhenFrom));
 		$Archers[$r->IndEvent][$r->EnId][20] = str_replace(["\n","\r"], ' / ', trim($COMP->ToVenue));
 		$Archers[$r->IndEvent][$r->EnId][21] = $r->QuClRank;
+		$Archers[$r->IndEvent][$r->EnId][22] = $r->QuD1Score ? $r->QuD1Score : '';
+		$Archers[$r->IndEvent][$r->EnId][23] = $r->QuD2Score ? $r->QuD2Score : '';
 		$Archers[$r->IndEvent][$r->EnId][24] = $r->QuD3Score ? $r->QuD3Score : '';
 		$Archers[$r->IndEvent][$r->EnId][25] = $r->QuD4Score ? $r->QuD4Score : '';
 		$Archers[$r->IndEvent][$r->EnId][47] = $r->IndRankFinal;
 		$Archers[$r->IndEvent][$r->EnId][48] = '1'; // will always be a valid competition... set to 1 if official FFTA Ranking Category
 		$Archers[$r->IndEvent][$r->EnId][49] = $r->EnDivision;
-		$Archers[$r->IndEvent][$r->EnId][50] = $EnCodes["{$r->EnCode}-{$r->EnDivision}-{$r->EnClass}"];
+		$Archers[$r->IndEvent][$r->EnId][50] = $EnCodes["{$r->EnCode}-{$r->EnDivision}"];
 	}
 
 	// get the matches
@@ -260,11 +221,6 @@ if(!empty($_REQUEST['lev'])) {
 		order by fl.FinMatchNo");
 
 	while($r=safe_fetch($q)) {
-		// Test if archer is present in event (for para export case)
-		if (!isset($Archers[$r->FinEvent][$r->FinAthlete])) {
-			continue;
-		}
-
 		if($r->GrPhase) {
 			$r->GrPhase=log($r->GrPhase, 2)+1;
 		}
@@ -377,7 +333,12 @@ echo '<tr>
 		<option value="">--</option>
 		<option value="S">Sélectif</option>
 		<option value="SP">Sélectif Para</option>
-		<option value="N">Championnat de France</option>
+		<option value="R">Régional</option>
+		<option value="D">Départemental</option>
+		<option value="N">National</option>
+		<option value="E">Europe</option>
+		<option value="M">Monde</option>
+		<option value="O">Jeux Olympiques</option>
 		</select></td>
 	</tr>';
 echo '</table>';

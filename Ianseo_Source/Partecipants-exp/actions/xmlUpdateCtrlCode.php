@@ -35,6 +35,7 @@
 
 	if (!IsBlocked(BIT_BLOCK_PARTICIPANT))
 	{
+		//if (IsValidCF($ctrlCode) || ConvertDate($ctrlCode) || strlen($ctrlCode)==0)
 		$ctrlCode=ConvertDateLoc($ctrlCode);
 
 		if ($ctrlCode!==false)

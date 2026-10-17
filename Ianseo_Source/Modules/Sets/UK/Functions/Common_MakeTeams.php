@@ -3,7 +3,6 @@
 /**
 * MakeTeams per la generazione delle suqadre nelle Regole UK
 */
-require_once ('Common/Lib/Fun_Modules.php');
 
 
 // Elimino le squadre della qualifica
@@ -29,7 +28,7 @@ foreach($divisions as $div)
 	$rs = safe_r_sql($sqlClasses);
 	while($row = safe_fetch($rs))
 	{
-		if($row->ClSex != 1)
+		if($row->ClSex == 0)
 			$clMen[] = StrSafe_DB($div . $row->ClId);
 		else
 			$clWomen[] = StrSafe_DB($div . $row->ClId);
@@ -68,13 +67,8 @@ foreach($divisions as $div)
 
 		$CurTeam = 0;					//Codice team attuale
 		$CurSubTeam = 0;				//Codice Subteam attuale -- Sempre "0"
-		$CurComponent = array();
-        $TeamCount = array(
-            GetModuleParameter('SetUK', 'TeamMode'),
-            GetModuleParameter('SetUK', 'MenComponent'),
-            GetModuleParameter('SetUK', 'WomenComponent'),
-            GetModuleParameter('SetUK', 'MixedComponent')
-        );
+		$CurComponent = array();		//Componenti della Squadra
+		$TeamCount = array(0,1,1,2);
 		$Scores = array();
 		$Golds = array();
 		$XNines = array();
@@ -92,12 +86,7 @@ foreach($divisions as $div)
 				}
 				$CurTeam = $MyRow->Country;
 				$CurComponent = array();
-                $TeamCount = array(
-                    GetModuleParameter('SetUK', 'TeamMode'),
-                    GetModuleParameter('SetUK', 'MenComponent'),
-                    GetModuleParameter('SetUK', 'WomenComponent'),
-                    GetModuleParameter('SetUK', 'MixedComponent')
-                );
+				$TeamCount = array(0,1,1,2);
 				$Scores = array();
 				$Golds = array();
 				$XNines = array();

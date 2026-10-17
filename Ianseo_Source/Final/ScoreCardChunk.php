@@ -230,6 +230,7 @@ for($m=1;$m<=2;++$m) {
 	{
 		$points=array(1=>array_fill(0,$rows,0),array_fill(0,$rows,0));	// punti set
 		$tots=array(1=>array_fill(0,$rows,0),array_fill(0,$rows,0));	// tot cum dei set
+		//print_r($setLoaded);
 		for ($i=0;$i<$rows;++$i)
 		{
 			$winner=1;
@@ -271,6 +272,10 @@ for($m=1;$m<=2;++$m) {
 			$points[$loser][$i]=$pointLoser;
 		}
 
+		/*print '<pre>';
+		print_r($points);
+		print_r($tots);
+		print '</pre>';*/
 
 	// i totali cumulativi dei sets
 		$tots=$points;

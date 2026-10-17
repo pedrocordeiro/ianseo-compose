@@ -46,15 +46,8 @@ switch($_REQUEST['act']) {
 		}
 
 		$JSON['error']=0;
-		$q=safe_r_sql("select RoundRobinLevel.*, EvElim1, EvMatchMode, EvElimArrows, EvElimEnds, EvElimSO, EvMaxTeamPerson, coalesce(sqySelector, 0) as HasBegun
-            from Events 
+		$q=safe_r_sql("select RoundRobinLevel.*, EvElim1, EvMatchMode, EvElimArrows, EvElimEnds, EvElimSO from Events 
 		    left join RoundRobinLevel on RrLevTournament=EvTournament and RrLevTeam=EvTeamEvent and RrLevEvent=EvCode and RrLevLevel=$Level
-            left join (
-                select RrMatchLevel as sqySelector 
-                from RoundRobinMatches
-                where RrMatchTournament={$_SESSION['TourId']} and RrMatchLevel=$Level and RrMatchEvent=".StrSafe_DB($Event)." and RrMatchTeam=$Team and RrMatchAthlete>0 
-                limit 1
-            ) sqy on sqySelector=RrLevLevel
 			where EvElimType=5 and EvTeamEvent=$Team and EvCode=".StrSafe_DB($Event)." and  EvTournament={$_SESSION['TourId']}");
 		$LEVEL=safe_fetch($q);
 
@@ -63,8 +56,6 @@ switch($_REQUEST['act']) {
 		$JSON['level']=min($Level, $EVENT->EvElim1);
 		$JSON['cmdSave']=get_text('CmdSave');
 		$JSON['showAlert']=(!is_null($LEVEL->RrLevGroups));
-        $JSON['disabled']=$LEVEL->HasBegun;
-        $JSON['disabledMessage']='<div>'.get_text('SettingsDisabled','RoundRobin').'</div><div>'.get_text('SettingsDisabled-1','RoundRobin').'</div><div>'.get_text('SettingsDisabled-2','RoundRobin').'</div>';
 
 		// normalize details of this event...
 		$JSON['details']=array(
@@ -75,7 +66,7 @@ switch($_REQUEST['act']) {
 			'bestRanked'    =>array('text'=>get_text('BestRanked','RoundRobin'),'val'=>($LEVEL->RrLevBestRankMode ?? 0)),
 			'arrows'        =>array('text'=>get_text('ArrowsPerEnd','Tournament'),'val'=>($LEVEL->RrLevArrows ?? $LEVEL->EvElimArrows)),
 			'ends'          =>array('text'=>get_text('Ends','Tournament'),'val'=>($LEVEL->RrLevEnds ?? $LEVEL->EvElimEnds)),
-			'so'            =>array('text'=>get_text('TieArrows'),'val'=>($LEVEL->RrLevSO ?? $LEVEL->EvElimSO)?:$LEVEL->EvMaxTeamPerson),
+			'so'            =>array('text'=>get_text('TieArrows'),'val'=>($LEVEL->RrLevSO ?? $LEVEL->EvElimSO)),
 			'tieAllowed'    =>array('text'=>get_text('TieAllowed', 'RoundRobin'),'val'=>($LEVEL->RrLevTieAllowed ?? 1)),
 			'winPoints'     =>array('text'=>get_text('WinPoints', 'RoundRobin'),'val'=>($LEVEL->RrLevWinPoints ?? 2)),
 			'tiePoints'     =>array('text'=>get_text('TiePoints', 'RoundRobin'),'val'=>($LEVEL->RrLevTiePoints ?? 1)),
@@ -84,7 +75,6 @@ switch($_REQUEST['act']) {
 			'checkGolds'    =>array('text'=>get_text('CheckGoldsInMatch', 'Tournament'),'val'=>($LEVEL->RrLevCheckGolds ?? 0)),
 			'checkXNines'   =>array('text'=>get_text('CheckXNinesInMatch', 'Tournament'),'val'=>($LEVEL->RrLevCheckXNines ?? 0)),
 		);
-        $JSON['soMinArrows']=$LEVEL->EvMaxTeamPerson;
 		$JSON['tieBreakOptions']=array(
 			array('val' => 1, 'text' => get_text('TiebreakSystem-1', 'RoundRobin')),
 			array('val' => 2, 'text' => get_text('TiebreakSystem-2', 'RoundRobin')),

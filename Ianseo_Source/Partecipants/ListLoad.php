@@ -38,10 +38,13 @@ if($DataSource) {
 	$DataSource = str_replace(";","\t",$DataSource);
 	$tmpRequest = explode("\n", trim($DataSource));
 
+	$OldTrace=$CFG->TRACE_QUERRIES;
+	$CFG->TRACE_QUERRIES=false;
+
 	// start fetching in an array the entry codes, will be used later
     $OldEntries=array();
     $HasEntries=false;
-    $q=safe_r_sql("select Entries.*, 'ToDelete' as EnFinalStatus, QuSession, QuTarget, QuLetter from Entries left join Qualifications on EnId=QuId where EnTournament=" . StrSafe_DB($_SESSION['TourId']) );
+    $q=safe_r_sql("select Entries.*, 'ToDelete' as EnFinalStatus, QuSession, QuTargetNo, QuTarget, QuLetter from Entries left join Qualifications on EnId=QuId where EnTournament=" . StrSafe_DB($_SESSION['TourId']) );
 	while($r=safe_fetch($q)) {
 	    $OldEntries[$r->EnCode][$r->EnId]=$r;
     }
@@ -94,35 +97,7 @@ if($DataSource) {
 		foreach(explode("\t", stripslashes($Value)) as $k=>$v) $tmpString[$k]=trim($v);
 
 		if(preg_match('/^##([a-z0-9-]+)##$/i',$tmpString[0])) {
-            if($tmpString[0]== "##RUN-ARCHERY-EVENTS##") {
-                if(count($tmpString)!=3) {
-                    $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, wrong number of fields<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
-                    continue;
-                }
-
-                require_once('RunArchery/Lib.php');
-
-                // check the event laps number
-                if(empty($EventLaps)) {
-                    $EventLaps=array();
-                    $q=safe_r_sql("select EvCode, EvFinEnds from Events where EvTournament={$_SESSION['TourId']} and EvTeamEvent=0");
-                    while($r=safe_fetch($q)) {
-                        $EventLaps[$r->EvCode]=$r->EvFinEnds;
-                    }
-                }
-                // gets the EnIds of the archer with that EnCode
-                $q=safe_r_SQL("select EnId from Entries where EnCode=".StrSafe_DB($tmpString[1])." and EnTournament={$_SESSION['TourId']}");
-                if(safe_num_rows($q)) {
-                    while($r=safe_fetch($q)) {
-                        insertRunParticipant(0, $tmpString[2], $r->EnId, $EventLaps[$tmpString[2]]??'');
-                        $ImportResult['Inserted'][]='<tr><td>Inserted/updated</td><td>'.$tmpString[1].'</td><td>'.$tmpString[2].'</td></tr>';
-                        $ImportResult['Imported']++;
-                    }
-                } else {
-                    $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, Invalid Entry Code<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
-                    continue;
-                }
-            } elseif($tmpString[0]== "##NOC##") {
+			if($tmpString[0]== "##NOC##") {
 				if(count($tmpString)!=3) {
 					$ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, wrong number of fields<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
 					continue;
@@ -139,11 +114,7 @@ if($DataSource) {
 							if($Where=GetAccBoothEnWhere($r->EnId, true, true)) {
 								LogAccBoothQuerry("UPDATE Entries SET EnCountry = (select CoId from Countries where CoCode=".StrSafe_DB($tmpString[2])." and CoTournament=§TOCODETOID§) WHERE $Where");
 							}
-							safe_w_sql("UPDATE Entries SET EnTimestamp=EnTimestamp, EnCountry =".intval($CoId)." WHERE EnId=$r->EnId");
-                            if(safe_w_affected_rows()) {
-                                $now=date('Y-m-d H:i:s');
-                                safe_w_sql("UPDATE Entries SET EnTimestamp='{$now}', EnMainInfoUpdate='{$now}' WHERE EnId=$r->EnId");
-                            }
+							safe_w_sql("UPDATE Entries SET EnCountry =".intval($CoId)." WHERE EnId=$r->EnId");
 							$ImportResult['Inserted'][]='<tr><td>Inserted/updated</td><td>'.$tmpString[1].'</td><td>'.$tmpString[2].'</td></tr>';
 							$ImportResult['Imported']++;
 						}
@@ -289,15 +260,14 @@ if($DataSource) {
                     $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, wrong number of fields<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
                     continue;
                 }
-                if(!preg_match('/^[0-9]{1,3}$/sim', $tmpString[2])) {
+                if(!preg_match('/^[0-9]{1}$/sim', $tmpString[2])) {
                     $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, Invalid Session reference<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
                     continue;
                 }
-                if(!preg_match('/^[0-9]+[A-Z]{0,1}$/sim', $tmpString[3])) {
+                if(!preg_match('/^[0-9]+[A-Z]{1}$/sim', $tmpString[3])) {
                     $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, Invalid target No. reference<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
                     continue;
                 }
-
                 // gets the EnIds of the archer with that EnCode
                 $Sql="SELECT EnId
                     FROM Entries
@@ -309,17 +279,10 @@ if($DataSource) {
                 $q=safe_r_SQL($Sql);
                 $tgt=intval(substr($tmpString[3],0,-1));
                 $letter=strtoupper(substr($tmpString[3],-1,1));
-                if($tmpString[2]==0 OR $tgt==0) {
-                    $tgt = 0;
-                    $letter='';
-                }
+                $tgtNo=$tmpString[2].str_pad($tgt,3,"0",STR_PAD_LEFT).$letter;
                 if(safe_num_rows($q)) {
                     while($r=safe_fetch($q)) {
-                        safe_w_sql("Update Qualifications SET QuSession={$tmpString[2]}, QuTarget={$tgt}, QuLetter='{$letter}'  WHERE QuId=$r->EnId");
-                        if(safe_w_affected_rows()) {
-                            $now=date('Y-m-d H:i:s');
-                            safe_w_sql("update Entries set EnMainInfoUpdate='{$now}' where EnId={$r->EnId}");
-                        }
+                        safe_w_sql("Update Qualifications SET QuSession={$tmpString[2]}, QuTarget={$tgt}, QuLetter='{$letter}', QuTargetNo='{$tgtNo}' WHERE QuId=$r->EnId");
                         $ImportResult['Inserted'][]='<tr><td>Inserted/updated</td><td>'.$tmpString[1].'</td><td>'.$tmpString[2].'</td><td>'.$tmpString[3].'</td></tr>';
                         $ImportResult['Imported']++;
                     }
@@ -422,11 +385,7 @@ if($DataSource) {
                 $q = safe_r_SQL("select EnId from Entries where EnCode=" . StrSafe_DB($tmpString[1]) . " and EnTournament={$_SESSION['TourId']}");
                 if (safe_num_rows($q)) {
                     while ($r = safe_fetch($q)) {
-                        if(!empty($tmpString[2])) {
-                            safe_w_sql("insert into ExtraData set EdId=$r->EnId, EdType='Z', EdExtra=" . StrSafe_DB($tmpString[2]) . " on duplicate key update EdExtra=" . StrSafe_DB($tmpString[2]) . "");
-                        } else {
-                            safe_w_sql("delete from ExtraData WHERE EdId=$r->EnId and EdType='Z'");
-                        }
+                        safe_w_sql("insert into ExtraData set EdId=$r->EnId, EdType='Z', EdExtra=" . StrSafe_DB($tmpString[2]) . " on duplicate key update EdExtra=" . StrSafe_DB($tmpString[2]) . "");
                         $ImportResult['Inserted'][] = '<tr><td>Inserted/updated</td><td>' . $tmpString[1] . '</td><td>' . $tmpString[2] . '</td></tr>';
                         $ImportResult['Imported']++;
                     }
@@ -449,10 +408,6 @@ if($DataSource) {
 				if(safe_num_rows($q)) {
                     while($r=safe_fetch($q)) {
                         safe_w_sql("UPDATE Entries SET EnSubClass =".StrSafe_DB($tmpString[2])." WHERE EnId=$r->EnId");
-                        if(safe_w_affected_rows()) {
-                            $now=date('Y-m-d H:i:s');
-                            safe_w_sql("update Entries set EnMainInfoUpdate='{$now}' where EnId={$r->EnId}");
-                        }
                         $ImportResult['Inserted'][]='<tr><td>Inserted/updated</td><td>'.$tmpString[1].'</td><td>'.$tmpString[2].'</td></tr>';
                         $ImportResult['Imported']++;
                     }
@@ -579,13 +534,6 @@ if($DataSource) {
 
                 $ImportResult['Inserted'][]='<tr><td>Inserted/updated</td><td>'.$tmpString[1].'</td><td>'.($Preferred ? 'Preferred' : '').'</td></tr>';
                 $ImportResult['Imported']++;
-            } elseif($tmpString[0]== "##MATCHNO-ARROWS##") {
-
-                if(count($tmpString)<5) {
-                    $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, wrong number of fields<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
-                    continue;
-                }
-
             } elseif($tmpString[0]== "##QUAL-ARROWS##") {
                 if(count($tmpString)<4) {
                     $ImportResult['Refused'][]='<tr class="error"><td>Row ' . $Line  . ' incorrect, wrong number of fields<br/>Row not imported</td><td>'.implode('</td><td>', $tmpString)."</td></tr>";
@@ -602,7 +550,7 @@ if($DataSource) {
                     INNER JOIN Tournament on ToId=EnTournament
                     LEFT JOIN DistanceInformation on DiTournament=EnTournament and QuSession=DiSession and DiDistance={$Dist} and DiType='Q'
                     LEFT JOIN TargetFaces ON TfTournament=EnTournament and EnTargetFace=TfId
-                    WHERE EnCode='{$tmpString[1]}' AND EnTournament={$_SESSION['TourId']}";
+                    WHERE EnCode={$tmpString[1]} AND EnTournament={$_SESSION['TourId']}";
                 $q=safe_r_sql($Sql);
                 if($r=safe_fetch($q)) {
                     $doRecalcQualRank[]=($r->EnDivision.'|'.$r->EnClass.'|'.$Dist);
@@ -631,7 +579,6 @@ if($DataSource) {
                         QuD{$Dist}Xnine=" . StrSafe_DB($XNine) . ",
                         QuD{$Dist}Hits=" . StrSafe_DB(strlen(str_replace(' ','', $ArrowString))) . ",
                         QuConfirm = QuConfirm & (255-".pow(2, $Dist) ."),
-                        QuSigned = QuSigned & (255-".pow(2, $Dist) ."),
                         QuScore=QuD1Score+QuD2Score+QuD3Score+QuD4Score+QuD5Score+QuD6Score+QuD7Score+QuD8Score,
                         QuGold=QuD1Gold+QuD2Gold+QuD3Gold+QuD4Gold+QuD5Gold+QuD6Gold+QuD7Gold+QuD8Gold,
                         QuXnine=QuD1Xnine+QuD2Xnine+QuD3Xnine+QuD4Xnine+QuD5Xnine+QuD6Xnine+QuD7Xnine+QuD8Xnine,
@@ -687,6 +634,7 @@ if($DataSource) {
 			/* Session           */ $Session2Save = intval($tmpString[1]);
 			/* Division          */ $Division2Save = $tmpString[2];
 			/* Class             */ $Class2Save = $tmpString[3];
+			/* Target            */ $TargetNo2Save = (!empty($tmpString[4]) ? intval($tmpString[1]) . str_pad($tmpString[4], TargetNoPadding+1,"0",STR_PAD_LEFT) : "");
 			/* Target            */ $Target2Save = (!empty($tmpString[4]) ? intval($tmpString[4]) : "0");
 			/* Target            */ $Letter2Save = (!empty($tmpString[4]) ? substr($tmpString[4],-1) : "");
 			/* IndQual           */ $ShootInd2Save = (count($tmpString)<=5 || !empty($tmpString[5]) ? '1' : '0');
@@ -957,6 +905,7 @@ if($DataSource) {
                 }
 
 				// checks the changes
+//				$q=safe_r_sql("select Entries.*, QuSession, QuTargetNo from Entries left join Qualifications on EnId=QuId where EnCode=".StrSafe_DB($Code2Save)." and EnTournament=" . StrSafe_DB($_SESSION['TourId']) . "");
 				if($EnIdToUpdate) { //$r=safe_fetch($q)) {
                     // updates the status of the matched element
 					$OldEntries[$Code2Save][$EnIdToUpdate]->EnFinalStatus='Updated';
@@ -978,17 +927,17 @@ if($DataSource) {
 							"update Entries set $EntrySQL, EnTimestamp=EnTimestamp where EnId=$EnIdToUpdate"));
 					$tmp=safe_w_affected_rows();
 					// update the qualification too
-					safe_w_sql("update Qualifications set QuSession='$Session2Save', QuTarget='$Target2Save', QuLetter='$Letter2Save', QuTimestamp=QuTimestamp where QuId=$EnIdToUpdate");
+					safe_w_sql("update Qualifications set QuSession='$Session2Save', QuTargetNo='$TargetNo2Save', QuTarget='$Target2Save', QuLetter='$Letter2Save', QuTimestamp=QuTimestamp where QuId=$EnIdToUpdate");
 					if($tmp or safe_w_affected_rows()) {
 						if(safe_w_affected_rows()) {
 							safe_w_sql("update Qualifications set QuBacknoPrinted=0 where QuId=$EnIdToUpdate");
 							LogAccBoothQuerry("update Qualifications set QuBacknoPrinted=0 where QuId=(select EnId from Entries where $Where)");
 						}
-						LogAccBoothQuerry("update Qualifications set QuSession='$Session2Save', QuTarget='$Target2Save', QuLetter='$Letter2Save', QuTimestamp=QuTimestamp where QuId=(select EnId from Entries where $Where)");
+						LogAccBoothQuerry("update Qualifications set QuSession='$Session2Save', QuTargetNo='$TargetNo2Save', QuTarget='$Target2Save', QuLetter='$Letter2Save', QuTimestamp=QuTimestamp where QuId=(select EnId from Entries where $Where)");
 						checkAgainstLUE($EnIdToUpdate);
 
-						safe_w_sql("Update Entries set EnBadgePrinted=0, EnTimestamp='".date('Y-m-d H:i:s')."', EnMainInfoUpdate='".date('Y-m-d H:i:s')."' where EnId=$EnIdToUpdate");
-						LogAccBoothQuerry("update Entries set EnBadgePrinted=0, EnTimestamp='".date('Y-m-d H:i:s')."', EnMainInfoUpdate='".date('Y-m-d H:i:s')."' where $Where");
+						safe_w_sql("Update Entries set EnBadgePrinted=0, EnTimestamp='".date('Y-m-d H:i:s')."' where EnId=$EnIdToUpdate");
+						LogAccBoothQuerry("update Entries set EnBadgePrinted=0, EnTimestamp='".date('Y-m-d H:i:s')."' where $Where");
 						if($Session2Save!=$r->QuSession) $tmpString[1]="<del>$r->QuSession</del><br/>$Session2Save";
 						if($Division2Save!=$r->EnDivision) $tmpString[2]="<del>$r->EnDivision</del><br/>$Division2Save";
 						if($Class2Save!=$r->EnClass) $tmpString[3]="<del>$r->EnClass</del><br/>$Class2Save";
@@ -1058,7 +1007,7 @@ if($DataSource) {
 			if(!$TeamUpdate) {
 				$EntrySQL.=", EnCountry=-Country-, EnCountry2=-Country2-, EnCountry3=-Country3- ";
 			}
-			$Insert = "INSERT INTO Entries set EnTimestamp='".date('Y-m-d H:i:s')."', EnMainInfoUpdate='".date('Y-m-d H:i:s')."', $EntrySQL";
+			$Insert = "INSERT INTO Entries set $EntrySQL";
 
 			LogAccBoothQuerry(str_replace(
 				array('-Country-','-Country2-','-Country3-'),
@@ -1076,10 +1025,11 @@ if($DataSource) {
 			$idNewRow = safe_w_last_id();
 
 			// aggiungo la riga in Qualifications
-			$Insert = "INSERT INTO Qualifications (QuId, QuSession, QuTarget, QuLetter) "
+			$Insert = "INSERT INTO Qualifications (QuId,QuSession,QuTargetNo,QuTarget,QuLetter) "
 				. "VALUES("
 				. StrSafe_DB($idNewRow) . ","
 				. StrSafe_DB($Session2Save) . ","
+				. StrSafe_DB($TargetNo2Save) . ","
 				. $Target2Save . ","
 				. StrSafe_DB($Letter2Save) . ") ";
 			$Rs=safe_w_sql($Insert);
@@ -1087,6 +1037,7 @@ if($DataSource) {
 			if($Where=GetAccBoothEnWhere($idNewRow, true, true)) {
 				LogAccBoothQuerry("INSERT INTO Qualifications
 						set QuSession=".StrSafe_DB($Session2Save).",
+						QuTargetNo=".StrSafe_DB($TargetNo2Save).",
 						QuTarget=".$Target2Save.",
 						QuLetter=".StrSafe_DB($Letter2Save).",
 						QuId=(select EnId from Entries Where $Where)");
@@ -1098,7 +1049,7 @@ if($DataSource) {
 				<td>$Session2Save</td>
 				<td>$Division2Save</td>
 				<td>$Class2Save</td>
-				<td>$Target2Save.$Letter2Save</td>
+				<td>$TargetNo2Save</td>
 				<td>$ShootInd2Save</td>
 				<td>$ShootTeam2Save</td>
 				<td>$ShootFinInd2Save</td>
@@ -1183,6 +1134,8 @@ if($DataSource) {
 	//	safe_w_sql("delete from Qualifications where QuId in (select EnId from Entries where EnAthlete!='1' and EnTournament={$_SESSION['TourId']})");
 
 	MakeIndAbs();
+
+	$CFG->TRACE_QUERRIES=$OldTrace;
 }
 
 $PAGE_TITLE=get_text('ListLoad','Tournament');

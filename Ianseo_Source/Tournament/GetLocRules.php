@@ -44,6 +44,9 @@ if ($type>0) {
 			'descr' => get_text('Setup-Select','Install')
 			));
 }
+/*print '<pre>';
+print_r($rules);
+print '</pre>';exit;*/
 
 $xmlDoc=new DOMDocument('1.0','UTF-8');
 	$xmlRoot=$xmlDoc->createElement('response');

@@ -53,7 +53,7 @@ if(!empty($_REQUEST['Prize'])) {
 if (isset($_REQUEST['Command'])) {
 	if ($_REQUEST['Command']=='ADD'){
 		foreach($_REQUEST["addField"] as $v) {
-			if(preg_match('/^[A-Z\-\_0-9]+\|[0-1]{1}\|[0-1]{1}$/sim',$v)) {
+			if(preg_match('/^[A-Z0-9]+\|[0-1]{1}\|[0-1]{1}$/sim',$v)) {
 				list($Event,$isFinal,$isTeam) = explode('|',$v);
 				if($Event=='Custom') {
 					$Num=1;
@@ -268,9 +268,9 @@ $tmp = getModuleParameter('Awards','ShowPdfFlags',0);
 echo '<tr><td colspan="6" class="Right"><img id="ShowPdfFlags" onclick="switchOption(this)" src="' . $CFG->ROOT_DIR . 'Common/Images/Enabled' . $tmp. '.png" width="20" alt="' .  get_text($tmp ? 'Yes' : 'No'). '"></td>';
 echo '<td colspan="3">'. get_text('ShowPdfFlags','Tournament') . '</td></tr>';
 
-$tmp = getModuleParameter('Awards','SwapLanguages', 0);
-echo '<tr><td colspan="6" class="Right"><img id="SwapLanguages" onclick="switchOption(this)" src="' . $CFG->ROOT_DIR . 'Common/Images/Enabled' . $tmp. '.png" width="20" alt="' .  get_text($tmp ? 'Yes' : 'No'). '"></td>';
-echo '<td colspan="3">'. get_text('AwardSwapLanguages','Tournament') . '</td></tr>';
+$tmp = getModuleParameter('Awards','ShowPoints', 0);
+echo '<tr><td colspan="6" class="Right"><img id="ShowPoints" onclick="switchOption(this)" src="' . $CFG->ROOT_DIR . 'Common/Images/Enabled' . $tmp. '.png" width="20" alt="' .  get_text($tmp ? 'Yes' : 'No'). '"></td>';
+echo '<td colspan="3">'. get_text('AwardShowPoints','Tournament') . '</td></tr>';
 
 $tmp = getModuleParameter('Awards','PrintPositions', array('Usher','2A','2B','2C','1A','1B','1C','3A','3B','3C', 'Tray Bearer 1', 'Tray Bearer 2', 'Tray Bearer 3', 'VIP Usher', 'V1', 'V2', 'VIP Usher'));
 echo '<tr><td colspan="6" class="Right Bold" nowrap="nowrap">Print Positions</td>';
@@ -298,7 +298,6 @@ if(empty($tmp2) or $tmp2!=$UseLang) {
         setModuleParameter('Awards', 'Aw-Med'.$n.'-1', get_text('Medal-'.$n, 'IOC_Codes', '', '', '', $UseLang));
     }
     setModuleParameter('Awards', 'Aw-representing-1', get_text('Award-representing', 'IOC_Codes', '$a', '', '', $UseLang));
-    setModuleParameter('Awards', 'Aw-representingTeam-1', get_text('Award-representing', 'IOC_Codes', '$a', '', '', $UseLang));
     setModuleParameter('Awards', 'Aw-Anthem-1', get_text('Award-Anthem', 'IOC_Codes', '', '', '', $UseLang));
     setModuleParameter('Awards', 'Aw-Anthem-TPE-1', get_text('Award-Anthem-TPE', 'IOC_Codes', '', '', '', $UseLang));
     setModuleParameter('Awards', 'Aw-Applause-1', get_text('Award-Applause', 'IOC_Codes', '', '', '', $UseLang));
@@ -318,7 +317,6 @@ $Lines=array(
     'Aw-Med3',
     'Aw-Med4',
     'Aw-representing',
-    'Aw-representingTeam',
     'Aw-Anthem',
     'Aw-Anthem-TPE',
     'Aw-Applause',
@@ -326,7 +324,7 @@ $Lines=array(
 
 foreach($Lines as $k) {
     echo '<tr>
-        <th colspan="6" class="Right" nowrap="nowrap">'.get_text($k,'Awards').'</th>
+        <th colspan="6" class="Right" nowrap="nowrap">'.substr($k,3).'</th>
         <td onclick="insertInput(\''.$k.'-1\')"><div id="'.$k.'-1" ref="'.$k.'-1">'.getModuleParameter('Awards', $k.'-1').'</div></td>
         <td onclick="insertInput(\''.$k.'-2\')"><div id="'.$k.'-2" ref="'.$k.'-2" class="SecondLanguage">'.($SecondLanguage ? getModuleParameter('Awards', $k.'-2') : '').'</div></td>
         <td></td>

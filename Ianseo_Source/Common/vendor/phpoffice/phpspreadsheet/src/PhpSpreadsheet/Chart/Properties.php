@@ -105,6 +105,7 @@ abstract class Properties
 
     protected bool $objectState = false; // used only for minor gridlines
 
+    /** @var ?float */
     protected ?float $glowSize = null;
 
     protected ChartColor $glowColor;

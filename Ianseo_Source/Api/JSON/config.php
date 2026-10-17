@@ -1,6 +1,6 @@
 <?php
 require_once(dirname(dirname(__FILE__)) . '/config.php');
-define("LastSeenTO",3600);
+define("LastSeenTO",300);
 
 function SendResult($Result) {
 	parse_str($_SERVER["QUERY_STRING"], $headerArray);

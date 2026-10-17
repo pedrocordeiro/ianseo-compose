@@ -2,8 +2,8 @@
 define('INSTALL', true);
 
 require_once(dirname(dirname(__FILE__)) . '/config.php');
-
 define('EmptyDbName', empty($CFG->DB_NAME));
+
 // non si sa mai, ma il $CFG potrebbe essere vuoto!!!
 // quindi ricostruisco il $CFG
 $CFG->ROOT_DIR = substr($_SERVER['SCRIPT_NAME'], 0, strlen(dirname(dirname(__FILE__))) + strlen($_SERVER['SCRIPT_NAME']) - strlen(realpath($_SERVER['SCRIPT_FILENAME']))) . '/';

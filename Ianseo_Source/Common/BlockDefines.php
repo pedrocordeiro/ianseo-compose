@@ -90,7 +90,7 @@ if($CFG->USERAUTH) {
     define ('AuthModule', true);
 } else {
     define ('AuthModule', false);
-    function isAuthEnabled($ToCode='') {return array(0,1);}
+    function isAuthEnabled() {return array(0,1);}
     function authActualACL($authEnabled, &$acl) {}
     function authHasACL($authEnabled, $feature, $level, $toCode) {return null;}
     function authCheckACL($authEnabled, $checkCompAcl, $feature, $subFeature, $level, $toCode) {return null;}
@@ -100,9 +100,6 @@ if($CFG->USERAUTH) {
         } else {
             return AclNoAccess;
         }
-    }
-    function possibleFeature($feature, $level, $toCode=null) {
-        return false;
     }
 }
 /*
@@ -145,17 +142,14 @@ function getBlocksToSet() {
 	return $ToSet;
 }
 
-function actualACL($ToId=0) {
+function actualACL() {
     global $listACL, $CFG;
     // in first installation no DB is configured!
     if(defined('EmptyDbName') and EmptyDbName) {
         return array_fill(0, count($listACL), AclReadWrite);
     }
-    if(!$ToId) {
-        $ToId = intval($_SESSION['TourId']??0);
-    }
 
-    $lockEnabled = getModuleParameter("ACL", "AclEnable", "00", $ToId);
+    $lockEnabled = getModuleParameter("ACL", "AclEnable", "00");
     list($authEnabled, $checkCompAcl) = isAuthEnabled();
     $ip = $_SERVER["REMOTE_ADDR"];
     if($ip == '127.0.0.1' OR $ip == '::1' OR in_array($ip,$CFG->ACLExcluded) OR ($lockEnabled[0] == "0" and $authEnabled == 0)) {
@@ -164,7 +158,7 @@ function actualACL($ToId=0) {
         $acl = array_fill(0, count($listACL), AclNoAccess);
         authActualACL($authEnabled, $acl);
         if($lockEnabled and $checkCompAcl) {
-            $Sql = "SELECT AclDtFeature, AclDtLevel FROM AclDetails WHERE AclDtTournament={$ToId} AND AclDtIP='{$ip}'";
+            $Sql = "SELECT AclDtFeature, AclDtLevel FROM AclDetails WHERE AclDtTournament=" . intval($_SESSION['TourId']??0) . " AND AclDtIP='{$ip}'";
             if((!isset($_SESSION['TourId']) or ($_SESSION['TourId']??0)<0) and !empty($_SESSION['AUTH_COMP'])) {
                 $AuthFilter = array();
                 $compList = array();
@@ -211,11 +205,11 @@ function checkACL($feature, $level, $redirect=true, $TourId=0) {
     return checkFullACL($feature, '', $level, $redirect, $TourId);
 }
 
-function hasFullACL($feature, $subFeature, $level, $TourId=0, $ip=null) {
-    return (checkFullACL($feature, $subFeature, $level, null, $TourId, $ip) >= $level);
+function hasFullACL($feature, $subFeature, $level, $TourId=0) {
+    return (checkFullACL($feature, $subFeature, $level, null, $TourId) >= $level);
 }
 
-function checkFullACL($feature, $subFeature, $level, $redirect=true, $TourId=0, $ip=null) {
+function checkFullACL($feature, $subFeature, $level, $redirect=true, $TourId=0) {
     global $INFO, $CFG;
     if(!is_array($feature)) {
         $feature = array($feature);
@@ -233,7 +227,7 @@ function checkFullACL($feature, $subFeature, $level, $redirect=true, $TourId=0, 
     if($lockEnabled[0] == "1") {
         $INFO->ACLEnabled = true;
     }
-    list($authEnabled, $checkCompAcl) = isAuthEnabled($TourCode);
+    list($authEnabled, $checkCompAcl) = isAuthEnabled();
     if($authEnabled == 1) {
         $INFO->ACLEnabled = true;
         $INFO->ACLAuthEnabled = true;
@@ -241,9 +235,7 @@ function checkFullACL($feature, $subFeature, $level, $redirect=true, $TourId=0, 
             $lockEnabled[0] = "1";
         }
     }
-    if(is_null($ip)) {
-        $ip = $_SERVER["REMOTE_ADDR"];
-    }
+    $ip = $_SERVER["REMOTE_ADDR"];
     if($ip == '127.0.0.1' OR $ip == '::1' OR in_array($ip,$CFG->ACLExcluded)) {
         return AclReadWrite;
     } else {
@@ -255,7 +247,7 @@ function checkFullACL($feature, $subFeature, $level, $redirect=true, $TourId=0, 
                 $Sql = "SELECT `AclTeFeatures`, `AclTePattern`, ('{$ip}' LIKE REPLACE(`AclTePattern`,'*','%')) as isMatch FROM `AclTemplates` WHERE `AclTeTournament`={$TourId} ORDER BY '{$ip}' LIKE REPLACE(`AclTePattern`,'*','%')";
                 $q = safe_r_SQL($Sql);
                 while($r=safe_fetch($q)) {
-                    if(($r->isMatch OR preg_match('/'.$r->AclTePattern.'/i',$ip)) and $r->AclTeFeatures) {
+                    if(($r->isMatch OR preg_match('/'.$r->AclTePattern.'/',$ip)) and $r->AclTeFeatures) {
                         foreach (explode('#', $r->AclTeFeatures) as $ft) {
                             $tmp = explode("|", $ft);
                             safe_w_SQL("INSERT INTO `AclDetails` (`AclDtTournament`, `AclDtIP`, `AclDtFeature`, `AclDtSubFeature`, `AclDtLevel`) 

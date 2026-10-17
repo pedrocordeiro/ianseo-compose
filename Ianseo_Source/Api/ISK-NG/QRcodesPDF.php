@@ -29,9 +29,7 @@ $style = array(
 		'module_height' => 1 // height of a single module in points
 );
 
-$qrCodeToPrint = $QrCode;
-unset($qrCodeToPrint['regexSignature']);
-$Code=json_encode($qrCodeToPrint);
+$Code=json_encode($QrCode);
 
 $Y=35;
 $VBlock=($pdf->getPageHeight()-$Y-30);
@@ -89,12 +87,6 @@ if($_SESSION['UseApi']==ISK_NG_LIVE_CODE) {
 	if($QrCode['askSignature']) {
 	    $pdf->Cell(0, 0, get_text('ISK-askSignature','Api') . ': ' . get_text('AskSignature-'.$QrCode['askSignature'],'Api'), 0, 1, 'L');
 	}
-    if($QrCode['askSignature']) {
-        $pdf->Cell(0, 0, get_text('ISK-regexSignature','Api') . ': ' . $QrCode['regexSignature'], 0, 1, 'L');
-    }
-    if($QrCode['takeScorecardPhoto']) {
-        $pdf->Cell(0, 0, get_text('ISK-takeScorecardPhoto','Api'), 0, 1, 'L');
-    }
     if($QrCode['settingsPinCode']) {
         $pdf->Cell(0, 0, get_text('ISK-SettingsPIN','Api') . ': ' . $QrCode['settingsPinCode'], 0, 1, 'L');
     }

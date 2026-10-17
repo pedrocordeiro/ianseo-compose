@@ -98,7 +98,7 @@ switch($_REQUEST['act']) {
         LEFT JOIN (
             SELECT RrPartEvent LevEvent, RrPartLevel LevLevel, group_concat(distinct if(RrPartLevelTiesForSO>0, CONCAT_WS('|', 'SO', RrPartLevelTiesForSO, RrPartLevelRankBefSO), null)) as SoNoLevel, group_concat(distinct if(RrPartLevelTiesForCT>0, CONCAT_WS('|', 'CT', RrPartLevelTiesForCT, RrPartLevelRankBefSO), null)) as CtNoLevel
             FROM RoundRobinParticipants
-            WHERE RrPartTournament = " . StrSafe_DB($_SESSION['TourId']) . " and RrPartLevelRank!=0 and RrPartTeam=$Team and RrPartParticipant!=0 -- and RrPartGroup=0
+            WHERE RrPartTournament = " . StrSafe_DB($_SESSION['TourId']) . " and RrPartLevelRank!=0 and RrPartTeam=$Team and RrPartParticipant!=0
             GROUP BY RrPartEvent, RrPartLevel
         ) as sqyLevel ON EvCode=LevEvent and RrGrLevel=LevLevel
         WHERE EvTournament=" . StrSafe_DB($_SESSION['TourId']) . " and EvTeamEvent=$Team and EvElimType=5
@@ -123,7 +123,6 @@ switch($_REQUEST['act']) {
 					'groups' => [],
 					'completed'=>(int) $r->LevelSoSolved,
 					'disabled'=>$SoDisabled[$r->EvCode],
-					'levDisabled'=>$SoDisabled[$r->EvCode],
 					'rowspan'=>0,
 					'hasSoCt'=>false,
 					'BestToSelect'=>'',
@@ -180,9 +179,6 @@ switch($_REQUEST['act']) {
 				'ct' => $ct,
 				'so' => $so,
 			];
-            if(!$r->GroupSoSolved and $r->EvPhase) {
-                $Events[$r->EvCode]['phases'][(int) $r->EvPhase]['levDisabled']=1;
-            }
 			$Events[$r->EvCode]['phases'][(int) $r->EvPhase]['rowspan']++;
 			$Events[$r->EvCode]['rowspan']++;
 		}
@@ -214,7 +210,7 @@ switch($_REQUEST['act']) {
 				$JSON['error']=0;
 			}
 			JsonOut($JSON);
-        }
+		}
 
 		$q=safe_r_sql("select RrGrSoSolved from RoundRobinGroup where RrGrTournament={$_SESSION['TourId']} and RrGrTeam=$Team and RrGrLevel=$Level and RrGrGroup=$Group and RrGrEvent=".StrSafe_DB($Event));
 		if($r=safe_fetch($q)) {
@@ -245,6 +241,7 @@ switch($_REQUEST['act']) {
 		$JSON['level']=$Level;
 		$JSON['group']=$Group;
 
+
 		// only Teams
 		// if($Team) {
 		// 	JsonOut($JSON);
@@ -271,28 +268,16 @@ switch($_REQUEST['act']) {
 			}
 
 			// select the last qualification rank for the level
-            $filter="RrPartParticipant>0 and ".($soGroup ? "RrPartGroup=$soGroup" : "RrPartLevelRank!=0")." and";
-            if(!$soLevel and !$soGroup) {
-                $filter="";
-            }
-            if($_SESSION['TourLocSubRule']=='SetFRD12026' and in_array($Event, ['FCL', 'HCL', 'HCO']) and $Level==1) {
-                // hardcoded 16 teams for those events
-                $SQL="select 16 as LastQualified, EvFinalTargetType
-                    from Events
-                    where EvTournament={$_SESSION['TourId']} and EvTeamEvent=$Team and EvCode=".StrSafe_DB($Event);
-            } else {
-                $SQL="select least(max(RrPartSourceRank), coalesce(ActParts,9999)) as LastQualified, EvFinalTargetType
-                    from RoundRobinParticipants 
-                    inner join Events on EvTournament=RrPartTournament and EvCode=RrPartEvent and EvTeamEvent=RrPartTeam
-                    left join (
-                        select count(*) as ActParts, RrPartLevel as ActLevel, ".($soGroup ? "RrPartGroup" : "0")." as ActGroup
-                        from RoundRobinParticipants 
-                        where $filter RrPartLevel=$soLevel and  RrPartEvent=" . StrSafe_DB($soEvent) . " and RrPartTeam=$Team and RrPartTournament='{$_SESSION['TourId']}'
-                        ) actualPart on ActLevel=RrPartSourceLevel and ActGroup=RrPartSourceGroup
-                    where RrPartSourceLevel=$soLevel and RrPartSourceGroup=$soGroup and RrPartEvent=" . StrSafe_DB($soEvent) . " and RrPartTeam=$Team and RrPartTournament='{$_SESSION['TourId']}'
-                    group by RrPartSourceLevel, RrPartSourceGroup";
-            }
-			$q = safe_r_sql($SQL);
+			$q = safe_r_sql("select least(max(RrPartSourceRank), ActParts) as LastQualified, EvFinalTargetType
+				from RoundRobinParticipants 
+                inner join Events on EvTournament=RrPartTournament and EvCode=RrPartEvent and EvTeamEvent=RrPartTeam
+				inner join (
+				    select count(*) as ActParts, RrPartLevel as ActLevel, ".($soGroup ? "RrPartGroup" : "0")." as ActGroup
+				    from RoundRobinParticipants 
+				    where RrPartParticipant>0 and RrPartLevel=$soLevel and ".($soGroup ? "RrPartGroup=$soGroup" : "RrPartLevelRank=0")." and RrPartEvent=" . StrSafe_DB($soEvent) . " and RrPartTeam=$Team and RrPartTournament='{$_SESSION['TourId']}'
+				    ) actualPart on ActLevel=RrPartSourceLevel and ActGroup=RrPartSourceGroup
+				where RrPartSourceLevel=$soLevel and RrPartSourceGroup=$soGroup and RrPartEvent=" . StrSafe_DB($soEvent) . " and RrPartTeam=$Team and RrPartTournament='{$_SESSION['TourId']}'
+				");
 			$r = safe_fetch($q);
 			if(!$r) {
 				JsonOut($JSON);
@@ -341,7 +326,7 @@ switch($_REQUEST['act']) {
 					$obj=getEventArrowsParams($soEvent,64, $Team);
 					foreach ($R as $IdSubTeam => $AssignedRank) {
 						list($EnId, $SubTeam)=explode('-', $IdSubTeam);
-						$tmpValue = array(($Team ? 'team' : 'ath') => $EnId, 'event' => $soEvent, 'dist' => 0, 'rank' => $AssignedRank);
+						$tmpValue = array('ath' => $EnId, 'event' => $soEvent, 'dist' => 0, 'rank' => $AssignedRank);
 						if($Team) {
 							$tmpValue['subteam']=$SubTeam;
 						}
@@ -408,15 +393,15 @@ switch($_REQUEST['act']) {
 					set_qual_session_flags();
 
 					// Updates the BYE status of the matches of 1st level
-					$qq=safe_r_sql("select r1.RrMatchGroup as MatchGroup, r1.RrMatchRound as MatchRound, r1.RrMatchMatchNo as M1, r1.RrMatchAthlete as A1, r2.RrMatchMatchNo as M2, r2.RrMatchAthlete as A2
+					$q=safe_r_sql("select r1.RrMatchGroup as MatchGroup, r1.RrMatchRound as MatchRound, r1.RrMatchMatchNo as M1, r1.RrMatchAthlete as A1, r2.RrMatchMatchNo as M2, r2.RrMatchAthlete as A2
 							from RoundRobinMatches r1
 							inner join RoundRobinMatches r2 on r2.RrMatchTournament=r1.RrMatchTournament and r2.RrMatchTeam=r1.RrMatchTeam and r2.RrMatchEvent=r1.RrMatchEvent and r2.RrMatchLevel=r1.RrMatchLevel and r2.RrMatchGroup=r1.RrMatchGroup and r2.RrMatchRound=r1.RrMatchRound and r2.RrMatchMatchNo=r1.RrMatchMatchNo+1
 							where r1.RrMatchMatchno%2=0 and (r1.RrMatchAthlete=0 or r2.RrMatchAthlete=0) and r1.RrMatchTournament={$_SESSION['TourId']} and r1.RrMatchTeam=$Team and r1.RrMatchLevel=1 and r1.RrMatchEvent=".StrSafe_DB($soEvent));
-					while($rr=safe_fetch($qq)) {
-						if($rr->A1) {
-							safe_w_sql("update RoundRobinMatches set RrMatchTie=2, RrMatchWinLose=1 where RrMatchTournament={$_SESSION['TourId']} and RrMatchTeam=$Team and RrMatchLevel=1 and RrMatchGroup=$rr->MatchGroup and RrMatchRound=$rr->MatchRound and RrMatchMatchNo=$rr->M1 and RrMatchEvent=".StrSafe_DB($soEvent));
-						} elseif($rr->A2) {
-							safe_w_sql("update RoundRobinMatches set RrMatchTie=2, RrMatchWinLose=1 where RrMatchTournament={$_SESSION['TourId']} and RrMatchTeam=$Team and RrMatchLevel=1 and RrMatchGroup=$rr->MatchGroup and RrMatchRound=$rr->MatchRound and RrMatchMatchNo=$rr->M2 and RrMatchEvent=".StrSafe_DB($soEvent));
+					while($r=safe_fetch($q)) {
+						if($r->A1) {
+							safe_w_sql("update RoundRobinMatches set RrMatchTie=2, RrMatchWinLose=1 where RrMatchTournament={$_SESSION['TourId']} and RrMatchTeam=$Team and RrMatchLevel=1 and RrMatchGroup=$r->MatchGroup and RrMatchRound=$r->MatchRound and RrMatchMatchNo=$r->M1 and RrMatchEvent=".StrSafe_DB($soEvent));
+						} elseif($r->A2) {
+							safe_w_sql("update RoundRobinMatches set RrMatchTie=2, RrMatchWinLose=1 where RrMatchTournament={$_SESSION['TourId']} and RrMatchTeam=$Team and RrMatchLevel=1 and RrMatchGroup=$r->MatchGroup and RrMatchRound=$r->MatchRound and RrMatchMatchNo=$r->M2 and RrMatchEvent=".StrSafe_DB($soEvent));
 						}
 					}
 
@@ -537,16 +522,6 @@ switch($_REQUEST['act']) {
 									    ) sqy on SrcRank=RrPartSourceRank and SrcLevel=RrPartSourceLevel and SrcGroup=RrPartSourceGroup
 									set RrPartParticipant=SrcPart, RrPartSubTeam=SrcSubteam, TfTeam=SrcPart, TfSubTeam=SrcSubTeam
 									where RrPartLevel=0 and RrPartGroup=0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent));
-                                // must fill in the TeamFinComponent table too
-                                $now = getToday('now', 'Y-m-d H:i:s');
-                                if($_SESSION['TourLocSubRule']!='SetFRD12026') {
-                                    safe_w_sql("delete from TeamFinComponent where TfcTournament={$_SESSION['TourId']} and TfcEvent=".StrSafe_DB($soEvent));
-                                }
-                                safe_w_SQL("INSERT ignore INTO TeamFinComponent (TfcCoId, TfcSubTeam, TfcTournament, TfcEvent, TfcId, TfcOrder, TfcTimeStamp) 
-                                    SELECT TcCoId, TcSubTeam, TcTournament, TcEvent, TcId, TcOrder, '{$now}'
-                                    FROM TeamComponent 
-                                    inner join (select TfTeam, TfSubTeam from TeamFinals where TfTournament={$_SESSION['TourId']} and TfEvent=".StrSafe_DB($soEvent)." group by TfTeam,TfSubTeam) Tf on TfTeam=TcCoId and TfSubTeam=TcSubTeam
-                                    WHERE TcFinEvent=1 AND TcTournament={$_SESSION['TourId']} AND TcEvent=".StrSafe_DB($soEvent));
 							} else {
 								safe_w_sql("update RoundRobinParticipants 
 									inner join Finals on FinTournament=RrPartTournament and FinEvent=RrPartEvent
@@ -555,7 +530,7 @@ switch($_REQUEST['act']) {
 									inner join (
 									    select RrPartGroupRank as SrcRank, RrPartParticipant as SrcPart, RrPartSubTeam as SrcSubteam, RrPartLevel srcLevel, RrPartGroup srcGroup
 									    from RoundRobinParticipants 
-									    where /* RrPartLevel=$soLevel and RrPartGroup=$soGroup and */ RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)."
+									    where RrPartLevel=$soLevel and RrPartGroup=$soGroup and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)."
 									    ) sqy on SrcRank=RrPartSourceRank and SrcLevel=RrPartSourceLevel and SrcGroup=RrPartSourceGroup
 									set RrPartParticipant=SrcPart, RrPartSubTeam=SrcSubteam, FinAthlete=SrcPart
 									where RrPartLevel=0 and RrPartGroup=0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent));
@@ -571,21 +546,11 @@ switch($_REQUEST['act']) {
 									inner join (
 									    select RrPartLevelRank as SrcRank, RrPartParticipant as SrcPart, RrPartSubTeam as SrcSubteam, RrPartLevel srcLevel, 0 srcGroup
 									    from RoundRobinParticipants 
-									    where /* RrPartLevel=$soLevel and */ RrPartLevelRank>0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)."
+									    where RrPartLevel=$soLevel and RrPartLevelRank>0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)."
 									    ) sqy on SrcRank=RrPartSourceRank and SrcLevel=RrPartSourceLevel and SrcGroup=RrPartSourceGroup
 									set RrPartParticipant=SrcPart, RrPartSubTeam=SrcSubteam, TfTeam=SrcPart, TfSubTeam=SrcSubTeam
 									where RrPartLevel=0 and RrPartGroup=0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent));
-                                // must fill in the TeamFinComponent table too
-                                $now = getToday('now', 'Y-m-d H:i:s');
-                                if($_SESSION['TourLocSubRule']!='SetFRD12026') {
-                                    safe_w_sql("delete from TeamFinComponent where TfcTournament={$_SESSION['TourId']} and TfcEvent=".StrSafe_DB($soEvent));
-                                }
-                                safe_w_SQL("INSERT ignore INTO TeamFinComponent (TfcCoId, TfcSubTeam, TfcTournament, TfcEvent, TfcId, TfcOrder, TfcTimeStamp) 
-                                    SELECT TcCoId, TcSubTeam, TcTournament, TcEvent, TcId, TcOrder, '{$now}'
-                                    FROM TeamComponent 
-                                    inner join (select TfTeam, TfSubTeam from TeamFinals where TfTournament={$_SESSION['TourId']} and TfEvent=".StrSafe_DB($soEvent)." group by TfTeam,TfSubTeam) Tf on TfTeam=TcCoId and TfSubTeam=TcSubTeam
-                                    WHERE TcFinEvent=1 AND TcTournament={$_SESSION['TourId']} AND TcEvent=".StrSafe_DB($soEvent));
-                            } else {
+							} else {
 								safe_w_sql("update RoundRobinParticipants 
 									inner join Finals on FinTournament=RrPartTournament and FinEvent=RrPartEvent
                                     inner join Grids on GrMatchno=FinMatchNo and GrPosition=RrPartDestItem
@@ -614,23 +579,13 @@ switch($_REQUEST['act']) {
 							safe_w_sql("update RoundRobinParticipants 
 								inner join RoundRobinGrids on RrGridTournament=RrPartTournament and RrGridEvent=RrPartEvent and RrGridTeam=RrPartTeam and RrGridLevel=RrPartLevel and RrGridGroup=RrPartGroup and RrGridItem=RrPartDestItem
 								inner join RoundRobinMatches on RrMatchTournament=RrGridTournament and RrMatchTeam=RrGridTeam and RrMatchEvent=RrGridEvent and RrMatchLevel=RrGridLevel and RrMatchGroup=RrGridGroup and RrMatchRound=RrGridRound and RrMatchMatchNo=RrGridMatchno
-								left join (
-								    select RrPartGroupRank as SrcRank, RrPartParticipant as SrcPart, RrPartSubTeam as SrcSubteam, RrPartLevel as SrcLevel, RrPartGroup as SrcGroup
+								inner join (
+								    select RrPartGroupRank as SrcRank, RrPartParticipant as SrcPart, RrPartSubTeam as SrcSubteam
 								    from RoundRobinParticipants 
 								    where RrPartLevel=$soLevel and RrPartGroup=$soGroup and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)."
-								    ) sqy on SrcRank=RrPartSourceRank and SrcLevel=RrPartSourceLevel and SrcGroup=RrPartSourceGroup
-                                left join (
-                                    select IndRank, IndId
-                                    from Individuals
-                                    where IndTournament={$_SESSION['TourId']} and IndEvent=".StrSafe_DB($soEvent)."
-                                ) sqi on RrPartTeam=0 and IndRank=RrPartSourceRank and RrPartSourceLevel=0 and RrPartSourceGroup=0
-                                left join (
-                                    select TeRank, TeCoId, TeSubTeam
-                                    from Teams
-                                    where TeTournament={$_SESSION['TourId']} and TeEvent=".StrSafe_DB($soEvent)."
-                                ) sqt on RrPartTeam=1 and TeRank=RrPartSourceRank and RrPartSourceLevel=0 and RrPartSourceGroup=0
-								set RrPartParticipant=coalesce(SrcPart, TeCoId, IndId), RrPartSubTeam=coalesce(SrcSubteam,TeSubTeam,0), RrMatchAthlete=coalesce(SrcPart, TeCoId, IndId), RrMatchSubTeam=coalesce(SrcSubteam,TeSubTeam,0)
-								where RrPartLevel=".($soLevel+1)." and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)." and coalesce(SrcPart, TeCoId, IndId) is not null");
+								    ) sqy on SrcRank=RrPartSourceRank
+								set RrPartParticipant=SrcPart, RrPartSubTeam=SrcSubteam, RrMatchAthlete=SrcPart, RrMatchSubTeam=SrcSubteam
+								where RrPartSourceLevel=$soLevel and RrPartSourceGroup=$soGroup and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent));
 
 							// updates the SO status of the group
 							safe_w_sql("UPDATE RoundRobinGroup SET RrGrSoSolved=1 WHERE RrGrTournament={$_SESSION['TourId']} and RrGrTeam=$Team and RrGrLevel=$soLevel and RrGrGroup=$soGroup and RrGrEvent=" . StrSafe_DB($soEvent));
@@ -638,31 +593,19 @@ switch($_REQUEST['act']) {
 							safe_w_sql("update RoundRobinParticipants 
 								inner join RoundRobinGrids on RrGridTournament=RrPartTournament and RrGridEvent=RrPartEvent and RrGridTeam=RrPartTeam and RrGridLevel=RrPartLevel and RrGridGroup=RrPartGroup and RrGridItem=RrPartDestItem
 								inner join RoundRobinMatches on RrMatchTournament=RrGridTournament and RrMatchTeam=RrGridTeam and RrMatchEvent=RrGridEvent and RrMatchLevel=RrGridLevel and RrMatchGroup=RrGridGroup and RrMatchRound=RrGridRound and RrMatchMatchNo=RrGridMatchno
-								left join (
-								    select RrPartLevelRank as SrcRank, RrPartParticipant as SrcPart, RrPartSubTeam as SrcSubteam, RrPartLevel as SrcLevel, RrPartGroup as SrcGroup
+								inner join (
+								    select RrPartLevelRank as SrcRank, RrPartParticipant as SrcPart, RrPartSubTeam as SrcSubteam
 								    from RoundRobinParticipants 
 								    where RrPartLevel=$soLevel and RrPartLevelRank>0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)."
-								    ) sqy on SrcRank=RrPartSourceRank and SrcLevel=RrPartSourceLevel and RrPartSourceGroup=0
-                                left join (
-                                    select IndRank, IndId
-                                    from Individuals
-                                    where IndTournament={$_SESSION['TourId']} and IndEvent=".StrSafe_DB($soEvent)."
-                                ) sqi on RrPartTeam=0 and IndRank=RrPartSourceRank and RrPartSourceLevel=0 and RrPartSourceGroup=0
-                                left join (
-                                    select TeRank, TeCoId, TeSubTeam
-                                    from Teams
-                                    where TeTournament={$_SESSION['TourId']} and TeEvent=".StrSafe_DB($soEvent)."
-                                ) sqt on RrPartTeam=1 and TeRank=RrPartSourceRank and RrPartSourceLevel=0 and RrPartSourceGroup=0
-								set RrPartParticipant=coalesce(SrcPart, TeCoId, IndId), RrPartSubTeam=SrcSubteam, RrMatchAthlete=SrcPart, RrMatchSubTeam=SrcSubteam
-								where RrPartLevel=".($soLevel+1)." and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent)." and coalesce(SrcPart, TeCoId, IndId) is not null");
+								    ) sqy on SrcRank=RrPartSourceRank
+								set RrPartParticipant=SrcPart, RrPartSubTeam=SrcSubteam, RrMatchAthlete=SrcPart, RrMatchSubTeam=SrcSubteam
+								where RrPartSourceLevel=$soLevel and RrPartSourceGroup=$soGroup and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($soEvent));
 
 							// select the "losers" and updates the "final rank" status
 
 							// updates the SO status of the level
 							calculateFinalRank($Team,$soEvent,$soLevel);
 							safe_w_sql("UPDATE RoundRobinLevel SET RrLevSoSolved=1 WHERE RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevLevel=$soLevel and RrLevEvent=" . StrSafe_DB($soEvent));
-                            // Check if there are other levels...
-//                            safe_w_sql("UPDATE Events SET EvE1ShootOff=1, EvShootOff=1 WHERE EvTournament={$_SESSION['TourId']} and EvTeamEvent=$Team and EvCode=" . StrSafe_DB($soEvent));
 						}
 					}
 
@@ -698,7 +641,7 @@ switch($_REQUEST['act']) {
 				$EvRows['level']=0;
 				$EvRows['group']=0;
 				$EvRows['soSolved']=$r->EvE1ShootOff;
-				$EvRows['name']= $section['meta']['descr'] . ' (' . $section['meta']['event'] . ')';
+				$EvRows['name']=$section['meta']['descr'] . ' (' . $section['meta']['event'] . ')';
 
 				$EvRows['rows']=[];
 
@@ -751,14 +694,14 @@ switch($_REQUEST['act']) {
 								$row['field']=[
 									'type' => 'h',
 									'name' => 'R',
-									'value' => ($R[$section['meta']['event']][$item['id']] ?? $item['rank']),
+									'value' => $item['rankBeforeSO'],
 								];
 							}
 						} else {
 							$row['field']=[
 								'type' => 'h',
 								'name' => 'bSO',
-								'value' => ($R[$section['meta']['event']][$item['id']] ?? $item['rank']),
+								'value' => $item['rankBeforeSO'],
 							];
 						}
 						$row['item']=$item[$Team?'countryCode':'athlete'];
@@ -812,94 +755,33 @@ switch($_REQUEST['act']) {
 
 		// other levels...
 		// count the number of people OK for the group selection
-		$NumGroups=0;
-		$NumSO=[];
-
-        // in case the following phase has no selection based on group rank, set the SO solved for those groups
-        if($_SESSION['TourLocSubRule']=='SetFRD12026' and in_array($Event, ['FCL', 'HCL', 'HCO']) and $Level==1) {
-            $SQL="select RrGrGroup, MaxQualified, RrGrSoSolved
-                from RoundRobinGroup
-                inner join Events on EvTournament=RrGrTournament and EvTeamEvent=RrGrTeam and EvCode=RrGrEvent
-                left join (
-                    select max(RrPartSourceRank) as MaxQualified, RrPartSourceGroup+1 r3Gr
-                    from RoundRobinParticipants
-                    where RrPartTournament = {$_SESSION['TourId']} and RrPartSourceLevel=0 and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($Event.'of')."
-                    group by RrPartTournament, RrPartSourceGroup
-                ) as r3 on r3Gr=RrGrGroup
-                where RrGrTournament={$_SESSION['TourId']} and RrGrTeam=$Team and RrGrEvent=".StrSafe_DB($Event)." and RrGrLevel=$Level
-                    and MaxQualified is null
-                order by RrGrGroup";
-        } else {
-            $SQL="select RrGrGroup, MaxQualified, RrGrSoSolved
-            from RoundRobinGroup
-            inner join Events on EvTournament=RrGrTournament and EvTeamEvent=RrGrTeam and EvCode=RrGrEvent
-            left join (
-                select max(RrPartSourceRank) as MaxQualified, RrPartSourceGroup r3Gr
-                from RoundRobinParticipants
-                where RrPartTournament = {$_SESSION['TourId']} and RrPartSourceLevel=$Level and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($Event)."
-                group by RrPartTournament, RrPartSourceGroup
-            ) as r3 on r3Gr=RrGrGroup
-            where RrGrTournament={$_SESSION['TourId']} and RrGrTeam=$Team and RrGrEvent=".StrSafe_DB($Event)." and RrGrLevel=$Level
-                and MaxQualified is null
-            order by RrGrGroup";
-        }
-        $q=safe_r_SQL($SQL);
-        while($r=safe_fetch($q)) {
-            // assign the group SO as solved!
-            safe_w_sql("update RoundRobinGroup 
-                set RrGrSoSolved=1 
-                where RrGrTournament={$_SESSION['TourId']} and RrGrTeam=$Team and RrGrEvent=".StrSafe_DB($Event)." and RrGrLevel=$Level and RrGrGroup={$r->RrGrGroup}");
-            $NumGroups++;
-            $NumSO[$r->RrGrGroup]=1;
-        }
-
-        if($_SESSION['TourLocSubRule']=='SetFRD12026' and in_array($Event, ['FCL', 'HCL', 'HCO']) and $Level==1) {
-            $SQL="select RrLevGroups, RrGrSoSolved, RrPartGroupRank, RrPartGroupRankBefSO, RrPartParticipant, RrPartSubTeam, RrPartGroup, RrPartPoints, RrPartTieBreaker, RrPartTieBreaker2, RrPartGroupTieBreak, RrPartGroupTbClosest,
-                RrPartGroupTiesForSO, RrPartGroupTiesForCT, RrPartLevelTiesForSO, RrPartLevelTiesForCT, EvEventName, RrLevEnds, RrLevArrows, RrLevSO, RrLevTieBreakSystem, RrLevTieBreakSystem2,
-                coalesce(EnId, CoId, 0)  as id, coalesce(concat(upper(EnFirstName),' ', EnName), concat(CoCode, '/',RrPartSubTeam), '') as athlete, coalesce(EnCoCode, CoName,'') as country,
-                IrmType, IrmId, RrLevSoSolved, RrLevName, RrGrName
-                from RoundRobinLevel
-                inner join RoundRobinGroup on RrGrTournament=RrLevTournament and RrGrTeam=RrLevTeam and RrGrEvent=RrLevEvent and RrGrLevel=RrLevLevel
-                inner join RoundRobinParticipants on RrPartTournament=RrGrTournament and RrPartTeam=RrGrTeam and RrPartEvent=RrGrEvent and RrPartLevel=RrGrLevel and RrPartGroup=RrGrGroup and RrPartParticipant!=0
-                inner join Events on EvTournament=RrLevTournament and EvTeamEvent=RrLevTeam and EvCode=RrLevEvent
-                inner join IrmTypes on IrmId=RrPartIrmType
-                inner join (
-                    select max(RrPartSourceRank)*2 as MaxQualified, RrPartTournament r3To, RrPartTeam r3Te, RrPartSourceLevel+1 r3Le, RrPartSourceGroup+1 r3Gr
-                    from RoundRobinParticipants
-                    where RrPartTournament = {$_SESSION['TourId']} and RrPartEvent=".StrSafe_DB($Event.'of')."
-                    group by RrPartTournament, RrPartTeam, RrPartEvent, RrPartSourceLevel, RrPartSourceGroup
-                    ) as r3 on r3To=RrPartTournament and r3Te=RrPartTeam and r3Le=RrPartLevel and r3Gr=RrPartGroup and RrPartGroupRankBefSO<=MaxQualified
-                left join (select EnTournament, EnId, EnFirstName, EnName, CoCode as EnCoCode, CoName as EnCoName from Entries inner join Countries on CoId=EnCountry and CoTournament=EnTournament where EnTournament={$_SESSION['TourId']}) Entries on EnTournament=RrPartTournament and EnId=RrPartParticipant and RrPartTeam=0
-                left join Countries on CoTournament=RrLevTournament and CoId=RrPartParticipant and RrPartTeam=1
-                where RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevEvent=".StrSafe_DB($Event)." and RrLevLevel=$Level
-                order by RrGrGroup, RrPartGroupRankBefSO, RrPartGroupRank, RrPartLevelRankBefSO, RrPartLevelRank";
-        } else {
-            $SQL="select RrLevGroups, RrGrSoSolved, RrPartGroupRank, RrPartGroupRankBefSO, RrPartParticipant, RrPartSubTeam, RrPartGroup, RrPartPoints, RrPartTieBreaker, RrPartTieBreaker2, RrPartGroupTieBreak, RrPartGroupTbClosest,
-                RrPartGroupTiesForSO, RrPartGroupTiesForCT, RrPartLevelTiesForSO, RrPartLevelTiesForCT, EvEventName, RrLevEnds, RrLevArrows, RrLevSO, RrLevTieBreakSystem, RrLevTieBreakSystem2,
-                coalesce(EnId, CoId, 0)  as id, coalesce(concat(upper(EnFirstName),' ', EnName), concat(CoCode, '/',RrPartSubTeam), '') as athlete, coalesce(EnCoCode, CoName,'') as country,
-                IrmType, IrmId, RrLevSoSolved, RrLevName, RrGrName
-                from RoundRobinLevel
-                inner join RoundRobinGroup on RrGrTournament=RrLevTournament and RrGrTeam=RrLevTeam and RrGrEvent=RrLevEvent and RrGrLevel=RrLevLevel
-                inner join RoundRobinParticipants on RrPartTournament=RrGrTournament and RrPartTeam=RrGrTeam and RrPartEvent=RrGrEvent and RrPartLevel=RrGrLevel and RrPartGroup=RrGrGroup and RrPartParticipant!=0
-                inner join Events on EvTournament=RrLevTournament and EvTeamEvent=RrLevTeam and EvCode=RrLevEvent
-                inner join IrmTypes on IrmId=RrPartIrmType
-                inner join (
-                    select max(RrPartSourceRank) as MaxQualified, RrPartTournament r3To, RrPartTeam r3Te, RrPartEvent r3Ev, RrPartSourceLevel r3Le, RrPartSourceGroup r3Gr
-                    from RoundRobinParticipants
-                    where RrPartTournament = {$_SESSION['TourId']}
-                    group by RrPartTournament, RrPartTeam, RrPartEvent, RrPartSourceLevel, RrPartSourceGroup
-                    ) as r3 on r3To=RrPartTournament and r3Te=RrPartTeam and r3Ev=RrPartEvent and r3Le=RrPartLevel and r3Gr=RrPartGroup and RrPartGroupRankBefSO<=MaxQualified
-                left join (select EnTournament, EnId, EnFirstName, EnName, CoCode as EnCoCode, CoName as EnCoName from Entries inner join Countries on CoId=EnCountry and CoTournament=EnTournament where EnTournament={$_SESSION['TourId']}) Entries on EnTournament=RrPartTournament and EnId=RrPartParticipant and RrPartTeam=0
-                left join Countries on CoTournament=RrLevTournament and CoId=RrPartParticipant and RrPartTeam=1
-                where RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevEvent=".StrSafe_DB($Event)." and RrLevLevel=$Level
-                order by RrGrGroup, RrPartGroupRankBefSO, RrPartGroupRank, RrPartLevelRankBefSO, RrPartLevelRank";
-        }
+		$SQL="select RrLevGroups, RrGrSoSolved, RrPartGroupRank, RrPartGroupRankBefSO, RrPartParticipant, RrPartSubTeam, RrPartGroup, RrPartPoints, RrPartTieBreaker, RrPartTieBreaker2, RrPartGroupTieBreak, RrPartGroupTbClosest,
+       		RrPartGroupTiesForSO, RrPartGroupTiesForCT, RrPartLevelTiesForSO, RrPartLevelTiesForCT, EvEventName, RrLevEnds, RrLevArrows, RrLevSO, RrLevTieBreakSystem, RrLevTieBreakSystem2,
+			coalesce(EnId, CoId, 0)  as id, coalesce(concat(upper(EnFirstName),' ', EnName), concat(CoCode, '/',RrPartSubTeam), '') as athlete, coalesce(EnCoCode, CoName,'') as country,
+       		IrmType, IrmId, RrLevSoSolved
+			from RoundRobinLevel
+			inner join RoundRobinGroup on RrGrTournament=RrLevTournament and RrGrTeam=RrLevTeam and RrGrEvent=RrLevEvent and RrGrLevel=RrLevLevel
+			inner join RoundRobinParticipants on RrPartTournament=RrGrTournament and RrPartTeam=RrGrTeam and RrPartEvent=RrGrEvent and RrPartLevel=RrGrLevel and RrPartGroup=RrGrGroup and RrPartParticipant!=0
+			inner join Events on EvTournament=RrLevTournament and EvTeamEvent=RrLevTeam and EvCode=RrLevEvent
+		    inner join IrmTypes on IrmId=RrPartIrmType
+			inner join (
+		        select max(RrPartSourceRank) as MaxQualified, RrPartTournament r3To, RrPartTeam r3Te, RrPartEvent r3Ev, RrPartSourceLevel r3Le, RrPartSourceGroup r3Gr
+		        from RoundRobinParticipants
+		        where RrPartTournament = {$_SESSION['TourId']}
+			    group by RrPartTournament, RrPartTeam, RrPartEvent, RrPartSourceLevel, RrPartSourceGroup
+			    ) as r3 on r3To=RrPartTournament and r3Te=RrPartTeam and r3Ev=RrPartEvent and r3Le=RrPartLevel and r3Gr=RrPartGroup and RrPartGroupRankBefSO<=MaxQualified
+		    left join (select EnTournament, EnId, EnFirstName, EnName, CoCode as EnCoCode, CoName as EnCoName from Entries inner join Countries on CoId=EnCountry and CoTournament=EnTournament where EnTournament={$_SESSION['TourId']}) Entries on EnTournament=RrPartTournament and EnId=RrPartParticipant and RrPartTeam=$Team
+			left join Countries on CoTournament=RrLevTournament and CoId=RrPartParticipant and RrPartTeam=1
+			where RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevEvent=".StrSafe_DB($Event)." and RrLevLevel=$Level
+			order by RrGrGroup, RrPartGroupRankBefSO, RrPartGroupRank, RrPartLevelRankBefSO, RrPartLevelRank";
 		$q=safe_r_sql($SQL);
 		$EvRows=[];
 		$OldGroup=0;
 		$NumRow=-1;
 		$GroupSoSolved=true;
 		$LevelSoSolved=false;
+		$NumGroups=0;
+		$NumSO=[];
 		while($r=safe_fetch($q)) {
 			$LevelSoSolved=$r->RrLevSoSolved;
 			$NumGroups=$r->RrLevGroups;
@@ -932,7 +814,7 @@ switch($_REQUEST['act']) {
 				$EvRows['level']=$Level;
 				$EvRows['soSolved']=$r->RrGrSoSolved;
 				$EvRows['group']=$r->RrPartGroup;
-				$EvRows['name']=($r->RrPartGroup ? get_text('CheckShootOfItem', 'RoundRobin', $r->RrLevName.' '.$r->RrGrName) : get_text('LevelRepechage', 'RoundRobin', $r->RrLevName)) . ' ' . $r->EvEventName . ' (' . $Event . ')';
+				$EvRows['name']=$r->EvEventName . ' (' . $Event . ')';
 
 				$EvRows['rows']=[];
 
@@ -964,7 +846,7 @@ switch($_REQUEST['act']) {
 				$row['field']=[
 					'type' => 'i',
 					'name' => 'R',
-					'value' => ($R[$key] ?? $r->RrPartGroupRank),
+					'value' => ($R[$Event][$key] ?? $r->RrPartGroupRank),
 				];
 			} else if ($r->IrmId < 10) {
 				//This part for DNF
@@ -976,7 +858,7 @@ switch($_REQUEST['act']) {
 					];
 					$IsCtSo = true;
 					for ($i = $r->RrPartGroupRankBefSO; $i < $r->RrPartGroupRankBefSO+$r->RrPartGroupTiesForSO; ++$i) {
-						$row['field']['value'][]=['k'=>$i, 's'=>(($R[$key] ?? $r->RrPartGroupRank) == $i)];
+						$row['field']['value'][]=['k'=>$i, 's'=>(($R[$Event][$key] ?? $r->RrPartGroupRank) == $i)];
 					}
 				} elseif ($r->RrPartGroupTiesForCT) {
 					$row['field']=[
@@ -986,7 +868,7 @@ switch($_REQUEST['act']) {
 					];
 					$IsCtSo = true;
 					for ($i = $r->RrPartGroupRankBefSO; $i < $r->RrPartGroupRankBefSO+$r->RrPartGroupTiesForCT; ++$i) {
-						$row['field']['value'][]=['k'=>$i, 's'=>(($R[$key] ?? $r->RrPartGroupRank) == $i)];
+						$row['field']['value'][]=['k'=>$i, 's'=>(($R[$Event][$key] ?? $r->RrPartGroupRank) == $i)];
 					}
 				} else {
 					$row['field']=[
@@ -1021,7 +903,7 @@ switch($_REQUEST['act']) {
 							'type'=>'i',
 							'name'=>'T',
 							'index'=>$idx,
-							'value'=>(strlen($r->RrPartGroupTieBreak) > $idx ? DecodeFromLetter($r->RrPartGroupTieBreak[$idx]) : ($T[$r->id][$idx] ?? '')),
+							'value'=>(strlen($r->RrPartGroupTieBreak) > $idx ? DecodeFromLetter($r->RrPartGroupTieBreak[$idx]) : ($T[$Event][$r->id][$idx] ?? '')),
 						];
 					}
 
@@ -1030,14 +912,12 @@ switch($_REQUEST['act']) {
 				$row['closest']=[
 					'type'=>'c',
 					'name'=>'C',
-					'sel'=>(($C[$r->id] ?? $r->RrPartGroupTbClosest) ? 'checked="checked"' : ''),
+					'sel'=>(($C[$Event][$r->id] ?? $r->RrPartGroupTbClosest) ? 'checked="checked"' : ''),
 				];
 			}
 			$EvRows['rows'][]=$row;
 		}
-        if($EvRows) {
-            $JSON['tables'][]=$EvRows;
-        }
+		$JSON['tables'][]=$EvRows;
 
 		if($GroupSoSolved and $NumGroups and $NumGroups==count($NumSO)) {
 			// check if there are "best of level" selection
@@ -1046,9 +926,7 @@ switch($_REQUEST['act']) {
 				inner join Events on EvTeamEvent=RrPartTeam and EvTournament=RrPartTournament and EvCode=RrPartEvent
 				where RrPartSourceLevel=$Level and RrPartSourceGroup=0 and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=$Team and RrPartEvent=".StrSafe_DB($Event));
 			if($LEVELS=safe_fetch($q)) {
-                // check if the SO has already been done
-                $t=safe_r_sql("select RrLevSoSolved from RoundRobinLevel where RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevLevel=$soLevel and RrLevEvent=".StrSafe_DB($Event));
-                if($u=safe_fetch($t) and !$u->RrLevSoSolved) {
+				if(!$LevelSoSolved) {
 					calculateLevelRank($Team, $Event, $Level);
 				}
 
@@ -1117,7 +995,7 @@ switch($_REQUEST['act']) {
 						$EvRows['level']=$Level;
 						$EvRows['soSolved']=$r->RrLevSoSolved;
 						$EvRows['group']=0;
-						$EvRows['name']=get_text('LevelRepechage', 'RoundRobin', $Level).' '.$r->EvEventName . ' (' . $Event . ')';
+						$EvRows['name']=$r->EvEventName . ' (' . $Event . ')';
 
 						$EvRows['rows']=[];
 
@@ -1158,20 +1036,19 @@ switch($_REQUEST['act']) {
 						$row['field']=[
 							'type' => 'i',
 							'name' => 'R',
-							'value' => ($R[$key] ?? $r->RrPartLevelRank),
+							'value' => ($R[$Event][$key] ?? $r->RrPartLevelRank),
 						];
 					} else if ($r->IrmId < 10) {
 						//This part for DNF
-//						if ($r->GroupTies>1 and $r->RrPartLevelRankBefSO+$r->GroupTies >= $r->MaxQualified) {
-						if ($r->GroupTies>1) {
+						if ($r->GroupTies>1 and $r->RrPartLevelRankBefSO+$r->GroupTies >= $r->MaxQualified) {
 							$row['field']=[
 								'type' => 's',
 								'name' => 'R',
 								'value' => [],
 							];
-							$IsCtSo = ($r->RrPartLevelRankBefSO+$r->GroupTies >= $r->MaxQualified);
+							$IsCtSo = true;
 							for ($i = $r->RrPartLevelRankBefSO; $i < $r->RrPartLevelRankBefSO+$r->GroupTies; ++$i) {
-								$row['field']['value'][]=['k'=>$i, 's'=>(($R[$key] ?? $r->RrPartLevelRank) == $i)];
+								$row['field']['value'][]=['k'=>$i, 's'=>(($R[$Event][$key] ?? $r->RrPartLevelRank) == $i)];
 							}
 						} else {
 							$row['field']=[
@@ -1206,7 +1083,7 @@ switch($_REQUEST['act']) {
 									'type'=>'i',
 									'name'=>'T',
 									'index'=>$idx,
-									'value'=>(strlen($r->RrPartLevelTieBreak) > $idx ? DecodeFromLetter($r->RrPartLevelTieBreak[$idx]) : ($T[$r->id][$idx] ?? '')),
+									'value'=>(strlen($r->RrPartLevelTieBreak) > $idx ? DecodeFromLetter($r->RrPartLevelTieBreak[$idx]) : ($T[$Event][$r->id][$idx] ?? '')),
 								];
 							}
 
@@ -1215,7 +1092,7 @@ switch($_REQUEST['act']) {
 						$row['closest']=[
 							'type'=>'c',
 							'name'=>'C',
-							'sel'=>(($C[$r->id] ?? $r->RrPartLevelTbClosest) ? 'checked="checked"' : ''),
+							'sel'=>(($C[$Event][$r->id] ?? $r->RrPartLevelTbClosest) ? 'checked="checked"' : ''),
 						];
 					}
 					$EvRows['rows'][]=$row;
@@ -1224,62 +1101,11 @@ switch($_REQUEST['act']) {
 				if($GroupSoSolved) {
 					calculateFinalRank($Team,$Event,$Level);
 					safe_w_sql("UPDATE RoundRobinLevel SET RrLevSoSolved=1 WHERE RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevLevel=$Level and RrLevEvent=" . StrSafe_DB($Event));
-                    // check this was the last level
-                    $qqq=safe_r_sql("select * from Events where EvElim1=$Level and EvTournament={$_SESSION['TourId']} and EvTeamEvent=$Team and EvCode=" . StrSafe_DB($Event));
-                    if(safe_num_rows($qqq)>0) {
-                        safe_w_sql("UPDATE Events SET EvE1ShootOff=1, EvShootOff=1 WHERE EvTournament={$_SESSION['TourId']} and EvTeamEvent=$Team and EvCode=" . StrSafe_DB($Event));
-                    }
-                    set_qual_session_flags();
 				}
 			} else {
 				// no other selection needs to be done, so updates the level SO also
 				calculateFinalRank($Team,$Event,$Level);
 				safe_w_sql("UPDATE RoundRobinLevel SET RrLevSoSolved=1 WHERE RrLevTournament={$_SESSION['TourId']} and RrLevTeam=$Team and RrLevLevel=$Level and RrLevEvent=" . StrSafe_DB($Event));
-                $qqq=safe_r_sql("select * from Events where EvElim1=$Level and EvTournament={$_SESSION['TourId']} and EvTeamEvent=$Team and EvCode=" . StrSafe_DB($Event));
-                if(safe_num_rows($qqq)>0) {
-                    safe_w_sql("UPDATE Events SET EvE1ShootOff=1, EvShootOff=1 WHERE EvTournament={$_SESSION['TourId']} and EvTeamEvent=$Team and EvCode=" . StrSafe_DB($Event));
-                }
-
-                // New D1 2026 rules: create the Shoot-off and shoot-down events!
-                if($_SESSION['TourLocSubRule']=='SetFRD12026' and $R) {
-                    if(in_array($Event, ['FCL', 'HCL', 'HCO']) and $Level==1) {
-                        // put the top 8 in $Event+'of' and the lower 8 in $Event+'dn'
-                        $SQL="select * from RoundRobinParticipants where RrPartTournament={$_SESSION['TourId']} and RrPartTeam=1 and RrPartEvent=".StrSafe_DB($Event)." and RrPartLevel=1 and RrPartGroup=1";
-                        $q=safe_r_sql($SQL);
-                        while($r=safe_fetch($q)) {
-                            if($r->RrPartGroupRank>8) {
-                                $rank=$r->RrPartGroupRank-8;
-                                $ev=$Event.'dn';
-                            } else {
-                                $rank=$r->RrPartGroupRank;
-                                $ev=$Event.'of';
-                            }
-                            $updSql="update RoundRobinParticipants 
-                                inner join RoundRobinGrids on RrGridTournament=RrPartTournament and RrGridEvent=RrPartEvent and RrGridTeam=RrPartTeam and RrGridLevel=RrPartLevel and RrGridGroup=RrPartGroup and RrGridItem=RrPartDestItem
-                                inner join RoundRobinMatches on RrMatchTournament=RrGridTournament and RrMatchTeam=RrGridTeam and RrMatchEvent=RrGridEvent and RrMatchLevel=RrGridLevel and RrMatchGroup=RrGridGroup and RrMatchRound=RrGridRound and RrMatchMatchNo=RrGridMatchno
-                                set RrPartParticipant=$r->RrPartParticipant, RrPartSubTeam=$r->RrPartSubTeam, RrMatchAthlete=$r->RrPartParticipant, RrMatchSubTeam=$r->RrPartSubTeam
-                                where RrPartSourceRank={$rank} and RrPartTournament={$_SESSION['TourId']} and RrPartTeam=1 and RrPartEvent=".StrSafe_DB($ev)." and RrPartSourceLevel=0 and RrPartSourceGroup=0";
-                            safe_w_sql($updSql);
-                        }
-                        // copy related teams and components to the new event
-                        safe_w_sql("insert ignore into Teams (TeCoId, TeSubTeam, TeEvent, TeTournament, TeFinEvent)
-                            select RrPartParticipant, RrPartSubTeam, RrPartEvent, RrPartTournament, 1 
-                            from RoundRobinParticipants 
-                            where RrPartTournament={$_SESSION['TourId']} and RrPartEvent in ('{$Event}Of','{$Event}dn')");
-                        // components
-                        safe_w_sql("insert ignore into TeamFinComponent (TfcCoId, TfcSubTeam, TfcTournament, TfcEvent, TfcId, TfcOrder) 
-                            select TfcCoId, TfcSubTeam, TfcTournament, TeEvent, TfcId, TfcOrder
-                            from TeamFinComponent
-                            inner join Teams on TeTournament=TfcTournament and left(TeEvent,3)=TfcEvent and TeCoId=TfcCoId and length(TeEvent!=3)
-                            where TfcTournament={$_SESSION['TourId']} and TfcEvent='{$Event}'");
-
-                        // set both of and dn SO as OK
-                        safe_w_sql("update Events set EvE1ShootOff=1 where EvTournament={$_SESSION['TourId']} and EvCode=".StrSafe_DB($Event.'of')." and EvTeamEvent=1");
-                        safe_w_sql("update Events set EvE1ShootOff=1 where EvTournament={$_SESSION['TourId']} and EvCode=".StrSafe_DB($Event.'dn')." and EvTeamEvent=1");
-                    }
-                }
-
-                set_qual_session_flags();
 			}
 		}
 		break;

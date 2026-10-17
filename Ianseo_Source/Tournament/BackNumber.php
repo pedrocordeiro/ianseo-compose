@@ -2,6 +2,7 @@
 	require_once(dirname(dirname(__FILE__)) . '/config.php');
 	require_once('Common/Fun_FormatText.inc.php');
 	require_once('Common/Lib/CommonLib.php');
+	//print_r($_REQUEST);exit;
 
 	CheckTourSession(true);
 

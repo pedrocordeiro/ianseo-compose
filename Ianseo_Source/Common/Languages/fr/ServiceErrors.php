@@ -54,5 +54,5 @@ $lang['ErrSubClassNotFound']='sous-classe non trouvée';
 $lang['ErrWronglevel']='Club / Archer mauvais niveau';
 $lang['InvalidData']='Donnés invalides';
 $lang['LoginTooManyArchers']='Plus d\'un archer utilise cet E-Mail. Veuillez utiliser l\'ID membre';
-$lang['WrongType']='Mauvaise catégorie';
+$lang['WrongType']='Mauvais catégorie';
 ?>

@@ -360,6 +360,7 @@
 					);
 
 				// e lo aggiungo alla sezione
+					//print_r($item);
 					$section['items'][]=$item;
 
 					if ($myRow->ElDateTime>$section['meta']['lastUpdate'])

@@ -22,7 +22,7 @@ if(isset($_REQUEST["CountryName"]) && preg_match("/^[-,0-9A-Z]*$/i",str_replace(
 }
 
 $MyQuery = "SELECT EnCode as Bib, EnName AS Name, upper(EnFirstName) AS FirstName, "
-	. "QuSession AS Session, CONCAT(QuTarget, QuLetter) AS TargetNo, "
+	. "QuSession AS Session, SUBSTRING(QuTargetNo,2) AS TargetNo, "
 	. "CoCode AS NationCode, CoName AS Nation, EnClass AS ClassCode, "
 	. "ClDescription, EnDivision AS DivCode, DivDescription, EnAgeClass as AgeClass, "
 	. "EnSubClass as SubClass, EnStatus as Status, "
@@ -91,7 +91,7 @@ if (safe_num_rows($Rs)>0)
 		$height=0;
 		if(!is_null($MyRow->PhPhoto))
 		{
-			if($im = @imagecreatefromstring(base64_decode($MyRow->PhPhoto))) {
+			if($im = imagecreatefromstring(base64_decode($MyRow->PhPhoto))) {
 				$height += ((imagesy($im) * 20 / imagesx($im)));
 				imagedestroy($im);
 

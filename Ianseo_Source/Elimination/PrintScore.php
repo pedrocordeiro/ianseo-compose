@@ -74,6 +74,9 @@ checkFullACL(AclEliminations, '',  AclReadOnly);
         if(!($tmp=getModuleParameter($Api, 'Mode')) || strpos($tmp,'live') !== false) {
             continue;
         }
+        if(strpos($tmp,'ng-') === 0) {
+            $Api.= '-NG';
+        }
         echo '<input name="QRCode[]" type="checkbox" '.(strpos($tmp,'pro')!== false ? '' : 'checked="checked"').' value="'.$Api.'" >&nbsp;' . get_text($Api.'-QRCode','Api') . '<br>';
     }
 	echo '</td>';

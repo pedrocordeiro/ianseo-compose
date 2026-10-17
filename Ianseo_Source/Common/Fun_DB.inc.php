@@ -28,7 +28,7 @@ function getHomeURL() {
 }
 
 function StrSafe_DB($TheString, $RemoveQuotes=false) {
-	global $WRIT_CON;
+	global $WRIT_CON, $ERROR_REPORT;
 	if(!$WRIT_CON) $WRIT_CON=safe_w_con();
     if(is_null($TheString)) {
         if($RemoveQuotes) {
@@ -57,7 +57,7 @@ function GetParameter($ParameterName, $InfoSystem=false, $default='', $encoded=f
 	if($InfoSystem) $TmpSql = "SELECT IsValue as ParValue FROM InfoSystem WHERE IsId=" . StrSafe_DB($ParameterName);
 	$Rs=safe_r_sql($TmpSql, false, true);
 	if($Rs and $TmpRow = safe_fetch($Rs)) {
-		return (($InfoSystem or ($encoded and unserialize($TmpRow->ParValue)!==false)) ? unserialize($TmpRow->ParValue) : $TmpRow->ParValue);
+		return (($InfoSystem or $encoded) ? unserialize($TmpRow->ParValue) : $TmpRow->ParValue);
 	}
 	if($default) {
 		SetParameter($ParameterName, $default, $encoded);
@@ -79,7 +79,8 @@ function DelParameter($ParId) {
 }
 
 function safe_w_con($error=false) {
-	global $CFG;
+	global $ERROR_REPORT, $CFG, $Collations;
+	if($ERROR_REPORT) $GLOBALS['safe_SQL']['w_connect']++;
     mysqli_report(MYSQLI_REPORT_OFF);
 	$a=mysqli_connect($CFG->W_HOST, $CFG->W_USER, $CFG->W_PASS);
 	if(!$a) {
@@ -111,7 +112,8 @@ function safe_w_con($error=false) {
 }
 
 function safe_r_con() {
-	global $CFG;
+	global $ERROR_REPORT, $CFG;
+	if($ERROR_REPORT) $GLOBALS['safe_SQL']['r_connect']++;
     mysqli_report(MYSQLI_REPORT_OFF);
 	$a=mysqli_connect($CFG->R_HOST, $CFG->R_USER, $CFG->R_PASS) or safe_error("Read Server not reachable");
 	mysqli_select_db($a, $CFG->DB_NAME) or safe_error(mysqli_error($a));
@@ -124,30 +126,12 @@ function safe_r_con() {
 	Return $a;
 }
 
-function safe_w_BeginTransaction() {
-    global $WRIT_CON, $CFG;
-    if(!$WRIT_CON) $WRIT_CON=safe_w_con();
-    $a=mysqli_begin_transaction($WRIT_CON);
-    return $a;
-}
-
-function safe_w_Commit() {
-    global $WRIT_CON, $CFG;
-    if(!$WRIT_CON) $WRIT_CON=safe_w_con();
-    $a=mysqli_commit($WRIT_CON);
-    return $a;
-}
-
-function safe_w_Rollback() {
-    global $WRIT_CON, $CFG;
-    if(!$WRIT_CON) $WRIT_CON=safe_w_con();
-    $a=mysqli_rollback($WRIT_CON);
-    return $a;
-}
-
-
 function safe_w_SQL($SQL, $use=false, $acc_error=array(0)) {
-	global $WRIT_CON;
+	global $WRIT_CON, $ERROR_REPORT, $CFG;
+	if($ERROR_REPORT and $CFG->TRACE_QUERRIES) {
+		$a=debug_backtrace();
+		$GLOBALS['safe_SQL']['w_querries'][]=$a[0];
+	}
 	if(!$WRIT_CON) $WRIT_CON=safe_w_con();
 	if($use) {
 		$a=mysqli_query($WRIT_CON, $SQL, MYSQLI_USE_RESULT ) or in_array(mysqli_errno($WRIT_CON), $acc_error) or safe_error('Error ' . mysqli_errno($WRIT_CON) . ': ' . mysqli_error($WRIT_CON));
@@ -162,20 +146,24 @@ function safe_w_SQL($SQL, $use=false, $acc_error=array(0)) {
  * @return int the server version in the form <code>main_version * 10000 + minor_version * 100 + sub_version (i.e. version 4.1.0 is 40100)</code>
  */
 function safe_server_version($BackEnd='W') {
-	global $WRIT_CON, $READ_CON;
+	global $WRIT_CON, $READ_CON, $ERROR_REPORT, $CFG;
 	if($BackEnd=='W') {
 		if(!$WRIT_CON) $WRIT_CON=safe_w_con();
 		$a=mysqli_get_server_version($WRIT_CON);
 	} else {
 		// the read server
-		if(!$READ_CON) $READ_CON=safe_r_con();
+		if(!$READ_CON) $WRIT_CON=safe_r_con();
 		$a=mysqli_get_server_version($READ_CON);
 	}
 	Return $a;
 }
 
 function safe_w_MultiSql($SQL, $free=false) {
-	global $WRIT_CON;
+	global $WRIT_CON, $ERROR_REPORT, $CFG;
+	if($ERROR_REPORT and $CFG->TRACE_QUERRIES) {
+		$a=debug_backtrace();
+		$GLOBALS['safe_SQL']['w_querries'][]=$a[0];
+	}
 	if(!$WRIT_CON) $WRIT_CON=safe_w_con();
 	$a=mysqli_multi_query($WRIT_CON, $SQL);
 	if($free) {
@@ -197,7 +185,11 @@ function safe_w_error() {
 	return $ret;
 }
 function safe_r_SQL($SQL, $use=false, $force=false) {
-	global $READ_CON;
+	global $READ_CON, $ERROR_REPORT, $CFG;
+	if($ERROR_REPORT and $CFG->TRACE_QUERRIES) {
+		$a=debug_backtrace();
+		$GLOBALS['safe_SQL']['r_querries'][]=$a[0];
+	}
 	if(!$READ_CON) $READ_CON=safe_r_con();
     try {
         if($use) {
@@ -251,16 +243,12 @@ function safe_fetch_field($q) {
 	return mysqli_fetch_field($q);
 }
 
-function safe_fetch_fields($q) {
-    return mysqli_fetch_fields($q);
-}
-
 function safe_free_result($q) {
 	return mysqli_free_result($q);
 }
 
 function safe_error($ERR='') {
-    global $ERROR_REPORT;
+global $ERROR_REPORT;
 	header('HTTP/1.0 404 Not Found');
 	echo '<meta http-equiv="Content-Type" content="text/html; charset='.PageEncode.'">
 	<p><b>'.get_text('TecError')."</b></p>";
@@ -409,7 +397,6 @@ function assembleWhereCondition($fields, $values) {
 }
 
 function LogAccBoothQuerry($SQL, $ToCode='', $Type='QUERY') {
-    return '';
 	if(empty($_SESSION['AccBooth'])) return;
 
 	if(empty($ToCode)) $ToCode=$_SESSION['TourCode'];
@@ -417,7 +404,6 @@ function LogAccBoothQuerry($SQL, $ToCode='', $Type='QUERY') {
 }
 
 function GetAccBoothEnWhere($EnId, $Division=false, $Limit=false) {
-    return '';
 	if(empty($_SESSION['AccBooth'])) return '';
 
 	$q=safe_r_sql("select EnCode, EnIocCode, EnDivision from Entries where EnId=$EnId");

@@ -18,21 +18,19 @@ $athId=(empty($_REQUEST['AthId']) || $_REQUEST['AthId']==0 ? null : $_REQUEST['A
 //$camurl=(empty($_REQUEST['url']) ? "http://localhost:8050/stream.mjpg" : urldecode($_REQUEST['url']));
 //$camurl="http://192.168.0.249/jpg/image.jpg";
 $camurl=(empty($_REQUEST['CamUrl']) ? "" : urldecode($_REQUEST['CamUrl']));
-if(!$camurl) $camurl=($_COOKIE['CamUrl']??'');
+if(!$camurl) $camurl=$_COOKIE['CamUrl'];
 
 $boundary="\n--";
 
-$f = ($camurl ? @fopen($camurl,"r") : '') ;
+$f = @fopen($camurl,"r") ;
 
 if(!$camurl or !$f) {
 
 	//**** cannot open
 	$im=imagecreatetruecolor(640,480);
 	$col=imagecolorallocate($im,128,128,128);
-	$col2=imagecolorallocate($im,255,255,255);
 
 	imagefilledrectangle($im, 0, 0, 640, 480, $col);
-    imagettftext($im, 50,0,50,255, $col2,$CFG->DOCUMENT_PATH.'Common/tcpdf/fonts/ariblk.ttf','No Webcam');
 	header("Content-type: image/png");
 	imagepng($im);
 	imagedestroy($im);
@@ -43,7 +41,7 @@ if(!$camurl or !$f) {
 	if(preg_match('/\.jpg$/i',$camurl) != 0) {
 		while(!feof($f))
 			$r .= fread($f,4096);
-		$im=@imagecreatefromstring($r);
+		$im=imagecreatefromstring($r);
 	} else {
 		while (substr_count($r,"Content-Length") != 2)
 			$r.=fread($f,512);
@@ -51,7 +49,7 @@ if(!$camurl or !$f) {
 		$end   = strpos($r,$boundary,$start)-1;
 
 		$frame = substr("$r",$start,$end - $start);
-		$im=@imagecreatefromstring($frame);
+		$im=imagecreatefromstring($frame);
 	}
 
 	if($x<0) $x=(imagesx($im)-$w-2)/2;
@@ -69,10 +67,6 @@ if(!$camurl or !$f) {
 		setcookie("getPhotoY",$y,time()+24*60);
 		setcookie("getPhotoW",$w,time()+24*60);
 		$tmpname=tempnam('/tmp', 'enphoto');
-        //        we need to get x, y, w and h of the image
-        $Photo=imagecreatetruecolor($w, $h);
-        imagecopyresampled($Photo, $im, 0, 0, $x, $y, $w, $h, $w, $h);
-        imagepng($Photo,$tmpname);
 		$Booth='';
 		if($_SESSION['AccBooth']) {
 			// pictures will be recorded in a Database!
@@ -80,13 +74,10 @@ if(!$camurl or !$f) {
 			$Booth=safe_fetch($q);
 		}
 
-        require_once('Common/PhotoResize.php');
-        require_once('Common/CheckPictures.php');
 		if($athId and $img=photoresize($tmpname, true) and InsertPhoto($athId, $img, $Booth)) {
 			$lineColor=imagecolorallocate($im,0,0,255);
 			imagesetthickness($im,10);
 		}
-    	imagedestroy($Photo);
 	}
 
 	imagerectangle($im,$x,$y,$x+$w,$y+$h,$lineColor);

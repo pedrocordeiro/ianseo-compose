@@ -59,17 +59,18 @@ if(CheckTourSession())
 		$printBarcode=false;
 	}
 
-	$MyQuery = "SELECT EnId, EnCode, EnName AS Name, upper(EnFirstName) AS FirstName, QuSession AS Session, CONCAT(QuTarget, QuLetter) AS TargetNo, CoCode AS NationCode, CoName AS Nation, EnClass AS ClassCode, EnDivision AS DivCode, EnStatus as Status, EnIndClEvent AS `IC`, EnTeamClEvent AS `TC`, EnIndFEvent AS `IF`, EnTeamFEvent as `TF`, if(AEId IS NULL, 0, 1) as OpDone ";
-    $MyQuery.= "FROM Qualifications AS q ";
-    $MyQuery.= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND EnAthlete=1 ";
+	$MyQuery = "SELECT EnId, EnName AS Name, upper(EnFirstName) AS FirstName, SUBSTRING(AtTargetNo,1,1) AS Session, SUBSTRING(AtTargetNo,2," . (TargetNoPadding+1) . ") AS TargetNo, CoCode AS NationCode, CoName AS Nation, EnClass AS ClassCode, EnDivision AS DivCode, EnStatus as Status, EnIndClEvent AS `IC`, EnTeamClEvent AS `TC`, EnIndFEvent AS `IF`, EnTeamFEvent as `TF`, if(AEId IS NULL, 0, 1) as OpDone ";
+	$MyQuery.= "FROM AvailableTarget at ";
+	$MyQuery.= "INNER JOIN Qualifications AS q ON at.AtTargetNo=q.QuTargetNo ";
+	$MyQuery.= "INNER JOIN Entries AS e ON q.QuId=e.EnId AND e.EnTournament=at.AtTournament AND EnAthlete=1 ";
 	$MyQuery.= "INNER JOIN Countries AS c ON e.EnCountry=c.CoId AND e.EnTournament=c.CoTournament ";
 	$MyQuery.= "LEFT JOIN AccEntries AS ae ON e.EnId=ae.AEId AND e.EnTournament=ae.AETournament ";
 	$MyQuery.= "AND ae.AEOperation=(SELECT AOTId FROM AccOperationType WHERE AOTDescr=" . StrSafe_DB($OpDetails) . ") ";
-	$MyQuery.= "WHERE EnTournament = " . StrSafe_DB($_SESSION['TourId']) . " ";
-	if(isset($_REQUEST["Session"]) AND is_numeric($_REQUEST["Session"]))
-		$MyQuery .= "AND QuSession = " . StrSafe_DB($_REQUEST["Session"]) . " ";
+	$MyQuery.= "WHERE AtTournament = " . StrSafe_DB($_SESSION['TourId']) . " ";
+	if(isset($_REQUEST["Session"]) && is_numeric($_REQUEST["Session"]))
+		$MyQuery .= "AND SUBSTRING(AtTargetNo,1,1) = " . StrSafe_DB($_REQUEST["Session"]) . " ";
 		//$MyQuery .= "AND AtTargetNo IN ('145B','145D','146D','149D','151C','152A') ";
-	$MyQuery.= "ORDER BY QuSession, QuTarget, QuLetter, CoCode, Name, CoName, FirstName ";
+	$MyQuery.= "ORDER BY AtTargetNo, CoCode, Name, CoName, FirstName ";
 
 	$Rs=safe_r_sql($MyQuery);
 	if($Rs)
@@ -105,10 +106,23 @@ if(CheckTourSession())
 			if($printBarcode)
 			{
 				$pdf->SetFont('barcode','',28);
-				if($MyRow->EnCode[0]=='_') $MyRow->EnCode='UU'.substr($MyRow->EnCode, 1);
-				$pdf->Cell($lblW-2*($lblMarginH),10, mb_convert_encoding('*' . $MyRow->EnCode,"UTF-8","cp1252") . "*",0,0,'C',0);
+				if($MyRow->EnId[0]=='_') $MyRow->EnId='UU'.substr($MyRow->EnId, 1);
+				$pdf->Cell($lblW-2*($lblMarginH),10, mb_convert_encoding('*$' . $MyRow->EnId,"UTF-8","cp1252") . "*",0,0,'C',0);
 			}
 
+/*
+			//Status
+			if($MyRow->Status>1)
+				$pdf->Rect((($Etichetta % 3) * $lblW)+4,(intval($Etichetta / 3) * $lblH)+4,($lblW-8),($lblH-10*$lblSp),"FD");
+
+			//Barcode
+			$pdf->SetXY((($Etichetta % 3) * $lblW)+5,(intval($Etichetta / 3) * $lblH)+12*$lblSp);
+			$pdf->SetFont('barcode','',28);
+			$pdf->Cell($lblW-10,10, mb_convert_encoding('*$' . $MyRow->EnId,"UTF-8","cp1252") . "*",0,0,'C',0);
+
+			//$pdf->Rect((($Etichetta % 3) * 70)+0,(intval($Etichetta / 3) * 37)+0,70,37);
+
+*/
 			$Etichetta = ++$Etichetta % $Label4Page;
 		}
 		safe_free_result($Rs);

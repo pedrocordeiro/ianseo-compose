@@ -332,7 +332,6 @@ function getStartListQuery($ORIS=false, $Event='', $Elim=false, $Filled=false, $
 			$Join="";
 		}
 
-        $atSql = createAvailableTargetSQL();
 		if(!empty($_REQUEST["Session"])) {
 			if(is_array($_REQUEST["Session"])) {
 				$Sessions=$_REQUEST["Session"];
@@ -343,15 +342,15 @@ function getStartListQuery($ORIS=false, $Event='', $Elim=false, $Filled=false, $
 
 		$MyQuery = "SELECT distinct SesName, 
 				EvCode, EvOdfCode, DivDescription, ClDescription, 
-				Bib, Athlete, FullTgtSession AS Session, CONCAT(FullTgtTarget,FullTgtLetter) AS TargetNo, NationCode, Nation, RealEventCode, RealEventName,
+				Bib, Athlete, SUBSTRING(AtTargetNo,1,1) AS Session, SUBSTRING(AtTargetNo,2) AS TargetNo, NationCode, Nation, RealEventCode, RealEventName,
 				EventCode, EventName, DOB, SesAth4Target, ClassCode, DivCode, AgeClass, SubClass, Status, 
 				`IC`, `TC`, `IF`, `TF`, `TM`, NationCode2, Nation2, NationCode3, Nation3, EnSubTeam, TfName, Wheelchair,
 				concat(DvMajVersion, '.', DvMinVersion) as DocVersion, date_format(DvPrintDateTime, '%e %b %Y %H:%i UTC') as DocVersionDate,
 				DvNotes as DocNotes,
 				ifnull(RankRanking, '') as Ranking, Season, Personal, EnTimestamp
-			 FROM ($atSql) at 
-			 INNER JOIN Session ON FullTgtSession=SesOrder AND SesType='Q' 
-			 LEFT JOIN DocumentVersions on SesTournament=DvTournament AND DvFile = 'TGT' 
+			 FROM AvailableTarget at 
+			 INNER JOIN Session ON SUBSTRING(AtTargetNo,1,1)=SesOrder AND AtTournament=SesTournament AND SesType='Q' 
+			 LEFT JOIN DocumentVersions on AtTournament=DvTournament AND DvFile = 'TGT' 
 			 LEFT JOIN 
 			 	(SELECT distinct ".($ORIS ? "EvCode," : "'' EvCode,") . ($ORIS ? " EvProgr," : " '' EvProgr,") . " 
 					DivDescription, ClDescription, EvOdfCode,
@@ -359,7 +358,7 @@ function getStartListQuery($ORIS=false, $Event='', $Elim=false, $Filled=false, $
 					" . ($ORIS ? " IFNULL(EvCode,CONCAT(TRIM(EnDivision),TRIM(EnClass))) as EventCode," : " '' as EventCode,") . " 
 					concat(upper(EnFirstName), ' ', EnName) Athlete,
 					EnCode as Bib,
-					QuSession, QuTarget, QuLetter,
+					QuTargetNo,
 					upper(c.CoCode) AS NationCode,
 					upper(c.CoName) AS Nation,
 					upper(c2.CoCode) NationCode2,
@@ -397,22 +396,22 @@ function getStartListQuery($ORIS=false, $Event='', $Elim=false, $Filled=false, $
 				left join Events on EvCode=IndEvent and EvTournament=EnTournament and EvTeamEvent=0 
 				LEFT JOIN Rankings on EnTournament=RankTournament and RankEvent=IF(EvWaCategory!='',EvWaCategory,EvCode) and RankTeam=0 and EnCode=RankCode and ToIocCode='FITA' and EnIocCode in ('', 'FITA') and RankIocCode='FITA' 
 				LEFT JOIN TargetFaces ON EnTournament=TfTournament AND EnTargetFace=TfId 
-				) as Sq ON QuSession=FullTgtSession AND QuTarget=FullTgtTarget AND QuLetter=FullTgtLetter 
-			WHERE SesTournament = " . StrSafe_DB($_SESSION['TourId']) ;
+				) as Sq ON at.AtTargetNo=Sq.QuTargetNo 
+			WHERE AtTournament = " . StrSafe_DB($_SESSION['TourId']) ;
 		if(isset($_REQUEST["Session"]) && $_REQUEST["Session"]!='All') {
-			$MyQuery .= " AND FullTgtSession in (" . implode(',', $Sessions) . ") ";
+			$MyQuery .= " AND SUBSTRING(AtTargetNo,1,1) in (" . implode(',', $Sessions) . ") ";
 		}
 		if(isset($_REQUEST["x_Session"]) )
-			$MyQuery .= " AND FullTgtSession = " . StrSafe_DB($_REQUEST["x_Session"]) . " ";
+			$MyQuery .= " AND SUBSTRING(AtTargetNo,1,1) = " . StrSafe_DB($_REQUEST["x_Session"]) . " ";
 		if(isset($_REQUEST["x_From"]) and isset($_REQUEST["x_To"]) ) {
-			$MyQuery .= " AND FullTgtTarget >= " . StrSafe_DB(sprintf('%03d', intval($_REQUEST["x_From"]))) . " ";
-			$MyQuery .= " AND FullTgtTarget <= " . StrSafe_DB(sprintf('%03d', intval($_REQUEST["x_To"]))) . " ";
+			$MyQuery .= " AND SUBSTRING(AtTargetNo,2,3) >= " . StrSafe_DB(sprintf('%03d', intval($_REQUEST["x_From"]))) . " ";
+			$MyQuery .= " AND SUBSTRING(AtTargetNo,2,3) <= " . StrSafe_DB(sprintf('%03d', intval($_REQUEST["x_To"]))) . " ";
 
 		}
 		if(isset($_REQUEST['Empty'])) {
-			$MyQuery.=" and QuSession is null
-                and (FullTgtSession,FullTgtTarget,FullTgtLetter) not in (select QuSession, QuTarget, case QuLetter when 'A' then 'C' when 'B' then 'D' when 'C' then 'A' when 'D' then 'B' else '' end from (select QuSession, QuTarget, QuLetter from Qualifications inner join Entries on EnId=QuId and EnTournament={$_SESSION['TourId']} and EnWchair=1) tmp )
-                and (FullTgtSession,FullTgtTarget,FullTgtLetter) not in (select QuSession, QuTarget, case QuLetter when 'A' then 'B' when 'B' then 'A' when 'C' then 'D' when 'D' then 'C' else '' end from (select QuSession, QuTarget, QuLetter from Qualifications inner join Entries on EnId=QuId and EnTournament={$_SESSION['TourId']} and EnDoubleSpace=1) tmp ) ";
+			$MyQuery.=" and QuTargetNo is null
+						and AtTargetNo not in (select case right(QuTargetNo,1) when 'A' then concat(left(QuTargetNo, 4),'C') when 'B' then concat(left(QuTargetNo, 4),'D') when 'C' then concat(left(QuTargetNo, 4),'A') when 'D' then concat(left(QuTargetNo, 4),'B') else '' end from (select QuTargetNo from Qualifications inner join Entries on EnId=QuId and EnTournament={$_SESSION['TourId']} and EnWchair=1) tmp )
+						and AtTargetNo not in (select case right(QuTargetNo,1) when 'A' then concat(left(QuTargetNo, 4),'b') when 'B' then concat(left(QuTargetNo, 4),'A') when 'C' then concat(left(QuTargetNo, 4),'D') when 'D' then concat(left(QuTargetNo, 4),'C') else '' end from (select QuTargetNo from Qualifications inner join Entries on EnId=QuId and EnTournament={$_SESSION['TourId']} and EnDoubleSpace=1) tmp ) ";
 		}
 
 		if(!empty($_REQUEST['EnCodes'])) {
@@ -429,14 +428,14 @@ function getStartListQuery($ORIS=false, $Event='', $Elim=false, $Filled=false, $
 		}
 
 		if($Filled) {
-			$MyQuery.= " and QuId is not null ";
+			$MyQuery.= " and QuTargetNo is not null ";
 		}
 
 		if($ORIS) {
 			$MyQuery.= " AND EventName!='' ";
-			$MyQuery.= " ORDER BY EvProgr, EventName,".($bisTargets ? "((FullTgtTarget-1) % ".$bisModule."), ":"")." FullTgtSession, FullTgtTarget, FullTgtLetter, Athlete ";
+			$MyQuery.= " ORDER BY EvProgr, EventName,".($bisTargets ? "((AtTarget-1) % ".$bisModule."), ":"")." AtTargetNo, Athlete ";
 		} else {
-			$MyQuery.= " ORDER BY SesOrder, ".($bisTargets ? "((FullTgtTarget-1) % ".$bisModule."), ":"")." FullTgtSession, FullTgtTarget, FullTgtLetter, NationCode, Athlete, Nation ";
+			$MyQuery.= " ORDER BY SesOrder, ".($bisTargets ? "((AtTarget-1) % ".$bisModule."), ":"")." AtTargetNo, NationCode, Athlete, Nation ";
 		}
 	}
 	return $MyQuery;
@@ -677,7 +676,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 		$MyQuery = "SELECT distinct
 				SesName, EvCode, EvCodeParent, EnDivision as DivCode, EnClass as ClassCode, DivDescription, ClDescription, DivAthlete and ClAthlete as IsAthlete,
 				IFNULL(EvCode,CONCAT(TRIM(EnDivision),TRIM(EnClass))) as EventCode, EnCode as Bib,
-				concat(upper(EnFirstName), ' ', EnName) AS Athlete, DATE_FORMAT(EnDob,'%d %b %Y') as DOB, QuSession AS Session, CONCAT(QuTarget,QuLetter) AS TargetNo,
+				concat(upper(EnFirstName), ' ', EnName) AS Athlete, DATE_FORMAT(EnDob,'%d %b %Y') as DOB, QuSession AS Session, SUBSTRING(QuTargetNo,2) AS TargetNo,
 				upper(CoCode) AS NationCode, upper(CoName) AS Nation, if(CoNameComplete!='', CoNameComplete, CoName) AS NationComplete,
 				IFNULL(GROUP_CONCAT(EvEventName SEPARATOR ', '), if(DivAthlete and ClAthlete, CONCAT('|',DivDescription, '| |', ClDescription), ClDescription)) as EventName,
 				IFNULL(GROUP_CONCAT(DISTINCT RankRanking order by EvProgr SEPARATOR ', '), '') as Ranking,
@@ -701,7 +700,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 			LEFT JOIN Session on EnTournament=SesTournament and SesType='Q' and SesOrder=QuSession
 			LEFT JOIN Photos ON PhEnId=EnId
 			LEFT JOIN ExtraData edmail ON edmail.EdId=EnId and edmail.EdType='E'
-			LEFT JOIN ExtraData edbib ON edbib.EdId=EnId and edbib.EdType='Z' and edbib.EdExtra!=''
+			LEFT JOIN ExtraData edbib ON edbib.EdId=EnId and edbib.EdType='Z'
 			LEFT JOIN DocumentVersions on EnTournament=DvTournament AND DvFile = 'EN'
 			LEFT JOIN Rankings on EnTournament=RankTournament and RankEvent=IF(EvWaCategory!='',EvWaCategory,EvCode) and RankTeam=0 and EnCode=RankCode and ToIocCode='FITA' and EnIocCode in ('', 'FITA') and RankIocCode='FITA'
 			WHERE EnTournament = " . intval($_SESSION['TourId']);
@@ -736,7 +735,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 			. ", concat(upper(EnFirstName), ' ', EnName) AS Athlete"
 			. ", QuSession AS Session"
 			. ", SesName"
-			. ", CONCAT(QuTarget,QuLetter) AS TargetNo"
+			. ", SUBSTRING(QuTargetNo,2) AS TargetNo"
 			. ", upper(CoCode) AS NationCode"
 			. ", upper(CoName) AS Nation"
 			. ", CoNameComplete AS NationComplete"
@@ -767,7 +766,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 	$MyQuery.= "left join Events on EvCode=IndEvent and EvTournament=EnTournament and EvTeamEvent=0  ";
 	$MyQuery.= "LEFT JOIN Photos ON e.EnId=PhEnId ";
 	$MyQuery.= "LEFT JOIN ExtraData as edmail ON edmail.EdId=EnId and edmail.EdType='E' ";
-	$MyQuery.= "LEFT JOIN ExtraData as edbib ON edbib.EdId=EnId and edbib.EdType='Z' and edbib.EdExtra!='' ";
+	$MyQuery.= "LEFT JOIN ExtraData as edbib ON edbib.EdId=EnId and edbib.EdType='Z' ";
 	$MyQuery.= "LEFT JOIN Countries AS c ON e.EnCountry=c.CoId AND e.EnTournament=c.CoTournament ";
 	$MyQuery.= "LEFT JOIN Qualifications AS q ON e.EnId=q.QuId ";
 	$MyQuery.= "LEFT JOIN Divisions ON TRIM(EnDivision)=TRIM(DivId) AND EnTournament=DivTournament ";
@@ -799,7 +798,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 			. ", concat(upper(EnFirstName), ' ', EnName) AS Athlete"
 			. ", QuSession AS Session"
 			. ", SesName"
-			. ", CONCAT(QuTarget,QuLetter) AS TargetNo"
+			. ", SUBSTRING(QuTargetNo,2) AS TargetNo"
 			. ", upper(CoCode) AS NationCode"
 			. ", upper(CoName) AS Nation"
 			. ", CoNameComplete AS NationComplete"
@@ -830,7 +829,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 	$MyQuery.= "left join Events on EvCode=IndEvent and EvTournament=EnTournament and EvTeamEvent=0   ";
 	$MyQuery.= "LEFT JOIN Photos ON e.EnId=PhEnId ";
 	$MyQuery.= "LEFT JOIN ExtraData as edmail ON edmail.EdId=EnId and edmail.EdType='E' ";
-	$MyQuery.= "LEFT JOIN ExtraData as edbib ON edbib.EdId=EnId and edbib.EdType='Z' and edbib.EdExtra!='' ";
+	$MyQuery.= "LEFT JOIN ExtraData as edbib ON edbib.EdId=EnId and edbib.EdType='Z' ";
 	$MyQuery.= "LEFT JOIN Countries AS c ON e.EnCountry2=c.CoId AND e.EnTournament=c.CoTournament ";
 	$MyQuery.= "LEFT JOIN Qualifications AS q ON e.EnId=q.QuId ";
 	$MyQuery.= "LEFT JOIN Divisions ON TRIM(EnDivision)=TRIM(DivId) AND EnTournament=DivTournament ";
@@ -863,7 +862,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 			. ", concat(upper(EnFirstName), ' ', EnName) AS Athlete"
 			. ", QuSession AS Session"
 			. ", SesName"
-			. ", CONCAT(QuTarget,QuLetter) AS TargetNo"
+			. ", SUBSTRING(QuTargetNo,2) AS TargetNo"
 			. ", upper(CoCode) AS NationCode"
 			. ", upper(CoName) AS Nation"
 			. ", CoNameComplete AS NationComplete"
@@ -894,7 +893,7 @@ function getStartListCountryQuery($ORIS=false, $Athletes=false, $orderByName=fal
 	$MyQuery.= "left join Events on EvCode=IndEvent and EvTournament=EnTournament and EvTeamEvent=0  ";
 	$MyQuery.= "LEFT JOIN Photos ON e.EnId=PhEnId ";
 	$MyQuery.= "LEFT JOIN ExtraData as edmail ON edmail.EdId=EnId and edmail.EdType='E' ";
-	$MyQuery.= "LEFT JOIN ExtraData as edbib ON edbib.EdId=EnId and edbib.EdType='Z' and edbib.EdExtra!='' ";
+	$MyQuery.= "LEFT JOIN ExtraData as edbib ON edbib.EdId=EnId and edbib.EdType='Z' ";
 	$MyQuery.= "LEFT JOIN Countries AS c ON e.EnCountry3=c.CoId AND e.EnTournament=c.CoTournament ";
 	$MyQuery.= "LEFT JOIN Qualifications AS q ON e.EnId=q.QuId ";
 	$MyQuery.= "LEFT JOIN Divisions ON TRIM(EnDivision)=TRIM(DivId) AND EnTournament=DivTournament ";
@@ -940,21 +939,21 @@ function getStandingRecordsQuery($ORIS=true) {
 function getBrokenRecordsQuery($ORIS=true) {
 	// The system is completely new and is based on the table RecBroken!
 	// check if a double event...
-	$q=safe_r_sql("select ToType, ToDouble, ToNumDist, ToGoldsChars from Tournament where ToId={$_SESSION['TourId']}");
+	$q=safe_r_sql("select ToType, ToDouble, ToNumDist, ToXNineChars from Tournament where ToId={$_SESSION['TourId']}");
 	$r=safe_fetch($q);
 	$IsDouble=$r->ToDouble;
 	$NumDistances=$r->ToNumDist;
 	$RecordTotal="QuScore";
-	$RecordXNine="QuGold";
-	$GenXNine=$r->ToGoldsChars;
+	$RecordXNine="QuXNine";
+	$GenXNine=$r->ToXNineChars;
 	if($IsDouble) {
 		if($NumDistances==4) {
 			// double 70m or 18+25
 			$RecordTotal="if(RecBroRecDouble, QuScore, if(RecBroRecMatchno=1, QuD1Score+QuD2Score, QuD3Score+QuD4Score))";
-			$RecordXNine="if(RecBroRecDouble, QuGold, if(RecBroRecMatchno=1, QuD1Gold+QuD2Gold, QuD3Gold+QuD4Gold))";
+			$RecordXNine="if(RecBroRecDouble, QuXNine, if(RecBroRecMatchno=1, QuD1Xnine+QuD2Xnine, QuD3Xnine+QuD4Xnine))";
 		} else {
 			$RecordTotal="if(RecBroRecDouble, QuScore, if(RecBroRecMatchno=1, QuD1Score+QuD2Score+QuD3Score+QuD4Score, QuD5Score+QuD6Score+QuD7Score+QuD8Score))";
-			$RecordXNine="if(RecBroRecDouble, QuGold, if(RecBroRecMatchno=1, QuD1Gold+QuD2Gold+QuD3Gold+QuD4Gold, QuD5Gold+QuD6Gold+QuD7Gold+QuD8Gold))";
+			$RecordXNine="if(RecBroRecDouble, QuXNine, if(RecBroRecMatchno=1, QuD1Xnine+QuD2Xnine+QuD3Xnine+QuD4Xnine, QuD5Xnine+QuD6Xnine+QuD7Xnine+QuD8Xnine))";
 		}
 	}
 
@@ -974,7 +973,6 @@ function getBrokenRecordsQuery($ORIS=true) {
        	RecBroRecDate as RecordDate,
        	date(RecBroRecDate) as RecordDateDate,
        	trim(concat(upper(EnFirstName), ' ', EnName)) as Athlete,
-       	'' as Archers,
         CoCode,
        	if(RecBroRecPara, ReArOdfParaCode, ReArOdfCode) as TrHeaderCode, 
        	if(RecBroRecPara, ReArOdfParaHeader, ReArOdfHeader) as TrHeader, 
@@ -1003,12 +1001,11 @@ function getBrokenRecordsQuery($ORIS=true) {
         RtRecCategory as RecCategory,
        	RtRecCategoryName as RecCategoryName,
         TeScore as NewRecord,
-        TeGold as NewXNine,
+        TeXNine as NewXNine,
 		TeScore=RtRecMaxScore as CheckXNine,
        	RecBroRecDate as RecordDate,
        	date(RecBroRecDate) as RecordDateDate,
-       	CoName as Athlete,
-       	group_concat(concat(upper(EnFirstName), ' ', EnName) separator \"\n\") as Archers,
+       	trim(concat(CoCode, ' ', CoName, \"\n\", group_concat(concat('   ', upper(EnFirstName), ' ', EnName) separator \"\n\"))) as Athlete,
         CoCode,
        	if(RecBroRecPara, ReArOdfParaCode, ReArOdfCode) as TrHeaderCode, 
        	if(RecBroRecPara, ReArOdfParaHeader, ReArOdfHeader) as TrHeader, 
@@ -1035,12 +1032,11 @@ function getBrokenRecordsQuery($ORIS=true) {
         RtRecCategory as RecCategory,
        	RtRecCategoryName as RecCategoryName,
         FinScore as NewRecord,
-        length(FinArrowstring)-length(replace(FinArrowstring, if(EvGoldsChars='', '{$GenXNine}', EvGoldsChars), '')) as NewXNine,
+        length(FinArrowstring)-length(replace(FinArrowstring, if(EvXNineChars='', '{$GenXNine}', EvXNineChars), '')) as NewXNine,
 		FinScore=RtRecMaxScore as CheckXNine,
        	RecBroRecDate as RecordDate,
        	date(RecBroRecDate) as RecordDateDate,
        	trim(concat(upper(EnFirstName), ' ', EnName)) as Athlete,
-       	'' as Archers,
         CoCode,
        	if(RecBroRecPara, ReArOdfParaCode, ReArOdfCode) as TrHeaderCode, 
        	if(RecBroRecPara, ReArOdfParaHeader, ReArOdfHeader) as TrHeader, 
@@ -1065,12 +1061,11 @@ function getBrokenRecordsQuery($ORIS=true) {
         RtRecCategory as RecCategory,
        	RtRecCategoryName as RecCategoryName,
         TfScore as NewRecord,
-        length(TfArrowstring)-length(replace(TfArrowstring, if(EvGoldsChars='', '{$GenXNine}', EvGoldsChars), '')) as NewXNine,
+        length(TfArrowstring)-length(replace(TfArrowstring, if(EvXNineChars='', '{$GenXNine}', EvXNineChars), '')) as NewXNine,
 		TfScore=RtRecMaxScore as CheckXNine,
        	RecBroRecDate as RecordDate,
        	date(RecBroRecDate) as RecordDateDate,
-        CoName as Athlete,
-       	group_concat(concat(upper(EnFirstName), ' ', EnName) separator \"\n\") as Archers,
+       	trim(concat(CoCode, ' ', CoName, \"\n\", group_concat(concat('   ', upper(EnFirstName), ' ', EnName) separator \"\n\"))) as Athlete,
         CoCode,
        	if(RecBroRecPara, ReArOdfParaCode, ReArOdfCode) as TrHeaderCode, 
        	if(RecBroRecPara, ReArOdfParaHeader, ReArOdfHeader) as TrHeader, 
@@ -1113,7 +1108,7 @@ function getStartListAlphaQuery($ORIS=false, $Athlete=false) {
 			EnCode as Bib, 
 			concat(upper(EnFirstName $Collation), ' ', EnName $Collation) AS Athlete, 
 			QuSession AS Session, 
-			CONCAT(QuTarget,QuLetter) AS TargetNo, 
+			SUBSTRING(QuTargetNo,2) AS TargetNo, 
 			QuTarget AS TargetButt, 
 			upper(c.CoCode) AS NationCode, upper(c.CoName) AS Nation, 
 			upper(c2.CoCode) AS NationCode2, upper(c2.CoName) AS Nation2, 
@@ -1192,89 +1187,89 @@ function getStartListCategoryQuery($ORIS=false, $orderByTeam=0, $Events=array())
 	$TmpWhere="";
 	if(isset($_REQUEST["ArcherCategories"]) && preg_match("/^[,0-9A-Z]*$/i",str_replace(" ","",$_REQUEST["ArcherCategories"]))) {
 		foreach(explode(",",$_REQUEST["ArcherCategories"]) as $Value) {
-			$TmpWhere .= "CONCAT(`EnDivision`,`EnClass`) LIKE " . StrSafe_DB(stripslashes(trim($Value)) . "%") . " OR ";
+			$TmpWhere .= "CONCAT(EnDivision,EnClass) LIKE " . StrSafe_DB(stripslashes(trim($Value)) . "%") . " OR ";
 		}
 		$TmpWhere = substr($TmpWhere,0,-3);
 	}
 	if($Events) {
-		$TmpWhere=" `EvCode` in (".implode(',', StrSafe_DB($Events)).") ";
+		$TmpWhere=" EvCode in (".implode(',', StrSafe_DB($Events)).") ";
 	}
 
 //	$Collation = ($_SESSION['TourCollation'] ? "COLLATE utf8_{$_SESSION['TourCollation']}_ci" : '');
 	$Collation = '';
 
 	$MyQuery = "SELECT distinct
-			" . ($ORIS ? ' `EvCode` as `EventCode` ' :" IFNULL(`EvCode`,CONCAT(TRIM(`EnDivision`),TRIM(`EnClass`))) as `EventCode`") . ", 
-			`SesName`, 
-			`EnCode` as `Bib`, 
-			concat(upper(`EnFirstName` $Collation), ' ', `EnName` $Collation) AS `Athlete`, 
-			`QuSession` AS `Session`, 
-			CONCAT(QuTarget,QuLetter) AS `TargetNo`, 
-			EnSubTeam as NationSubTeam,
-			case `EvTeamCreationMode`
-				when 0 then upper(c.`CoCode`) 
-				when 1 then upper(c2.`CoCode`) 
-				when 2 then upper(c3.`CoCode`) 
+			" . ($ORIS ? ' EvCode as EventCode ' :" IFNULL(EvCode,CONCAT(TRIM(EnDivision),TRIM(EnClass))) as EventCode") . ", 
+			SesName, 
+			EnCode as Bib, 
+			concat(upper(EnFirstName $Collation), ' ', EnName $Collation) AS Athlete, 
+			QuSession AS Session, 
+			SUBSTRING(QuTargetNo,2) AS TargetNo, 
+			case EvTeamCreationMode
+				when 0 then upper(c.CoCode) 
+				when 1 then upper(c2.CoCode) 
+				when 2 then upper(c3.CoCode) 
 				else upper(c.CoCode) 
-			end as `NationCode`,
-			case `EvTeamCreationMode`
-				when 0 then upper(c.`CoName`) 
-				when 1 then upper(c2.`CoName`) 
-				when 2 then upper(c3.`CoName`) 
-				else upper(c.`CoName`) 
-			end as `Nation`,
-			upper(c2.`CoCode`) AS `NationCode2`, 
-			upper(c2.`CoName`) AS `Nation2`, 
-			upper(c3.`CoCode`) AS `NationCode3`, 
-			upper(c3.`CoName`) AS `Nation3`, 
-			`DivDescription`, 
-			`ClDescription`, 
-			`EnSubTeam`, 
-			`EnClass` AS `ClassCode`, 
-			`EnDivision` AS `DivCode`, 
-			`DivAthlete` and `ClAthlete` as `IsAthlete`, 
-			`EnAgeClass` as `AgeClass`, 
-			`EnSubClass` as `SubClass`, 
-			`EnStatus` as `Status`, 
-			`EnIndClEvent` AS `IC`, 
-			`EnTeamClEvent` AS `TC`, 
-			`EnIndFEvent` AS `IF`, 
-			`EnTeamFEvent` as `TF`, 
-			`EnTeamMixEvent` as `TM`, 
-			`EvCode`, 
-			DATE_FORMAT(`EnDob`,'%d %b %Y') as `DOB`, 
-			IFNULL(GROUP_CONCAT(`EvEventName` order by `EvProgr` SEPARATOR ', '),CONCAT('|',`DivDescription`, '| |', `ClDescription`)) as `EventName` , 
-			`TfName`, 
-			`cNumber`, `EnTimestamp`,
+			end as NationCode,
+			case EvTeamCreationMode
+				when 0 then upper(c.CoName) 
+				when 1 then upper(c2.CoName) 
+				when 2 then upper(c3.CoName) 
+				else upper(c.CoName) 
+			end as Nation,
+			upper(c2.CoCode) AS NationCode2, 
+			upper(c2.CoName) AS Nation2, 
+			upper(c3.CoCode) AS NationCode3, 
+			upper(c3.CoName) AS Nation3, 
+			DivDescription, 
+			ClDescription, 
+			EnSubTeam, 
+			EnClass AS ClassCode, 
+			EnDivision AS DivCode, 
+			DivAthlete and ClAthlete as IsAthlete, 
+			EnAgeClass as AgeClass, 
+			EnSubClass as SubClass, 
+			EnStatus as Status, 
+			EnIndClEvent AS `IC`, 
+			EnTeamClEvent AS `TC`, 
+			EnIndFEvent AS `IF`, 
+			EnTeamFEvent as `TF`, 
+			EnTeamMixEvent as `TM`, 
+			EvCode, 
+			DATE_FORMAT(EnDob,'%d %b %Y') as DOB, 
+			IFNULL(GROUP_CONCAT(EvEventName order by EvProgr SEPARATOR ', '),CONCAT('|',DivDescription, '| |', ClDescription)) as EventName , 
+			TfName, 
+			cNumber, EnTimestamp,
 			ifnull(GROUP_CONCAT(RankRanking order by EvProgr SEPARATOR ', '), '') as Ranking
-		FROM `Entries` AS e
-		INNER JOIN `Tournament` on `EnTournament`=`ToId`
-		INNER JOIN `Qualifications` AS q ON e.`EnId`=q.`QuId` 
-		LEFT JOIN `Individuals` on `IndId`=`EnId` AND `EnTournament`=`IndTournament` 
-		LEFT JOIN `Events` AS ec ON `EvTeamEvent`=0 AND `EvTournament`=`EnTournament` AND `IndEvent`=`EvCode` and `EvCodeParent`=''
-		LEFT JOIN `Divisions` ON TRIM(`EnDivision`)=TRIM(`DivId`) AND `EnTournament`=`DivTournament` 
-		LEFT JOIN `Classes` ON TRIM(`EnClass`)=TRIM(`ClId`) AND `EnTournament`=`ClTournament` 
-		LEFT JOIN `Countries` AS c ON e.`EnCountry`=c.`CoId` AND e.`EnTournament`=c.`CoTournament` 
-		LEFT JOIN `Countries` AS c2 ON e.`EnCountry2`=c2.`CoId` AND e.`EnTournament`=c2.`CoTournament` 
-		LEFT JOIN `Countries` AS c3 ON e.`EnCountry3`=c3.`CoId` AND e.`EnTournament`=c3.`CoTournament`
+		FROM Entries AS e
+		INNER JOIN Tournament on EnTournament=ToId
+		INNER JOIN Qualifications AS q ON e.EnId=q.QuId 
+		LEFT JOIN Individuals on IndId=EnId AND EnTournament=IndTournament 
+		LEFT JOIN Events AS ec ON EvTeamEvent=0 AND EvTournament=EnTournament AND IndEvent=EvCode and EvCodeParent=''
+		LEFT JOIN Divisions ON TRIM(EnDivision)=TRIM(DivId) AND EnTournament=DivTournament 
+		LEFT JOIN Classes ON TRIM(EnClass)=TRIM(ClId) AND EnTournament=ClTournament 
+		LEFT JOIN Countries AS c ON e.EnCountry=c.CoId AND e.EnTournament=c.CoTournament 
+		LEFT JOIN Countries AS c2 ON e.EnCountry2=c2.CoId AND e.EnTournament=c2.CoTournament 
+		LEFT JOIN Countries AS c3 ON e.EnCountry3=c3.CoId AND e.EnTournament=c3.CoTournament
 		LEFT JOIN ( 
-			SELECT `EnCountry` AS `cCode`, COUNT(`EnId`) AS `cNumber`, `IndEvent` as `cEvent` FROM `Entries` inner join `Individuals` on `EnId`=`IndId` and `IndTournament`={$_SESSION['TourId']} 
-			WHERE `EnTournament`={$_SESSION['TourId']} GROUP BY `EnCountry`, `IndEvent` 
-			) as sqy ON e.`EnCountry`=sqy.`cCode` and `IndEvent`=`cEvent` 
-		LEFT JOIN `Session` on `EnTournament`=`SesTournament` and `SesType`='Q' and `SesOrder`=`QuSession` 
-		LEFT JOIN `TargetFaces` ON `EnTournament`=`TfTournament` AND `EnTargetFace`=`TfId`
-		LEFT JOIN `Rankings` on `EnTournament`=`RankTournament` and `RankEvent`=IF(`EvWaCategory`!='',`EvWaCategory`,`EvCode`) and `RankTeam`=0 and `EnCode`=`RankCode` and `ToIocCode`='FITA' and `EnIocCode` in ('', 'FITA') and `RankIocCode`='FITA' 
-		WHERE ".($ORIS ? '`EvCode` is not null and ' : '')." `EnAthlete`=1 and `EnTournament` = " . StrSafe_DB($_SESSION['TourId']) ;
-	if(isset($_REQUEST["Session"]) and is_numeric($_REQUEST["Session"])) $MyQuery .= " AND `QuSession` = " . StrSafe_DB($_REQUEST["Session"]) ;
+			SELECT EnCountry AS cCode, COUNT(EnId) AS cNumber, IndEvent as cEvent FROM `Entries` inner join Individuals on EnId=IndId and IndTournament={$_SESSION['TourId']} 
+			WHERE EnTournament={$_SESSION['TourId']} GROUP BY EnCountry, IndEvent 
+			) as sqy ON e.EnCountry=sqy.cCode and IndEvent=cEvent 
+		LEFT JOIN Session on EnTournament=SesTournament and SesType='Q' and SesOrder=QuSession 
+		LEFT JOIN TargetFaces ON EnTournament=TfTournament AND EnTargetFace=TfId
+		LEFT JOIN Rankings on EnTournament=RankTournament and RankEvent=IF(EvWaCategory!='',EvWaCategory,EvCode) and RankTeam=0 and EnCode=RankCode and ToIocCode='FITA' and EnIocCode in ('', 'FITA') and RankIocCode='FITA' 
+		WHERE ".($ORIS ? 'EvCode is not null and ' : '')." EnAthlete=1 and EnTournament = " . StrSafe_DB($_SESSION['TourId']) ;
+	if(isset($_REQUEST["Session"]) and is_numeric($_REQUEST["Session"])) $MyQuery .= " AND QuSession = " . StrSafe_DB($_REQUEST["Session"]) ;
 	if($TmpWhere) $MyQuery .= " AND (" . $TmpWhere . ")";
-	$MyQuery.= " GROUP BY `EventCode`, `SesName`, `Bib`, `Athlete`, `Session`, `TargetNo`, `NationCode`, `Nation`, `NationCode2`, `Nation2`, `NationCode3`, `Nation3`,
-		`DivDescription`, `ClDescription`, `EnSubTeam`, `ClassCode`, `DivCode`, `IsAthlete`, `AgeClass`, `SubClass`, `Status`, `IC`, `TC`, `IF`, `TF`, `TM`,
-			`DOB`, `TfName` ";
+	$MyQuery.= " GROUP BY EventCode, SesName, Bib, Athlete, Session, TargetNo, NationCode, Nation, NationCode2, Nation2, NationCode3, Nation3,
+		DivDescription, ClDescription, EnSubTeam, ClassCode, DivCode, IsAthlete, AgeClass, SubClass, Status, `IC`, `TC`, `IF`, `TF`, `TM`,
+			DOB, TfName ";
 	if(empty($_REQUEST['byTarget'])) {
-		$MyQuery.= " ORDER BY ".($ORIS ? '`EvProgr`, `NationCode`' : '`EventCode`').", " . ($orderByTeam ? ($orderByTeam==1 ? " `NationCode`, ":"`Nation`, "):"") . " `Athlete`, `TargetNo` ";
+		$MyQuery.= " ORDER BY ".($ORIS ? 'EvProgr, NationCode' : 'EventCode').", " . ($orderByTeam ? ($orderByTeam==1 ? " NationCode, ":"Nation, "):"") . " Athlete, TargetNo ";
 	} else {
-		$MyQuery.= " ORDER BY `EvProgr`, `TargetNo` ";
+		$MyQuery.= " ORDER BY EvProgr, TargetNo ";
 	}
 
 	return $MyQuery;
 }
+?>
